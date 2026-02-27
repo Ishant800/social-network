@@ -1,4 +1,4 @@
-# 🌐 Social Networking Platform (MERN Stack)
+# 🌐 Social Networking Platform Using MERN Stack
 
 A modern social networking backend built using the MERN stack. This project implements secure user authentication and is designed with scalable architecture for future features like posts, comments, and connections.
 
