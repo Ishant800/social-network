@@ -132,7 +132,7 @@ npm run dev
 
 ## 👨‍💻 Author
 
-Your Name
+Ishant Karmacharya
 
 ---
 
