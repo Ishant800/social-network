@@ -1,25 +1,50 @@
-# 🌐 Social Networking Platform Using MERN Stack
+## 🧱 Architecture
 
-A modern social networking backend built using the MERN stack. This project implements secure user authentication and is designed with scalable architecture for future features like posts, comments, and connections.
+Frontend (React) → Backend (Express API) → MongoDB
+# 🌐 ConnectHub – Social Networking Platform (MERN Stack)
+
+ConnectHub is a full-stack social networking platform built using the MERN stack. It provides secure user authentication and is designed with scalable architecture to support future features such as posts, comments, likes, and user connections.
+
+This project demonstrates real-world full-stack development practices including REST APIs, JWT authentication, and modern frontend architecture.
 
 ---
 
-## 🚀 Features (Currently Implemented)
+# 🚀 Features
+
+## ✅ Implemented Features
 
 ### 🔐 Authentication System
 
 * User registration
 * User login
-* Password hashing using bcrypt
-* JWT-based authentication (secure)
-* Input validation
-* Error handling
+* Secure password hashing using bcrypt
+* JWT-based authentication
+* Protected routes (backend ready)
+* Form validation and error handling
 
 ---
 
-## 🛠️ Tech Stack
+## 🔜 Planned Features
 
-**Backend:**
+* User profile management
+* Create, edit, delete posts
+* Like and comment on posts
+* User connection system
+* Real-time notifications
+* Image upload support
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend (client)
+
+* React.js
+* Axios
+* React Router
+* Context API
+
+## Backend (server)
 
 * Node.js
 * Express.js
@@ -28,114 +53,151 @@ A modern social networking backend built using the MERN stack. This project impl
 * JWT Authentication
 * bcrypt
 
-**Tools:**
+## Tools
 
-* Git
-* GitHub
+* Git & GitHub
 * Postman
+* MongoDB Atlas
 
 ---
 
-## 📁 Project Structure
+# 📁 Project Structure
 
-backend/
+```
+connecthub/
 │
-├── controllers/
-│ └── auth.controller.js
+├── client/          # React frontend
+│   ├── src/
+│   ├── public/
+│   └── package.json
 │
-├── models/
-│ └── auth.entity.js
+├── server/          # Node.js backend
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── config/
+│   └── server.js
 │
-├── routes/
-│ └── auth.routes.js
-│
-├── config/
-│ └── db.js
-│
-└── server.js
-
----
-
-## ⚙️ API Endpoints
-
-### Register User
-
-POST /api/auth/register
-
-Request Body:
-
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123"
-}
+└── README.md
 ```
 
 ---
 
-### Login User
+# ⚙️ Installation and Setup
 
-POST /api/auth/login
+## 1️⃣ Clone the repository
 
-Request Body:
-
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
+```
+git clone https://github.com/YOUR_USERNAME/connecthub.git
+cd connecthub
 ```
 
 ---
 
-## 🔒 Security Features
+## 2️⃣ Setup Backend
 
-* Password hashing with bcrypt
-* JWT authentication
-* Protected routes ready
-* Secure authentication flow
-
----
-
-## ▶️ How to Run Locally
-
-1. Clone the repository
-
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-
-2. Install dependencies
-
+```
+cd server
 npm install
+```
 
-3. Create .env file
+Create `.env` file inside server folder:
 
+```
 PORT=5000
-MONGO_URI=your_mongodb_uri
+MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
+```
 
-4. Run server
+Run backend:
 
+```
 npm run dev
+```
+
+Server runs on:
+
+```
+http://localhost:5000
+```
 
 ---
 
-## 🎯 Future Features
+## 3️⃣ Setup Frontend
 
-* User profile
-* Create posts
-* Like and comment system
-* Connection system
-* Real-time notifications
+Open new terminal:
+
+```
+cd client
+npm install
+npm start
+```
+
+Frontend runs on:
+
+```
+http://localhost:3000
+```
 
 ---
 
-## 👨‍💻 Author
+# 🔗 API Endpoints
 
-Ishant Karmacharya
+## Auth Routes
+
+### Register
+
+```
+POST /api/auth/register
+```
+
+### Login
+
+```
+POST /api/auth/login
+```
 
 ---
 
-## ⭐ Project Status
+# 🔒 Security Features
 
-Authentication system completed. More features coming soon.
+* Encrypted passwords using bcrypt
+* JWT-based authentication
+* Protected backend routes
+* Secure user validation
+
+---
+
+# 🎯 Learning Objectives
+
+This project demonstrates:
+
+* Full-stack MERN development
+* REST API design
+* Authentication and authorization
+* Database schema design
+* Client-server architecture
+
+---
+
+# 🚀 Future Improvements
+
+* Post creation system
+* Follow/connect system
+* Real-time chat
+* Notification system
+* Deployment (Render / Vercel)
+
+---
+
+# 👨‍💻 Author
+
+Ishant Shrestha
+
+---
+
+# ⭐ Project Status
+
+🟢 Authentication system completed
+🟡 Full social networking features in progress
