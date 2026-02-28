@@ -1,11 +1,14 @@
-const { config, configDotenv } = require('dotenv')
 const mongoose = require('mongoose')
-configDotenv()
 
-//connection string url
-const csurl = process.env.CSTRING;
-const db = mongoose.connect(csurl,console.log("db connected sucessfully"))
+async function connectDb() {
+    try {
+        await mongoose.connect(process.env.CNS)
+        console.log("mongoose connected sucessfully")
+    } catch (error) {
+        console.error("mongoose connection failed")
+        process.exit(1);
+    }
+}
 
-if(!db) console.log("failed to connect DB")
 
-module.exports = db
+module.exports = connectDb
