@@ -15,7 +15,16 @@ const userSchema = mongoose.Schema({
 
     },
     address:{type:String},
-    profileImage:{type:String},
+    profileImage:{
+        url:{
+            type:String,
+            default:null
+        },
+        public_id:{
+            type:String,
+            default:null
+        }
+    },
     followers:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"

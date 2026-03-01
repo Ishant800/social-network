@@ -11,11 +11,11 @@ configDotenv()
 const authRoute = require("./modules/authModule/routes/auth.route")
 const connectDb = require("./database/dbconfig")
 const postRoute = require("./modules/postModule/route/post.route")
-
+const userRoute = require("./modules/userModel/route/user.route")
 
 app.use("/auth",authRoute)
 app.use("/post",postRoute)
-
+app.use("/profile",userRoute)
 
 connectDb().then(()=>{
 const PORT_NO = process.env.PORT
