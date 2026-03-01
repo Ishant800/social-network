@@ -1,21 +1,45 @@
 const Post = require("../models/post.entity")
-
+const cloudinary = require("cloudinary").v2;
 
 //post create
 exports.createPost = async (req,res)=>{
     try {
-        const postsaved = await Post.create(req.body)
-    if(!postsaved) return res.status(400).json({
-      error:"failed to create post"
-    })
+        const userId = req.params.id;
+        const {content,media,tags,isPublic} = req.body;
+
+        //postimages 
+        let mediaUrls = [];
+        if(req.files && req.files.length > 0){
+            mediaUrls = req.files.map(file => file.path)
+        }
+        //create post
+        const post = await Post.create({
+            user:userId,
+            content,
+            media:mediaUrls,
+            tags: tags ? tags.split(",") : [],
+            isPublic : isPublic !== undefined ? isPublic : true
+        });
+          
+         if(!post) return res.status(400).json({
+            sucess:false,
+          error:"failed to create post"
+        })
+
+        //populate user info
+        const populatedPost = await Post.findById(post._id).populate("user", "name profileImage");
+
+   
     return res.status(201).json({
-          sucess:"ok",
-        message:"post create sucessfully"
+          sucess:true,
+        message:"post create sucessfully",
+        post: populatedPost
     })
 
     } catch (error) {
-        return res.status(501).json({
-            error:"Internal Server error"
+        return res.status(500).json({
+            success:false,
+            message: error.message
         })
     }
     
@@ -54,7 +78,7 @@ exports.getMyPost = async(req,res)=>{
 exports.getPostDetails = async (req,res)=>{
 
     const postId = req.params.postId;
-    const post = await Post.findById({id:postId})
+    const post = await Post.findById(postId)
     if(!post){
         return res.status(400).json({
             sucess:"ok",
@@ -66,4 +90,60 @@ exports.getPostDetails = async (req,res)=>{
             sucess:"ok",
             post:post
         })
+}
+
+exports.updatePost = async () =>{
+
+    try {
+       const userId = req.user.id;
+    const postId = req.params.postId;
+
+    const post = await Post.findById(postId);
+    if(!post){
+        return res.status(404).json({
+            success:false,
+            message:"post not found"
+        })
+    }
+
+    // ownership check user is owner or not
+    if(post.user.toString() !== userId){
+        return res.status(203).json({
+            sucess:false,
+            message:"Unauthorized  to update this post"
+        })
+    }
+
+    // update fields
+    if(req.body.content) post.content = req.body.content;
+    if(req.body.tags) post.tags = req.body.tags;
+    if(req.body.isPublic !== undefined) post.isPublic = req.body.isPublic;
+    
+    
+    // media replacement
+    if(req.files && req.files.length > 0){
+        if(post.media.length > 0){
+            for(let url of post.media){
+                const publicId = url.split("/").split(".")[0];
+                await cloudinary.uploader.destroy(`meroroom/${publicId}`);
+            }
+        }
+        post.media = req.files.map(file => file.path);
+
+    }
+
+    await post.save();
+     res.status(200).json({
+            success: true,
+            message: "Post updated successfully",
+            post
+        });
+
+    } catch (error) {
+         res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+    
 }
