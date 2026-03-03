@@ -1,37 +1,58 @@
-import Navbar from "./Navbar";
+import { useLocation } from 'react-router-dom';
 import Sidebar from "./Sidebar";
 import RightSidebar from "./RightSidebar";
 import MobileNav from "./MobileNav";
+import Navbar from './Navbar';
 
 export default function Layout({ children }) {
+  const location = useLocation();
+  
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isFeedPage = location.pathname === '/';
+
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen w-full bg-white flex flex-col justify-center">
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F3F4F6] text-slate-900">
-      <Navbar />
+    <div className="min-h-screen bg-[#F8FAFC]"> {/* Slightly cooler gray for realism */}
+      {/* 1. FIXED NAVBAR (Added glass effect) */}
+      <div className="fixed top-0 inset-x-0 z-[100] bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <Navbar />
+      </div>
       
-      {/* pt-20: Accounts for fixed navbar height 
-        Grid layout: 280px | Fluid | 320px
-      */}
-      <main className="mx-auto max-w-7xl px-4 pt-20 pb-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_320px]">
+      <main className="mx-auto max-w-[1440px] px-6 pt-24 pb-24 lg:pb-8">
+        <div className="flex justify-between gap-10">
           
-          {/* Left Sidebar - Sticky */}
-          <aside className="hidden lg:block lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)]">
-            <Sidebar />
+          {/* 2. FIXED LEFT SIDEBAR (Widened to 300px) */}
+          <aside className="hidden lg:block w-[300px] flex-shrink-0">
+            <div className="fixed top-24 w-[300px] h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar pr-2">
+              <Sidebar />
+            </div>
           </aside>
 
-          {/* Main Feed */}
-          <section className="min-w-0 space-y-6">
-            {children}
+          {/* 3. CENTER CONTENT */}
+          <section className={`flex-1 min-w-0 ${!isFeedPage ? 'max-w-3xl mx-auto' : ''}`}>
+            {children} 
           </section>
 
-          {/* Right Sidebar - Sticky */}
-          <aside className="hidden xl:block xl:sticky xl:top-20 xl:h-[calc(100vh-5rem)]">
-            <RightSidebar />
-          </aside>
+          {/* 4. FIXED RIGHT SIDEBAR (Widened to 350px) */}
+          {isFeedPage && (
+            <aside className="hidden xl:block w-[350px] flex-shrink-0">
+              <div className="fixed top-24 w-[350px] h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar">
+                <RightSidebar />
+              </div>
+            </aside>
+          )}
+          
         </div>
       </main>
 
-      <MobileNav/>
+      <MobileNav />
     </div>
   );
 }

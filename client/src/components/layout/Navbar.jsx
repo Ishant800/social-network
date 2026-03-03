@@ -2,17 +2,17 @@ import { Search, Bell, MessageSquare, PlusSquare } from 'lucide-react';
 
 export default function Navbar() {
   return (
-    <header className="fixed top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
+    <header className="w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
         
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <span className="text-white font-bold text-xl">M</span>
+            <span className="text-white font-bold text-xl">MC</span>
           </div>
-          <h1 className="hidden text-2xl font-extrabold tracking-tight text-slate-900 sm:block">
+          {/* <h1 className="hidden text-2xl font-medium tracking-tight text-slate-900 sm:block">
             MeroRoom
-          </h1>
+          </h1> */}
         </div>
 
         {/* Search Bar */}
@@ -27,9 +27,7 @@ export default function Navbar() {
 
         {/* Action Icons */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <button className="hidden sm:flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">
-            <PlusSquare className="h-4 w-4" /> Post
-          </button>
+        
           
           <div className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer transition">
             <Bell className="h-6 w-6" />

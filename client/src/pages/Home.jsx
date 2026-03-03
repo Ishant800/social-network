@@ -1,4 +1,4 @@
-import Layout from "../components/layout/Layout";
+
 import CreatePost from "../components/post/CreatePost";
 import PostCard from "../components/post/PostCard";
 
@@ -67,13 +67,12 @@ const dummyPosts = [
 ];
 
 export default function Home() {
-  return (
-    <Layout>
-
-        <CreatePost/>
+ return (
+    <> 
+      <CreatePost />
       {dummyPosts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
-    </Layout>
+    </>
   );
 }
