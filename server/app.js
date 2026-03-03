@@ -12,11 +12,11 @@ const authRoute = require("./modules/authModule/routes/auth.route")
 const connectDb = require("./database/dbconfig")
 const postRoute = require("./modules/postModule/route/post.route")
 const userRoute = require("./modules/userModel/route/user.route")
-
+const commentRoute = require("./modules/commentModule/router/comment.route")
 app.use("/auth",authRoute)
 app.use("/post",postRoute)
 app.use("/profile",userRoute)
-
+app.use("/comment",commentRoute)
 connectDb().then(()=>{
 const PORT_NO = process.env.PORT
 app.listen(PORT_NO,()=>{

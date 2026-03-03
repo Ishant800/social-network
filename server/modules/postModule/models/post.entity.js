@@ -27,8 +27,11 @@ const postSchema = mongoose.Schema({
    //users able to make their post public or private 
    isPublic:{
     type:Boolean,default:true
+   },
+   commentsCount:{
+    type:Number,
+    default:0
    }
-
 },{timestamps: true})
 
 
