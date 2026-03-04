@@ -49,4 +49,28 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { updateProfile };
+
+
+ async function getMe (req,res){
+  try {
+    const userid = req.user.id;
+    const getme = await User.findById(userid)
+    if(!getme){
+      return res.status(400).json({
+        sucess:false,
+        message:"user not found"
+      })
+    }
+
+    res.status(200).json({
+      getme
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success:false,
+      error:error.message
+    })
+  }
+}
+
+module.exports = { updateProfile ,getMe};

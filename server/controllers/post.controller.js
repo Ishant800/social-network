@@ -140,9 +140,28 @@ const updatePost = async (req, res) => {
   }
 };
 
+
+const randomPosts = async(req,res)=>{
+  try {
+    const posts = await Post.find()
+    if(!posts) return  res.status(200).json({
+      
+      message: "no post available"
+    });
+    return res.status(200).json({
+      posts
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
+  randomPosts
 };
