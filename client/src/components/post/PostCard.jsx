@@ -1,13 +1,39 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  Bookmark,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import CommentSection from '../comment/commentSection';
 
 export default function PostCard({ post }) {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
-  const images = post.images || [];
-const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
-
+  const images = post.images || post.media || [];
+  const authorName = post.author || post.user?.name || 'Unknown User';
+  const username =
+    post.username ||
+    (post.user?.name &&
+      post.user.name.toLowerCase().replace(/\s+/g, '')) ||
+    'user';
+  const time = post.time || post.createdAt;
+  const likeCount = typeof post.likes === 'number'
+    ? post.likes
+    : Array.isArray(post.likes)
+      ? post.likes.length
+      : 0;
+  const commentCount =
+    typeof post.comments === 'number'
+      ? post.comments
+      : typeof post.commentsCount === 'number'
+        ? post.commentsCount
+        : 0;
   // Helper to handle lightbox navigation
   const navigateLightbox = (e, direction) => {
     e.stopPropagation();
@@ -23,16 +49,18 @@ const [showComments, setShowComments] = useState(false);
       {/* Header */}
       <header className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <img 
-            src={`https://ui-avatars.com/api/?name=${post.author}&background=random`} 
+          <img
+            src={`https://ui-avatars.com/api/?name=${authorName}&background=random`}
             className="h-11 w-11 rounded-full border border-gray-100 object-cover" 
-            alt={post.author} 
+            alt={authorName}
           />
           <div>
             <h3 className="font-bold text-slate-900 hover:text-indigo-600 cursor-pointer transition-colors">
-              {post.author}
+              {authorName}
             </h3>
-            <p className="text-xs text-slate-500">@{post.username} • {post.time}</p>
+            <p className="text-xs text-slate-500">
+              @{username} • {time}
+            </p>
           </div>
         </div>
         <button className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition-colors">
@@ -94,31 +122,31 @@ const [showComments, setShowComments] = useState(false);
 
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group">
             <Heart className="w-5 h-5 group-hover:fill-rose-600" />
-            <span className="text-sm font-semibold">{post.likes}</span>
+            <span className="text-sm font-semibold">{likeCount}</span>
           </button>
           
-        <button 
-  onClick={() => setShowComments(!showComments)}
-  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-    showComments ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
-  }`}
->
-  <MessageCircle className="w-5 h-5" />
-  <span className="text-sm font-semibold">{post.comments}</span>
-</button>
+        <button
+          onClick={() => setShowComments(!showComments)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+            showComments
+              ? 'bg-indigo-50 text-indigo-600'
+              : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
+          }`}
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-sm font-semibold">{commentCount}</span>
+        </button>
 
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
             <Share2 className="w-5 h-5" />
           </button>
-        </div>
-        
-        <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors">
+      </div>
+
+      <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors">
           <Bookmark className="w-5 h-5" />
         </button>
       </div>
-
-
-{showComments && <CommentSection postId={post.id} />}
+      {showComments && <CommentSection postId={post.id || post._id} />}
       {/* Lightbox / Image Viewer Modal */}
       {activeImageIndex !== null && (
         <div 

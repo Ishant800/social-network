@@ -1,7 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
 import { Mail, Lock, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../../api";
 
 function Signup() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name || !email || !password) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await apiRequest("/auth/signup", {
+        method: "POST",
+        body: { name, email, password },
+      });
+
+      if (res?.token) {
+        localStorage.setItem("token", res.token);
+      }
+
+      navigate("/");
+    } catch (err) {
+      setError(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
 
@@ -27,7 +61,7 @@ function Signup() {
             Fill in your details to get started
           </p>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
 
             {/* Name */}
             <div className="relative">
@@ -35,6 +69,8 @@ function Signup() {
               <input
                 type="text"
                 placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full border border-slate-200 rounded-md pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-slate-400 transition"
               />
             </div>
@@ -45,6 +81,8 @@ function Signup() {
               <input
                 type="email"
                 placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-slate-200 rounded-md pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-slate-400 transition"
               />
             </div>
@@ -55,16 +93,25 @@ function Signup() {
               <input
                 type="password"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-slate-200 rounded-md pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-slate-400 transition"
               />
             </div>
 
+            {error && (
+              <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-md px-3 py-2">
+                {error}
+              </p>
+            )}
+
             {/* Button */}
             <button
-              type="button"
-              className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md disabled:opacity-60"
             >
-              Sign Up
+              {loading ? "Creating account..." : "Sign Up"}
             </button>
 
             {/* Divider */}

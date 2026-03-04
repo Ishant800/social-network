@@ -1,26 +1,28 @@
-const { configDotenv } = require("dotenv")
-const express = require("express")
-const cors = require("cors")
+const { configDotenv } = require('dotenv');
+const express = require('express');
+const cors = require('cors');
 
-const app = express()
+const connectDb = require('./config/db.config');
+const authRoute = require('./routes/auth.routes');
+const postRoute = require('./routes/post.routes');
+const userRoute = require('./routes/user.routes');
+const commentRoute = require('./routes/comment.routes');
 
-app.use(express.json())
-app.use(cors("*"))
-configDotenv()
+const app = express();
 
-const authRoute = require("./modules/authModule/routes/auth.route")
-const connectDb = require("./database/dbconfig")
-const postRoute = require("./modules/postModule/route/post.route")
-const userRoute = require("./modules/userModel/route/user.route")
-const commentRoute = require("./modules/commentModule/router/comment.route")
-app.use("/auth",authRoute)
-app.use("/post",postRoute)
-app.use("/profile",userRoute)
-app.use("/comment",commentRoute)
-connectDb().then(()=>{
-const PORT_NO = process.env.PORT
-app.listen(PORT_NO,()=>{
-    console.log(`server running successfully on port: ${PORT_NO}`)
-})
-})
- 
+configDotenv();
+
+app.use(express.json());
+app.use(cors('*'));
+
+app.use('/auth', authRoute);
+app.use('/post', postRoute);
+app.use('/profile', userRoute);
+app.use('/comment', commentRoute);
+
+connectDb().then(() => {
+  const PORT_NO = process.env.PORT;
+  app.listen(PORT_NO, () => {
+    console.log(`server running successfully on port: ${PORT_NO}`);
+  });
+});

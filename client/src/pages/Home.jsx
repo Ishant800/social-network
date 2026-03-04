@@ -1,76 +1,119 @@
 
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+
 import CreatePost from "../components/post/CreatePost";
 import PostCard from "../components/post/PostCard";
-
-const dummyPosts = [
-    {
-    id: 1,
-    author: "Ishant",
-    username: "ishant_dev",
-    time: "2 hours ago",
-    content: "Just finished building the new MeroRoom UI gallery! What do you guys think of this multi-image layout? 🚀 #webdev #react #tailwindcss",
-    likes: 124,
-    comments: 18,
-    // Add multiple images here to test the grid
-    images: [
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c",
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97",
-      "https://images.unsplash.com/photo-1550745165-9bc0b252726f",
-      "https://images.unsplash.com/photo-1587620962725-abab7fe55159" // 5th image (will show +1)
-    ]
-  },
-  {
-    id: 2,
-    author: "Ishant",
-    username: "ishant",
-    time: "2h",
-    content: "Built the first version of our social app feed today. Next step is comments and notifications.",
-    images: ["https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80"],
-    likes: 34,
-    comments: 8,
-    shares: 3,
-  },
-  {
-    id: 3,
-    author: "Sita",
-    username: "sita.dev",
-    time: "4h",
-    content: "Working on responsive layout fixes. Desktop and mobile views are finally behaving properly.",
-    image: "",
-    likes: 21,
-    comments: 4,
-    shares: 1,
-  },
-  {
-    id: 4,
-    author: "Rabin",
-    username: "rabin.codes",
-    time: "6h",
-    content: "Just deployed backend auth routes. Login, register, and token checks are now connected.",
-    image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80",
-    likes: 56,
-    comments: 12,
-    shares: 7,
-  },
-  {
-    id: 5,
-    author: "Maya",
-    username: "maya.ui",
-    time: "8h",
-    content: "UI polish day: cleaned spacing, fixed cards, and standardized buttons across the app.",
-    image: "",
-    likes: 18,
-    comments: 2,
-    shares: 0,
-  },
-];
+import { apiRequest } from "../api";
 
 export default function Home() {
- return (
-    <> 
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPosts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await apiRequest("/post/myPost", { auth: true });
+
+        const mapped =
+          data?.posts?.map((post) => ({
+            id: post._id,
+            author: post.user?.name || "Unknown User",
+            username:
+              post.user?.name?.toLowerCase().replace(/\s+/g, "") ||
+              "user",
+            time: new Date(post.createdAt).toLocaleString(),
+            content: post.content,
+            likes: Array.isArray(post.likes) ? post.likes.length : 0,
+            comments:
+              typeof post.commentsCount === "number"
+                ? post.commentsCount
+                : 0,
+            images: post.media || [],
+          })) || [];
+
+        if (isMounted) {
+          setPosts(mapped);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPosts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isAuthError = error && error.status === 401;
+
+  return (
+    <>
       <CreatePost />
-      {dummyPosts.map((post) => (
+
+      {loading && (
+        <div className="flex items-center justify-center py-10 text-slate-500 gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm font-medium">
+            Loading your posts...
+          </span>
+        </div>
+      )}
+
+      {!loading && isAuthError && (
+        <div className="bg-white border border-dashed border-indigo-200 rounded-2xl p-6 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 mb-1">
+            Sign in to see your feed
+          </h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Your personalized posts will appear here after you log in.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
+            >
+              Go to Login
+            </Link>
+            <Link
+              to="/signup"
+              className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+            >
+              Create account
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!loading && !isAuthError && error && (
+        <div className="bg-white border border-rose-100 rounded-2xl p-4 text-sm text-rose-600">
+          Something went wrong while loading your feed. Please try
+          again.
+        </div>
+      )}
+
+      {!loading && !error && posts.length === 0 && (
+        <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-6 text-center text-sm text-slate-500">
+          You haven&apos;t posted anything yet. Start by sharing your
+          first update.
+        </div>
+      )}
+
+      {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
     </>

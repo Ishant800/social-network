@@ -1,6 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { apiRequest } from "../../api";
 
 function Signin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await apiRequest("/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
+
+      if (res?.token) {
+        localStorage.setItem("token", res.token);
+      }
+
+      navigate("/");
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
 
@@ -26,7 +59,7 @@ function Signin() {
             Enter your credentials to continue
           </p>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
 
             {/* Email */}
             <div>
@@ -35,6 +68,8 @@ function Signin() {
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-slate-400 transition"
               />
@@ -47,6 +82,8 @@ function Signin() {
               </label>
               <input
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-slate-400 transition"
               />
@@ -76,12 +113,19 @@ function Signin() {
               </a>
             </div>
 
+            {error && (
+              <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-md px-3 py-2">
+                {error}
+              </p>
+            )}
+
             {/* Button */}
             <button
-              type="button"
-              className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md disabled:opacity-60"
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
             </button>
 
             {/* Divider */}
@@ -101,12 +145,12 @@ function Signin() {
 
             <p className="text-center text-sm text-slate-600 mt-4">
               Don’t have an account?
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
                 className="ml-1 font-semibold text-slate-800 hover:underline"
               >
                 Sign up
-              </a>
+              </Link>
             </p>
 
           </form>
