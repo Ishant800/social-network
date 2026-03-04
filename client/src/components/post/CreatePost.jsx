@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Image, Video, Smile, Send } from 'lucide-react';
-import { apiRequest } from '../../api';
+
 
 export default function CreatePost() {
   const [content, setContent] = useState('');
@@ -16,37 +16,7 @@ export default function CreatePost() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() || submitting) return;
-
-    try {
-      setSubmitting(true);
-      setError('');
-
-      const formData = new FormData();
-      formData.append('content', content.trim());
-      formData.append('isPublic', isPublic);
-      if (tags.trim()) {
-        formData.append('tags', tags.trim());
-      }
-      files.forEach((file) => {
-        formData.append('media', file);
-      });
-
-      await apiRequest('/post/create', {
-        method: 'POST',
-        body: formData,
-        auth: true,
-      });
-
-      setContent('');
-      setFiles([]);
-      setTags('');
-      setIsPublic(true);
-    } catch (err) {
-      setError(err.message || 'Failed to create post');
-    } finally {
-      setSubmitting(false);
-    }
+    
   };
 
   return (

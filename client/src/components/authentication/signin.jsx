@@ -1,39 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiRequest } from "../../api";
+
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../features/auth/authSlice";
 
 function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+const dispatch = useDispatch()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) return;
+const {isLoading,isError,message} = useSelector((state)=> state.auth)
+ const token = localStorage.getItem("token")
+useEffect(()=>{
+  if(token){
+    navigate("/")
+  }
+},[token,navigate])
+const handleSubmit = (e)=>{
+  e.preventDefault();
 
-    try {
-      setLoading(true);
-      setError("");
-
-      const res = await apiRequest("/auth/login", {
-        method: "POST",
-        body: { email, password },
-      });
-
-      if (res?.token) {
-        localStorage.setItem("token", res.token);
-      }
-
-      navigate("/");
-    } catch (err) {
-      setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const formData = {
+    email:email,
+   password:password
+  }
+  dispatch(login(formData))
+}
+  
   return (
     <div className="min-h-screen flex">
 
@@ -113,19 +106,19 @@ function Signin() {
               </a>
             </div>
 
-            {error && (
+            {isError && (
               <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-md px-3 py-2">
-                {error}
+                {message}
               </p>
             )}
 
             {/* Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md disabled:opacity-60"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
 
             {/* Divider */}

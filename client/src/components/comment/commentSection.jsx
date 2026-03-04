@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Send, Smile, MoreHorizontal, Heart, Loader2 } from 'lucide-react';
-import { apiRequest } from '../../api';
+
 
 export default function CommentSection({ postId }) {
   const [commentText, setCommentText] = useState('');

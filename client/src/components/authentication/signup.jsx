@@ -1,39 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Mail, Lock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { apiRequest } from "../../api";
+import { useDispatch, useSelector } from "react-redux";
+import { signup } from "../../features/auth/authSlice";
+
 
 function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  const {isLoading,isError,message} = useSelector((state)=> state.auth)
   const navigate = useNavigate();
+  const dispatch = useDispatch()
+
+  const token = localStorage.getItem("token")
+  useEffect(()=>{
+    if(token){
+      navigate("/")
+    }
+  },[token,navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) return;
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const res = await apiRequest("/auth/signup", {
-        method: "POST",
-        body: { name, email, password },
-      });
-
-      if (res?.token) {
-        localStorage.setItem("token", res.token);
-      }
-
-      navigate("/");
-    } catch (err) {
-      setError(err.message || "Failed to create account");
-    } finally {
-      setLoading(false);
+    const formData = {
+      name,
+      email,
+      password
     }
+    dispatch(signup(formData))
   };
 
   return (
@@ -99,19 +94,19 @@ function Signup() {
               />
             </div>
 
-            {error && (
+            {isError && (
               <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-md px-3 py-2">
-                {error}
+                {message}
               </p>
             )}
 
             {/* Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-slate-900 text-white py-2 rounded-md hover:bg-slate-800 transition shadow-md disabled:opacity-60"
             >
-              {loading ? "Creating account..." : "Sign Up"}
+              {isLoading ? "Creating account..." : "Sign Up"}
             </button>
 
             {/* Divider */}

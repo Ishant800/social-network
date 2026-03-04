@@ -1,6 +1,17 @@
 import { Search, Bell, MessageSquare, PlusSquare } from 'lucide-react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function Navbar() {
+
+  const dispatch = useDispatch()
+    const {user} = useSelector((state)=> state.auth)
+  // useEffect
+
+
+  const image = user?.profileImage?.url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4XoGpSkgybe5fubd2XlhO_zNXDF9CjbTrEw&s"
+
+   
   return (
     <header className="w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
@@ -40,8 +51,8 @@ export default function Navbar() {
             <MessageSquare className="h-6 w-6" />
           </div>
 
-          <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-transparent hover:border-indigo-600 transition cursor-pointer">
-            <img src="https://ui-avatars.com/api/?name=Ishant" alt="Profile" />
+          <div className="h-9 w-9 overflow-hidden transition cursor-pointer">
+            <img src={image} alt="Profile" className='rounded-full' />
           </div>
         </div>
       </div>

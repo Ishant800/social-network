@@ -8,7 +8,6 @@ export default function Sidebar() {
     { icon: MessageSquare, label: 'Messages', path: '/chats' },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
     { icon: User, label: 'Profile', path: '/profile' },
-
     { icon: User2, label: 'Find Friend', path: '/friendsexplore' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
@@ -23,8 +22,8 @@ export default function Sidebar() {
             className={({ isActive }) => `
               flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group
               ${isActive 
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 translate-x-1' 
-                : 'text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm'}
+                ? 'bg-indigo-400 text-white shadow-lg shadow-indigo-100 translate-x-1' 
+                : 'text-slate-600 hover:bg-white hover:text-indigo-400 hover:shadow-sm'}
             `}
           >
             <item.icon className="w-6 h-6" />

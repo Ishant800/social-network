@@ -15,6 +15,8 @@ export default function PostCard({ post }) {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [showComments, setShowComments] = useState(false);
 
+
+  
   const images = post.images || post.media || [];
   const authorName = post.author || post.user?.name || 'Unknown User';
   const username =

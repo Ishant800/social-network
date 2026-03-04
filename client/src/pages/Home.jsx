@@ -1,11 +1,12 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import CreatePost from "../components/post/CreatePost";
 import PostCard from "../components/post/PostCard";
-import { apiRequest } from "../api";
+import API from "../api/axios";
+import PostSkeleton from "../components/skeleton/postSkeleton";
+ // use your axios instance
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -13,67 +14,76 @@ export default function Home() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
 
     const loadPosts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiRequest("/post/myPost", { auth: true });
 
-        const mapped =
-          data?.posts?.map((post) => ({
-            id: post._id,
-            author: post.user?.name || "Unknown User",
-            username:
-              post.user?.name?.toLowerCase().replace(/\s+/g, "") ||
-              "user",
-            time: new Date(post.createdAt).toLocaleString(),
-            content: post.content,
-            likes: Array.isArray(post.likes) ? post.likes.length : 0,
-            comments:
-              typeof post.commentsCount === "number"
-                ? post.commentsCount
-                : 0,
-            images: post.media || [],
-          })) || [];
+        const response = await API.get("/post/randomposts", {
+          signal: controller.signal,
+        });
 
-        if (isMounted) {
-          setPosts(mapped);
-        }
+        const postsData = response.data?.posts ?? [];
+
+        const mappedPosts = postsData.map((post) => ({
+          id: post._id,
+          author: post.user?.name ?? "Unknown User",
+          username:
+            post.user?.name?.toLowerCase().replace(/\s+/g, "") ??
+            "user",
+          time: post.createdAt
+            ? new Date(post.createdAt).toLocaleString()
+            : "Just now",
+          content: post.content ?? "",
+          likes: Array.isArray(post.likes)
+            ? post.likes.length
+            : 0,
+          comments:
+            typeof post.commentsCount === "number"
+              ? post.commentsCount
+              : 0,
+          images: Array.isArray(post.media)
+            ? post.media
+            : [],
+        }));
+
+        setPosts(mappedPosts);
       } catch (err) {
-        if (isMounted) {
-          setError(err);
+        if (err.name !== "CanceledError") {
+          setError(err.response || err);
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     loadPosts();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, []);
 
-  const isAuthError = error && error.status === 401;
+  const isAuthError = error?.status === 401;
 
   return (
     <>
       <CreatePost />
 
+      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-10 text-slate-500 gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm font-medium">
-            Loading your posts...
-          </span>
+        <div className="space-y-4">
+        <PostSkeleton/>
+        <PostSkeleton/>
+        <PostSkeleton/>
+        <PostSkeleton/>
+        <PostSkeleton/>
         </div>
       )}
 
+      {/* Auth Error */}
       {!loading && isAuthError && (
         <div className="bg-white border border-dashed border-indigo-200 rounded-2xl p-6 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900 mb-1">
@@ -99,23 +109,26 @@ export default function Home() {
         </div>
       )}
 
+      {/* General Error */}
       {!loading && !isAuthError && error && (
         <div className="bg-white border border-rose-100 rounded-2xl p-4 text-sm text-rose-600">
-          Something went wrong while loading your feed. Please try
-          again.
+          Something went wrong while loading your feed. Please try again.
         </div>
       )}
 
+      {/* Empty State */}
       {!loading && !error && posts.length === 0 && (
         <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-6 text-center text-sm text-slate-500">
-          You haven&apos;t posted anything yet. Start by sharing your
-          first update.
+          No posts available right now. Be the first to share something!
         </div>
       )}
 
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
+      {/* Posts */}
+      {!loading &&
+        !error &&
+        posts.map((post) => (
+          <PostCard key={post.id} post={post} />
+        ))}
     </>
   );
 }
