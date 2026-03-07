@@ -1,5 +1,5 @@
 const express = require('express');
-const { updateProfile, getMe } = require('../controllers/user.controller');
+const { updateProfile, getMe, getUsers } = require('../controllers/user.controller');
 const { upload } = require('../config/cloudinary.config');
 const { verifyToken } = require('../middleware/auth.middleware');
 
@@ -12,10 +12,19 @@ router.put(
   updateProfile,
 );
 
+
+
 router.get(
   '/getMe',
   verifyToken,
   getMe
 );
+
+router.get(
+  '/usersuggestions',
+  verifyToken,
+  getUsers
+);
+
 
 module.exports = router;

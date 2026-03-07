@@ -20,6 +20,8 @@ app.use('/post', postRoute);
 app.use('/profile', userRoute);
 app.use('/comment', commentRoute);
 
+
+
 connectDb().then(() => {
   const PORT_NO = process.env.PORT;
   app.listen(PORT_NO, () => {

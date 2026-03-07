@@ -5,18 +5,29 @@ const { cloudinary } = require('../config/cloudinary.config');
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { content, media, tags, isPublic } = req.body;
+    const { content,  tags, isPublic } = req.body;
 
     let mediaUrls = [];
     if (req.files && req.files.length > 0) {
       mediaUrls = req.files.map((file) => file.path);
     }
 
+
+    let tagsArray = [];
+
+if (req.body.tags) {
+  if (Array.isArray(req.body.tags)) {
+    tagsArray = req.body.tags;
+  } else {
+    tagsArray = [req.body.tags];
+  }
+}
+
     const post = await Post.create({
       user: userId,
       content,
       media: mediaUrls,
-      tags: tags ? tags.split(',') : [],
+      tags: tagsArray,
       isPublic: isPublic !== undefined ? isPublic : true,
     });
 

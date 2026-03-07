@@ -73,4 +73,26 @@ const updateProfile = async (req, res) => {
   }
 }
 
-module.exports = { updateProfile ,getMe};
+async function getUsers (req,res){
+try {
+  const users = await User.find()
+  if(!users){
+    return res.status(400).json({
+      success:false,
+      message:"users are not avaiable, be the first users?"
+    })
+  }
+
+  return res.status(200).json({
+    users:users
+  })
+} catch (error) {
+   return res.status(500).json({
+      success:false,
+      error:error.message
+    })
+}
+  
+}
+
+module.exports = { updateProfile ,getMe,getUsers};

@@ -42,24 +42,7 @@ const userSchema = mongoose.Schema(
         ref: 'User',
       },
     ],
-    friends: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    friendsRequestReceived: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    friendsRequestSent: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    
     isActive: {
       type: Boolean,
       default: true,
