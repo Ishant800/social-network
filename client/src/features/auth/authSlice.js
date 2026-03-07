@@ -72,7 +72,7 @@ const authSlice = createSlice({
         })
         .addCase(login.fulfilled,(state,action)=>{
             state.isLoading = false;
-            state.isSucess = true;
+            state.isSuccess = true;
             state.token = action.payload.token;
             localStorage.setItem("token",action.payload.token)
         })

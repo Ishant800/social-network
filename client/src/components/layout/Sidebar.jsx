@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, MessageSquare, User, Bookmark, Settings, LogOut, User2 } from 'lucide-react';
+import { Home, Compass, MessageSquare, User, Bookmark, Settings, LogOut, UserPlus } from 'lucide-react';
 
 export default function Sidebar() {
   const menuItems = [
@@ -8,34 +8,35 @@ export default function Sidebar() {
     { icon: MessageSquare, label: 'Messages', path: '/chats' },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
     { icon: User, label: 'Profile', path: '/profile' },
-    { icon: User2, label: 'Find Friend', path: '/friendsexplore' },
+    { icon: UserPlus, label: 'Find Friends', path: '/friendsexplore' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
   return (
-    <div className="flex flex-col h-full select-none pr-2">
-      <nav className="flex-1 space-y-2">
+    <div className="flex flex-col h-full pr-2">
+      <nav className="flex-1 space-y-1">
         {menuItems.map((item) => (
           <NavLink
             key={item.label}
             to={item.path}
-            className={({ isActive }) => `
-              flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group
-              ${isActive 
-                ? 'bg-indigo-400 text-white shadow-lg shadow-indigo-100 translate-x-1' 
-                : 'text-slate-600 hover:bg-white hover:text-indigo-400 hover:shadow-sm'}
-            `}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+                isActive
+                  ? 'bg-indigo-50 text-indigo-600 font-medium'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`
+            }
           >
-            <item.icon className="w-6 h-6" />
-            <span className="font-bold text-[16px]">{item.label}</span>
+            <item.icon className="w-5 h-5" />
+            <span className="text-sm font-medium">{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      <div className="mt-auto pb-4 pt-4 border-t border-gray-200/60">
-        <button className="flex items-center gap-4 px-5 py-4 w-full text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all font-bold">
-          <LogOut className="w-6 h-6" />
-          <span className="text-[16px]">Logout</span>
+      <div className="pt-4 mt-4 border-t border-slate-100">
+        <button className="flex items-center gap-3 px-4 py-2.5 w-full text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium">
+          <LogOut className="w-5 h-5" />
+          <span>Logout</span>
         </button>
       </div>
     </div>
