@@ -80,50 +80,69 @@ export default function UserSuggestions({ limit = 10 }) {
 
   // ─── Cards ───
   return (
-    <div className="flex flex-col gap-3 w-full max-w-md">
-      {suggestions.map((user) => {
-        const isFollowing = followingIds.has(user._id || user.id);
-        return (
-          <div 
-            key={user._id || user.id}
-            className="flex items-center justify-between gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:shadow-sm transition w-full"
-          >
-            {/* Avatar */}
-            <img
-              src={user?.profileImage?.url || user?.profileImage || fallbackImage}
-              alt={user?.name || "User"}
-              className="w-11 h-11 rounded-full object-cover bg-gray-100"
-              onError={(e) => { e.target.src = fallbackImage; }}
-            />
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
-                {user?.name || "Anonymous"}
-              </h3>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email || "No email"}
+    <div>
+
+    <h1 className="font-medium text-sm mb-4">Suggested Users</h1>
+  <div className="grid grid-cols-2 mb-10 md:grid-cols-3 gap-5 w-full">
+    
+    {suggestions.map((user) => {
+      const isFollowing = followingIds.has(user._id || user.id);
+
+      return (
+        <div
+          key={user._id || user.id}
+          className="flex flex-col items-center text-center gap-3 p-5 bg-white rounded-sm border border-gray-100 hover:shadow-md transition"
+        >
+          {/* Avatar */}
+          <img
+            src={user?.profileImage?.url || user?.profileImage || fallbackImage}
+            alt={user?.name || "User"}
+            className="w-16 h-16 rounded-full object-cover bg-gray-100"
+            onError={(e) => {
+              e.target.src = fallbackImage;
+            }}
+          />
+
+          {/* Info */}
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-gray-900 truncate">
+              {user?.name || "Anonymous"}
+            </h3>
+
+            <p className="text-xs text-gray-500 truncate">
+              {user?.email || "No email"}
+            </p>
+
+            {user?.address && (
+              <p className="text-xs text-gray-400 truncate">
+                {user.address}
               </p>
-              {user?.address && (
-                <p className="text-xs text-gray-400 truncate">{user.address}</p>
-              )}
-            </div>
-
-            {/* Follow Button */}
-            <button
-              onClick={() => handleFollow(user._id || user.id)}
-              disabled={isFollowing}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap ${
-                isFollowing
-                  ? "bg-gray-200 text-gray-500 cursor-default"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </button>
+            )}
           </div>
-        );
-      })}
-    </div>
-  );
-}
+
+          {/* Follow Button */}
+
+          <div className="flex gap-2">
+            <button className="mt-2 px-4 py-1.5 text-xs shadow font-medium rounded-lg transition ">
+              view 
+              </button>
+              <button
+            onClick={() => handleFollow(user._id || user.id)}
+            disabled={isFollowing}
+            className={`mt-2 px-4 py-1.5 text-xs font-medium rounded-lg transition ${
+              isFollowing
+                ? "bg-gray-200 text-gray-500 cursor-default"
+                : "bg-indigo-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {isFollowing ? "Following" : "Follow"}
+          </button>
+            </div>
+          
+        </div>
+      );
+    })}
+  </div>
+  </div>
+)}

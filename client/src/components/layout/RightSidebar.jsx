@@ -1,6 +1,9 @@
-import { UserPlus, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import { useNavigate} from 'react-router-dom';
 
 export default function RightSidebar() {
+
+  
   const suggestedUsers = [
     { name: 'Alex Rivera', handle: 'arivera', avatar: 'https://i.pravatar.cc/150?u=alex&size=80' },
     { name: 'Sarah Chen', handle: 'schen_dev', avatar: 'https://i.pravatar.cc/150?u=sarah&size=80' },
@@ -13,6 +16,8 @@ export default function RightSidebar() {
     { name: 'Rachel Zane', status: 'Active now', avatar: 'https://i.pravatar.cc/150?u=rachel&size=80' },
   ];
 
+  const navigate = useNavigate()
+
   return (
     <div className="w-full space-y-4">
       
@@ -20,7 +25,7 @@ export default function RightSidebar() {
       <div className="bg-white rounded-xl border border-slate-100">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
           <span className="text-sm font-medium text-slate-900">Suggested</span>
-          <button className="text-xs text-indigo-600 hover:underline">See all</button>
+          <button onClick={()=> navigate("/friendsexplore")} className="text-xs text-indigo-600 hover:underline">See all</button>
         </div>
         
         <div className="p-2">

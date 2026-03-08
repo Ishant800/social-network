@@ -5,7 +5,7 @@ export default function Sidebar() {
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Compass, label: 'Explore', path: '/explore' },
-    { icon: MessageSquare, label: 'Messages', path: '/chats' },
+    // { icon: MessageSquare, label: 'Messages', path: '/chats' },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: UserPlus, label: 'Find Friends', path: '/friendsexplore' },

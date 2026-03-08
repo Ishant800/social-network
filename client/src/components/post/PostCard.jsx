@@ -32,7 +32,7 @@ export default function PostCard({ post, currentUser, onEdit, onDelete }) {
   const likeCount = typeof post.likes === 'number' ? post.likes : Array.isArray(post.likes) ? post.likes.length : 0;
   const commentCount = typeof post.comments === 'number' ? post.comments : typeof post.commentsCount === 'number' ? post.commentsCount : 0;
   
-  const isOwner = currentUser?.id === post.authorId || currentUser?.id === post.userId || currentUser?.email === post.user?.email;
+  const isOwner = currentUser?.id === post.user;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -98,6 +98,7 @@ export default function PostCard({ post, currentUser, onEdit, onDelete }) {
             <MoreHorizontal className="w-4 h-4" />
           </button>
 
+          
           {showDropdown && (
             <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-slate-100 shadow-lg z-10 py-1">
               {isOwner && (
@@ -114,11 +115,8 @@ export default function PostCard({ post, currentUser, onEdit, onDelete }) {
                   >
                     <Trash2 className="w-4 h-4" /> Delete post
                   </button>
-                  <div className="border-t border-slate-100 my-1"></div>
-                </>
-              )}
-              
-              <button
+
+                  <button
                 onClick={handlePrivacyToggle}
                 className="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
@@ -134,6 +132,11 @@ export default function PostCard({ post, currentUser, onEdit, onDelete }) {
               <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition text-left">
                 <Bookmark className="w-4 h-4" /> Save post
               </button>
+                  {/* <div className="border-t border-slate-100 my-1"></div> */}
+                </>
+              )}
+              
+              
             </div>
           )}
         </div>

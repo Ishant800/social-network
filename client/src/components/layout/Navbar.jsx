@@ -1,5 +1,5 @@
 import { Search, Bell, MessageSquare, PlusSquare } from 'lucide-react';
-import { useEffect } from 'react';
+
 import { useDispatch, useSelector } from 'react-redux';
 
 export default function Navbar() {
@@ -47,9 +47,9 @@ export default function Navbar() {
             </span>
           </div>
           
-          <div className="p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer transition">
+          {/* <div className="p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer transition">
             <MessageSquare className="h-6 w-6" />
-          </div>
+          </div> */}
 
           <div className="h-9 w-9 overflow-hidden transition cursor-pointer">
             <img src={image} alt="Profile" className='rounded-full' />
