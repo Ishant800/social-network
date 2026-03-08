@@ -73,19 +73,16 @@ const updateProfile = async (req, res) => {
   }
 }
 
-async function getUsers (req,res){
+async function getSuggestions (req,res){
 try {
-  const users = await User.find()
-  if(!users){
-    return res.status(400).json({
-      success:false,
-      message:"users are not avaiable, be the first users?"
-    })
-  }
-
-  return res.status(200).json({
-    users:users
-  })
+  const user = await User.findById(req.user.id).select('following')
+  const suggestions = await User.find({
+    _id: {$nin: [...user.following,req.user.id]}
+  }).select('name email')
+  .limit(10)
+  res.json(suggestions)
+  
+  
 } catch (error) {
    return res.status(500).json({
       success:false,
@@ -95,4 +92,54 @@ try {
   
 }
 
-module.exports = { updateProfile ,getMe,getUsers};
+
+async function followUser(req,res){
+  try {
+    const ownerId = req.user.id;
+   const {userId} = req.params;
+
+   await User.findByIdAndUpdate(ownerId,{
+    $addToSet: {following: userId}
+   })
+
+   await User.findByIdAndUpdate(userId,{$addToSet:{
+    followers : ownerId
+   }})
+
+   return res.status(200).json({
+    message:"following user"
+   })
+
+  } catch (error) {
+    return res.status(500).json({
+      error:'server error'
+    })
+  }
+}
+
+// unfolw user
+async function unfollowuser (req,res){
+  try {
+    const {userId} = req.params;
+    const ownerId = req.user.id;
+
+    await User.findByIdAndUpdate(ownerId,{
+      $pull:{following: userId}
+    })
+
+    await User.findByIdAndUpdate(userId,{
+      $pull:{
+        followers: ownerId
+      }
+    })
+
+    res.json({
+      message:"unfollowed users "
+    })
+  } catch (error) {
+     return res.status(500).json({
+      error:'server error'
+    })
+  }
+}
+module.exports = { updateProfile ,getMe,getSuggestions,followUser,unfollowuser};
