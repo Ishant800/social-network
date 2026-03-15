@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, MessageSquare, User, Bookmark, Settings, LogOut, UserPlus } from 'lucide-react';
+import { Home, User, Bookmark, Settings, LogOut, UserPlus, PlusCircle } from 'lucide-react';
 
 export default function Sidebar() {
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Compass, label: 'Explore', path: '/explore' },
-    // { icon: MessageSquare, label: 'Messages', path: '/chats' },
+    { icon: PlusCircle, label: 'CreatePost', path: '/post/create' },
+    
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: UserPlus, label: 'Find Friends', path: '/friendsexplore' },

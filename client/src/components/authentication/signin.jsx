@@ -11,12 +11,13 @@ function Signin() {
 const dispatch = useDispatch()
 
 const {isLoading,isError,message} = useSelector((state)=> state.auth)
- const token = localStorage.getItem("token")
+
 useEffect(()=>{
+  const token = localStorage.getItem("token")
   if(token){
     navigate("/")
   }
-},[token,navigate])
+},[navigate])
 const handleSubmit = (e)=>{
   e.preventDefault();
 

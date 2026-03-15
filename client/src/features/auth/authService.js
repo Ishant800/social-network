@@ -1,5 +1,6 @@
 import axios from "axios"
 import API from "../../api/axios";
+
 const API_URL= "http://localhost:5000/auth/";
 
 const signup = async(userData) =>{
@@ -18,7 +19,7 @@ const logout = ()=>{
 
 
 const getMe = async ()=>{
-    const response = await API.get("/profile/getMe")
+    const response = await API.get("/user/getMe")
     return response.data.getme
 }
 

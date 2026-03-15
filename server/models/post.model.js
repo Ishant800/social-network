@@ -16,12 +16,7 @@ const postSchema = mongoose.Schema(
         type: String,
       },
     ],
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    
     sharedFrom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Post',
@@ -36,6 +31,10 @@ const postSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    likesCount:{
+        type:Number,
+        default: 0
+    }
   },
   { timestamps: true },
 );

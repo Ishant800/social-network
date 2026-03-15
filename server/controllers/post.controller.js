@@ -1,4 +1,5 @@
 const Post = require('../models/post.model');
+const Comment = require('../models/comment.model');
 const { cloudinary } = require('../config/cloudinary.config');
 
 // post create
@@ -86,19 +87,34 @@ const getMyPost = async (req, res) => {
 };
 
 const getPostDetails = async (req, res) => {
-  const postId = req.params.postId;
-  const post = await Post.findById(postId);
-  if (!post) {
-    return res.status(400).json({
+  try {
+    const postId = req.params.postId;
+    const post = await Post.findById(postId).populate(
+      'user',
+      'name profileImage',
+    );
+    if (!post) {
+      return res.status(400).json({
+        sucess: 'ok',
+        message: 'post not found ',
+      });
+    }
+
+    const comments = await Comment.find({ post: postId })
+      .populate('user', 'name profileImage')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
       sucess: 'ok',
-      message: 'post not found ',
+      post,
+      comments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
-
-  return res.status(200).json({
-    sucess: 'ok',
-    post,
-  });
 };
 
 const updatePost = async (req, res) => {
@@ -154,7 +170,7 @@ const updatePost = async (req, res) => {
 
 const randomPosts = async(req,res)=>{
   try {
-    const posts = await Post.find()
+    const posts = await Post.find().populate('user', 'name profileImage');
     if(!posts) return  res.status(200).json({
       
       message: "no post available"

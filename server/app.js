@@ -1,4 +1,5 @@
-const { configDotenv } = require('dotenv');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 
@@ -7,20 +8,19 @@ const authRoute = require('./routes/auth.routes');
 const postRoute = require('./routes/post.routes');
 const userRoute = require('./routes/user.routes');
 const commentRoute = require('./routes/comment.routes');
+const likeRoute = require("./routes/like.routes")
 
 const app = express();
-
-configDotenv();
-
 app.use(express.json());
 app.use(cors('*'));
 
 app.use('/auth', authRoute);
 app.use('/post', postRoute);
-app.use('/profile', userRoute);
+app.use('/user', userRoute);
 app.use('/comment', commentRoute);
+app.use("/likes",likeRoute)
 
-
+  
 
 connectDb().then(() => {
   const PORT_NO = process.env.PORT;

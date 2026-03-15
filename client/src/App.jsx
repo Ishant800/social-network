@@ -16,6 +16,8 @@ import EditProfile from './components/sections/EditProfileModel';
 import EditPost from './components/sections/EditPost';
 import CreatePost from './components/post/CreatePost';
 import UserSuggestions from './components/sections/UserSuggestionCard';
+import PostDetails from './pages/PostDetails';
+import Bookmarks from './pages/Bookmarks';
 export default function App() {
 
   const dispatch = useDispatch();
@@ -40,6 +42,8 @@ export default function App() {
           <Route path="/profile/edit" element={<EditProfile/>} />
            <Route path="/post/create" element={<CreatePost/>} />
            <Route path="/post/edit" element={<EditPost/>} />
+          <Route path="/post/:postId" element={<PostDetails/>} />
+          <Route path="/bookmarks" element={<Bookmarks/>} />
           <Route path="/chats" element={<Messages />} />
           <Route path="/login" element={<Signin />} />
           <Route path="/signup" element={<Signup />} />
@@ -48,4 +52,3 @@ export default function App() {
     </Router>
   );
 }
-

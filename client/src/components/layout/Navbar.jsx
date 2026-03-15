@@ -18,12 +18,7 @@ export default function Navbar() {
         
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <span className="text-white font-bold text-xl">MC</span>
-          </div>
-          {/* <h1 className="hidden text-2xl font-medium tracking-tight text-slate-900 sm:block">
-            MeroRoom
-          </h1> */}
+            <span className="text-slate-800 font-bold text-xl">Sanyukt</span>
         </div>
 
         {/* Search Bar */}
@@ -32,7 +27,7 @@ export default function Navbar() {
           <input
             type="text"
             placeholder="Search communities, people..."
-            className="w-full rounded-full border-none bg-gray-100 py-2.5 pl-11 pr-4 text-sm focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-sm border-none outline-none bg-gray-100 py-2.5 pl-11 pr-4 text-sm "
           />
         </div>
 
@@ -47,10 +42,6 @@ export default function Navbar() {
             </span>
           </div>
           
-          {/* <div className="p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer transition">
-            <MessageSquare className="h-6 w-6" />
-          </div> */}
-
           <div className="h-9 w-9 overflow-hidden transition cursor-pointer">
             <img src={image} alt="Profile" className='rounded-full' />
           </div>

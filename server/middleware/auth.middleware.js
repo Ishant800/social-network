@@ -2,24 +2,37 @@ const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
   try {
+    
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
       return res.status(401).json({
-        success: 'failed',
-        message: 'Acess denied. No token provided',
+        success: false,
+        message: 'Access denied. No token provided.',
       });
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format. Expected "Bearer <token>".',
+      });
+    }
+
+    
+    const token = authHeader.substring(7).trim();
+
     if (!token) {
       return res.status(401).json({
-        sucess: false,
-        message: 'Invalid token format',
+        success: false,
+        message: 'Token is empty.',
       });
     }
 
+    console.log(process.env.SECRETE_KEY)
+    // 4. Verify Token
     const decode = jwt.verify(token, process.env.SECRETE_KEY);
+    
     req.user = decode;
     next();
   } catch (error) {
@@ -33,13 +46,14 @@ const verifyToken = (req, res, next) => {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token',
+        message: 'Invalid token signature.',
       });
     }
 
+    // Catch-all for unexpected errors
     return res.status(500).json({
       success: false,
-      message: 'Authentication failed',
+      message: 'Authentication failed.',
     });
   }
 };

@@ -104,10 +104,10 @@ export default function CreatePostPage({ onPost }) {
   }, [media]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-full bg-white">
 
       {/* HEADER */}
-
+    
       <div className="sticky top-0 bg-white border-b border-slate-100">
 
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -146,7 +146,7 @@ export default function CreatePostPage({ onPost }) {
             value={content}
             onChange={(e)=>setContent(e.target.value)}
             placeholder="Share something..."
-            rows={4}
+            rows={10}
             className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
 

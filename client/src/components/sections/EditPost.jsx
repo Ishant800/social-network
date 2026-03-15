@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Image as ImageIcon} from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function EditPost() {
   const navigate = useNavigate();
   const location = useLocation();
   const post = location.state?.post;
-
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);

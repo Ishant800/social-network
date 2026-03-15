@@ -1,8 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-
 import authService from "./authService";
-
-
 
 const initialState ={
     token: localStorage.getItem("token"),
@@ -38,7 +35,7 @@ export const signup = createAsyncThunk(
 
 
 export const getMe = createAsyncThunk(
-    "profile/getMe",
+    "user/getMe",
     async (_,thunkAPI)=>{
         try {
             return await authService.getMe();
@@ -82,7 +79,6 @@ const authSlice = createSlice({
             state.message = action.payload
         })
 
-
         // for signup
         .addCase(signup.pending,(state)=>{
             state.isLoading = true;
@@ -100,7 +96,6 @@ const authSlice = createSlice({
             state.isError = true;
             state.message = action.payload
         })
-
 
         // for user details
         .addCase(getMe.pending,(state)=>{

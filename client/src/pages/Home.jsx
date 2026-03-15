@@ -28,9 +28,6 @@ export default function Home() {
 
   return (
     <>
-      <button onClick={handleCreatePost}>
-        add post+
-      </button>
 
       {/* Loading */}
       {isLoading && (
