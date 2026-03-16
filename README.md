@@ -52,18 +52,6 @@ High‑level flow:
 **Environment Variables**
 Create a `.env` in the repo root. Do not commit real secrets.
 
-```
-PORT=5000
-CNS=your_mongodb_connection_string
-SECRETE_KEY=your_jwt_secret
-
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-VITE_API_BASE_URL=http://localhost:5000
-```
-
 Notes:
 - The server reads `PORT`, `CNS` (MongoDB URI), and `SECRETE_KEY`.
 - The Cloudinary config reads the `CLOUDINARY_*` variables.
