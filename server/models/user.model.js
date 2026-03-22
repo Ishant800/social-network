@@ -1,56 +1,51 @@
 const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
-    name: {
-      type: String,
-      default: '',
-      required: true,
-      index: true,
-    },
-    password: { type: String, required: true },
-    bio: {
-      type: String,
-      default: '',
-    },
-    address: { type: String },
-    profileImage: {
-      url: {
-        type: String,
-        default: null,
-      },
-      public_id: {
-        type: String,
-        default: null,
-      },
-    },
-    followers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    following: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-  },
-);
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, trim: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
 
-module.exports = mongoose.model('User', userSchema);
+  profile: {
+    fullName: String,
+    bio: { type: String, maxlength: 300 },
+    avatar: {
+      url: String,
+      public_id: String
+    },
+    coverImage: {
+      url: String,
+      public_id: String
+    },
+    location: String,
+    website: String
+  },
+
+  stats: {
+    followers: { type: Number, default: 0 },
+    following: { type: Number, default: 0 },
+    posts: { type: Number, default: 0 },
+    blogs: { type: Number, default: 0 }
+  },
+
+  preferences: {
+    interests: [String],
+    notifications: {
+      email: { type: Boolean, default: true },
+      push: { type: Boolean, default: true }
+    }
+  },
+
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user"
+  }
+
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', UserSchema);
+
+

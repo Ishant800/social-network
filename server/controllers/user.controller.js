@@ -3,38 +3,34 @@ const { cloudinary } = require('../config/cloudinary.config');
 
 const updateProfile = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = req.user.id;
     const user = await User.findById(userId);
 
-    const updateData = {};
-
-    if (req.body.name) updateData.name = req.body.name;
-    if (req.body.address) updateData.address = req.body.address;
-    if (req.body.bio) updateData.bio = req.body.bio;
-
-    if (req.file) {
-      if (user.profileImage?.public_id) {
-        await cloudinary.uploader.destroy(user.profileImage.public_id);
-      }
-
-      updateData.profileImage = {
-        url: req.file.path,
-        public_id: req.file.filename,
-      };
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateData },
-      { returnDocument: 'after' },
-    );
-
-    if (!updatedUser) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
       });
     }
+
+    if (req.body.fullName) user.profile.fullName = req.body.fullName;
+    if (req.body.bio) user.profile.bio = req.body.bio;
+    if (req.body.location) user.profile.location = req.body.location;
+    if (req.body.website) user.profile.website = req.body.website;
+
+    if (req.file) {
+      if (user.profile?.avatar?.public_id) {
+        await cloudinary.uploader.destroy(user.profile.avatar.public_id);
+      }
+
+      user.profile.avatar = {
+        url: req.file.path,
+        public_id: req.file.filename,
+      };
+    } 
+
+    await user.save();
+    const updatedUser = await User.findById(userId).select('-password');
 
     res.status(200).json({
       sucess: true,
@@ -54,7 +50,7 @@ const updateProfile = async (req, res) => {
  async function getMe (req,res){
   try {
     const userid = req.user.id;
-    const getme = await User.findById(userid)
+    const getme = await User.findById(userid).select('-password');
     if(!getme){
       return res.status(400).json({
         sucess:false,
@@ -64,7 +60,7 @@ const updateProfile = async (req, res) => {
 
     res.status(200).json({
       getme
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success:false,
@@ -75,12 +71,22 @@ const updateProfile = async (req, res) => {
 
 async function getSuggestions (req,res){
 try {
-  const user = await User.findById(req.user.id).select('following')
+  const limit = Number(req.query.limit) || 10;
+  const user = await User.findById(req.user.id).select('following');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+  }
+
   const suggestions = await User.find({
     _id: {$nin: [...user.following,req.user.id]}
-  }).select('name email')
-  .limit(10)
-  res.json(suggestions)
+  }).select('-password')
+  .limit(limit);
+
+  res.status(200).json(suggestions);
   
   
 } catch (error) {
@@ -98,13 +104,36 @@ async function followUser(req,res){
     const ownerId = req.user.id;
    const {userId} = req.params;
 
-   await User.findByIdAndUpdate(ownerId,{
-    $addToSet: {following: userId}
-   })
+   if (ownerId === userId) {
+    return res.status(400).json({
+      success: false,
+      message: 'You cannot follow yourself',
+      });
+   }
 
-   await User.findByIdAndUpdate(userId,{$addToSet:{
-    followers : ownerId
-   }})
+   const owner = await User.findById(ownerId);
+   const target = await User.findById(userId);
+
+   if (!owner || !target) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+   }
+
+   const alreadyFollowing = owner.following.some(
+    (id) => id.toString() === userId,
+   );
+
+   if (!alreadyFollowing) {
+    owner.following.push(userId);
+    target.followers.push(ownerId);
+    owner.stats.following += 1;
+    target.stats.followers += 1;
+
+    await owner.save();
+    await target.save();
+   }
 
    return res.status(200).json({
     message:"following user"
@@ -123,15 +152,30 @@ async function unfollowuser (req,res){
     const {userId} = req.params;
     const ownerId = req.user.id;
 
-    await User.findByIdAndUpdate(ownerId,{
-      $pull:{following: userId}
-    })
+    const owner = await User.findById(ownerId);
+    const target = await User.findById(userId);
 
-    await User.findByIdAndUpdate(userId,{
-      $pull:{
-        followers: ownerId
-      }
-    })
+    if (!owner || !target) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const isFollowing = owner.following.some(
+      (id) => id.toString() === userId,
+    );
+
+    if (isFollowing) {
+      owner.following.pull(userId);
+      target.followers.pull(ownerId);
+
+      if (owner.stats.following > 0) owner.stats.following -= 1;
+      if (target.stats.followers > 0) target.stats.followers -= 1;
+
+      await owner.save();
+      await target.save();
+    }
 
     res.json({
       message:"unfollowed users "

@@ -10,7 +10,7 @@ function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const {isLoading,isError,message} = useSelector((state)=> state.auth)
+  const {isLoading,isError,isSuccess,message} = useSelector((state)=> state.auth)
   const navigate = useNavigate();
   const dispatch = useDispatch()
 
@@ -20,6 +20,12 @@ function Signup() {
       navigate("/")
     }
   },[token,navigate])
+
+  useEffect(() => {
+    if (isSuccess) {
+      navigate("/");
+    }
+  }, [isSuccess, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,19 +40,7 @@ function Signup() {
   return (
     <div className="min-h-screen flex">
 
-      {/* LEFT SIDE */}
-      <div className="hidden md:flex w-1/2 bg-slate-900 text-white items-center justify-center p-12">
-        <div>
-          <h1 className="text-4xl font-bold mb-4">Join Us Today 🚀</h1>
-          <p className="text-slate-300 text-lg">
-            Create your account and start building amazing things.
-            Connect, grow and explore without limits.
-          </p>
-        </div>
-      </div>
-
-      {/* RIGHT SIDE */}
-      <div className="flex w-full md:w-1/2 items-center justify-center bg-gray-100 p-6">
+      <div className="flex w-full items-center justify-center bg-gray-100 p-6">
         <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-md">
 
           <h2 className="text-2xl font-semibold text-slate-800">

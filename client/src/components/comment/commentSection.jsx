@@ -1,13 +1,34 @@
+import { Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Send, Smile, MoreHorizontal, Heart, Loader2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import API from '../../api/axios';
 
+function formatCommentTime(value) {
+  if (!value) return '';
 
-export default function CommentSection({ postId }) {
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+export default function CommentSection({ postId, compact = false }) {
+  const { user } = useSelector((state) => state.auth);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState('');
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -16,9 +37,9 @@ export default function CommentSection({ postId }) {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiRequest(`/comment/getComment/${postId}`);
+        const response = await API.get(`/comment/getComment/${postId}`);
         if (isMounted) {
-          setComments(data?.comments || []);
+          setComments(response.data?.comments || []);
         }
       } catch (err) {
         if (isMounted) {
@@ -40,18 +61,17 @@ export default function CommentSection({ postId }) {
     };
   }, [postId]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (!commentText.trim() || submitting) return;
 
     try {
       setSubmitting(true);
-      const data = await apiRequest(`/comment/create/${postId}`, {
-        method: 'POST',
-        body: { text: commentText.trim() },
-        auth: true,
+      setError(null);
+      const response = await API.post(`/comment/create/${postId}`, {
+        text: commentText.trim(),
       });
-      setComments((prev) => [data.comment, ...prev]);
+      setComments((prev) => [response.data.comment, ...prev]);
       setCommentText('');
     } catch (err) {
       setError(err);
@@ -60,106 +80,188 @@ export default function CommentSection({ postId }) {
     }
   };
 
+  const startEditing = (comment) => {
+    setEditingId(comment._id || comment.id);
+    setEditingText(comment.text || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingText('');
+  };
+
+  const handleUpdate = async (commentId) => {
+    if (!editingText.trim()) return;
+
+    try {
+      setActionLoadingId(commentId);
+      setError(null);
+      const response = await API.put(`/comment/update/${commentId}`, {
+        text: editingText.trim(),
+      });
+      setComments((prev) =>
+        prev.map((comment) =>
+          (comment._id || comment.id) === commentId ? response.data.comment : comment,
+        ),
+      );
+      cancelEditing();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    if (!window.confirm('Delete this comment?')) return;
+
+    try {
+      setActionLoadingId(commentId);
+      setError(null);
+      await API.delete(`/comment/delete/${commentId}`);
+      setComments((prev) => prev.filter((comment) => (comment._id || comment.id) !== commentId));
+      if (editingId === commentId) {
+        cancelEditing();
+      }
+    } catch (err) {
+      setError(err);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   return (
-    <div className="mt-4 pt-4 border-t border-gray-100 animate-in slide-in-from-top-2 duration-300">
-      
-      {/* 1. Write a Comment Input */}
-      <form className="flex gap-3 mb-6" onSubmit={handleSubmit}>
-        <img 
-          src="https://ui-avatars.com/api/?name=Ishant&background=4f46e5&color=fff" 
-          className="w-8 h-8 rounded-full flex-shrink-0"
-          alt="My Profile"
+    <section className={compact ? 'space-y-5' : 'space-y-6'}>
+      <div>
+        <h3 className="font-['Plus_Jakarta_Sans'] text-xl font-bold text-slate-900">Discussion</h3>
+        <p className="mt-1 text-sm text-slate-500">Share your thoughts and manage your comments here.</p>
+      </div>
+
+      <form
+        className={`rounded-[1.5rem] bg-white shadow-sm ${compact ? 'p-4' : 'p-5'}`}
+        onSubmit={handleSubmit}
+      >
+        <textarea
+          value={commentText}
+          onChange={(event) => setCommentText(event.target.value)}
+          placeholder="Write a comment..."
+          className="min-h-[96px] w-full resize-none rounded-[1rem] bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
         />
-        <div className="flex-1 relative group">
-          <input
-            type="text"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Write a comment..."
-            className="w-full bg-gray-50 border-none rounded-2xl py-2 px-4 pr-20 text-sm focus:ring-2 focus:ring-indigo-500 transition-all"
-          />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <button className="text-gray-400 hover:text-amber-500 transition-colors">
-              <Smile className="w-4 h-4" />
-            </button>
-            <button
-              type="submit"
-              disabled={!commentText.trim() || submitting}
-              className="text-indigo-600 disabled:text-gray-300 p-1 hover:bg-indigo-50 rounded-full transition-all flex items-center justify-center"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
-          </div>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="submit"
+            disabled={!commentText.trim() || submitting}
+            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Post comment
+          </button>
         </div>
       </form>
 
       {loading && (
-        <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
-          <Loader2 className="w-3 h-3 animate-spin" />
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
           <span>Loading comments...</span>
         </div>
       )}
 
       {!loading && error && (
-        <p className="text-xs text-rose-500 mb-3">
-          Could not load comments. Please try again.
-        </p>
+        <p className="text-sm text-rose-500">Could not load comments right now. Please try again.</p>
       )}
 
-      {/* 2. Comments List */}
-      <div className="space-y-5">
-        {comments.map((comment) => (
-          <div key={comment._id || comment.id} className="flex gap-3 group">
-            <img 
-              src={`https://ui-avatars.com/api/?name=${comment.user?.name || 'User'}`} 
-              className="w-8 h-8 rounded-full flex-shrink-0"
-              alt={comment.user}
-            />
-            <div className="flex-1">
-              <div className="bg-gray-50 rounded-2xl px-4 py-2 relative">
-                <div className="flex justify-between items-start">
-                  <span className="text-xs font-bold text-slate-900 hover:underline cursor-pointer">
-                    {comment.user?.name || 'User'}
-                  </span>
-                  <button className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                </div>
-                <p className="text-sm text-slate-700 leading-snug mt-0.5">
-                  {comment.text}
-                </p>
-                
-                {/* Like Badge (Floating) */}
-                {comment.likes > 0 && (
-                  <div className="absolute -right-2 -bottom-2 bg-white border border-gray-100 rounded-full px-1.5 py-0.5 flex items-center gap-1 shadow-sm">
-                    <Heart className="w-3 h-3 text-rose-500 fill-rose-500" />
-                    <span className="text-[10px] font-bold text-slate-500">{comment.likes}</span>
+      <div className="space-y-4">
+        {comments.map((comment) => {
+          const commentId = comment._id || comment.id;
+          const isOwner = user?._id === comment.user?._id || user?.id === comment.user?._id;
+          const isEditing = editingId === commentId;
+          const avatar =
+            comment.user?.profileImage?.url ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}`;
+
+          return (
+            <article key={commentId} className="rounded-[1.5rem] bg-white p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <img src={avatar} alt={comment.user?.name || 'User'} className="h-10 w-10 rounded-full object-cover" />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">{comment.user?.name || 'User'}</h4>
+                      <p className="text-xs text-slate-400">{formatCommentTime(comment.createdAt)}</p>
+                    </div>
+
+                    {isOwner && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        {isEditing ? (
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            className="transition hover:text-slate-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => startEditing(comment)}
+                              className="transition hover:text-slate-700"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(commentId)}
+                              className="transition hover:text-rose-600"
+                              disabled={actionLoadingId === commentId}
+                            >
+                              {actionLoadingId === commentId ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Comment Actions */}
-              <div className="flex items-center gap-4 mt-1 ml-2 text-[11px] font-bold text-slate-500">
-                <button className="hover:text-indigo-600 transition-colors uppercase tracking-wider">
-                  Like
-                </button>
-                <button className="hover:text-indigo-600 transition-colors uppercase tracking-wider">
-                  Reply
-                </button>
-                <span className="font-normal text-slate-400 lowercase">
-                  {/* No time field from API yet; placeholder */}
-                </span>
+                  {isEditing ? (
+                    <div className="mt-3">
+                      <textarea
+                        value={editingText}
+                        onChange={(event) => setEditingText(event.target.value)}
+                        className="min-h-[88px] w-full resize-none rounded-[1rem] bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none"
+                      />
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={cancelEditing}
+                          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdate(commentId)}
+                          disabled={!editingText.trim() || actionLoadingId === commentId}
+                          className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        >
+                          {actionLoadingId === commentId ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-7 text-slate-700">{comment.text}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            </article>
+          );
+        })}
       </div>
-
-      {/* View more button (future pagination) */}
-    </div>
+    </section>
   );
 }

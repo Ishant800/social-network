@@ -1,25 +1,37 @@
 const mongoose = require('mongoose');
 
-const commentSchema = mongoose.Schema(
-  {
-    post: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
-      required: true,
-    },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    text: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 500,
-    },
+const CommentSchema = new mongoose.Schema({
+  user: {
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    username: String,
+    avatar: String
   },
-  { timestamps: true },
-);
 
-module.exports = mongoose.model('Comment', commentSchema);
+  content: { type: String, required: true },
+
+  target: {
+    type: {
+      type: String,
+      enum: ["Post", "Blog"],
+      required: true
+    },
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      refPath: "target.type"
+    }
+  },
+
+  parentComment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Comment",
+    default: null
+  },
+
+  stats: {
+    likes: { type: Number, default: 0 }
+  }
+
+}, { timestamps: true });
+
+module.exports = mongoose.model('Comment', CommentSchema);

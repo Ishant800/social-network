@@ -1,13 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { ArrowLeft, Image, Video, X, Globe, Lock, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function CreatePostPage({ onPost }) {
 
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
+
+  if(!user) return (
+      <div className="max-w-3xl mx-auto p-6 text-center">
+        <h2 className="text-lg font-semibold text-slate-900">
+          You don't have an account yet
+        </h2>
+        <p className="text-slate-600 mt-2">
+          Create an account to continue and access your profile.
+        </p>
+        <Link
+          to="/signup"
+          className="inline-flex mt-4 items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition"
+        >
+          Create account
+        </Link>
+      </div>
+    );
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [media, setMedia] = useState([]);

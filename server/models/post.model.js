@@ -11,10 +11,11 @@ const postSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
-    media: [
+     media: [
       {
-        type: String,
-      },
+        url: String,
+        public_id: String,
+      }
     ],
     
     sharedFrom: {

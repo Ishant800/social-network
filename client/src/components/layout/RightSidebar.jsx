@@ -1,79 +1,92 @@
-import { MessageSquare } from 'lucide-react';
-import { useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+const suggestedUsers = [
+  {
+    name: 'Julian K.',
+    handle: '@j_visuals',
+    avatar: 'https://i.pravatar.cc/120?u=julian-k',
+  },
+  {
+    name: 'Sarah Chen',
+    handle: '@schen_writes',
+    avatar: 'https://i.pravatar.cc/120?u=sarah-chen',
+  },
+];
+
+const trendingTopics = [
+  { category: 'Social Media', topic: '#EditorialShift', posts: '12.4k posts' },
+  { category: 'Design', topic: 'Asymmetric Layouts', posts: '8.2k posts' },
+  { category: 'Technology', topic: 'Ethical AI Feed', posts: '21.5k posts' },
+];
 
 export default function RightSidebar() {
-
-  
-  const suggestedUsers = [
-    { name: 'Alex Rivera', handle: 'arivera', avatar: 'https://i.pravatar.cc/150?u=alex&size=80' },
-    { name: 'Sarah Chen', handle: 'schen_dev', avatar: 'https://i.pravatar.cc/150?u=sarah&size=80' },
-  ];
-
-  const onlineFriends = [
-    { name: 'John Doe', status: 'Active now', avatar: 'https://i.pravatar.cc/150?u=john&size=80' },
-    { name: 'Jane Smith', status: '2m ago', avatar: 'https://i.pravatar.cc/150?u=jane&size=80' },
-    { name: 'Mike Ross', status: 'Active now', avatar: 'https://i.pravatar.cc/150?u=mike&size=80' },
-    { name: 'Rachel Zane', status: 'Active now', avatar: 'https://i.pravatar.cc/150?u=rachel&size=80' },
-  ];
-
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
-    <div className="w-full space-y-4">
-      
-      {/* Suggested Accounts */}
-      <div className="bg-white rounded-xl border border-slate-100">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-          <span className="text-sm font-medium text-slate-900">Suggested</span>
-          <button onClick={()=> navigate("/friendsexplore")} className="text-xs text-indigo-600 hover:underline">See all</button>
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <h2 className="font-display text-base font-bold text-slate-900">Trending topics</h2>
+        <div className="mt-4 space-y-4">
+          {trendingTopics.map((item) => (
+            <button
+              key={item.topic}
+              type="button"
+              onClick={() => navigate('/explore')}
+              className="block w-full text-left"
+            >
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                {item.category}
+              </p>
+              <h3 className="mt-1 text-sm font-semibold text-slate-900">{item.topic}</h3>
+              <p className="mt-1 text-xs text-slate-500">{item.posts}</p>
+            </button>
+          ))}
         </div>
-        
-        <div className="p-2">
+        <button
+          type="button"
+          onClick={() => navigate('/explore')}
+          className="mt-4 text-sm font-medium text-indigo-600 transition hover:text-indigo-700"
+        >
+          View more
+        </button>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <h2 className="font-display text-base font-bold text-slate-900">Who to follow</h2>
+        <div className="mt-4 space-y-4">
           {suggestedUsers.map((user) => (
-            <div key={user.handle} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-2 min-w-0">
-                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+            <div key={user.handle} className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-                  <p className="text-xs text-slate-500">@{user.handle}</p>
+                  <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+                  <p className="truncate text-xs text-slate-500">{user.handle}</p>
                 </div>
               </div>
-              <button className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded-lg transition">
+              <button
+                type="button"
+                onClick={() => navigate('/friendsexplore')}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+              >
                 Follow
               </button>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Online Friends */}
-      <div className="bg-white rounded-xl border border-slate-100">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-900">Online</span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-          </div>
-          <MessageSquare className="w-4 h-4 text-slate-400" />
+      <footer className="px-1 pb-8 text-[11px] text-slate-500">
+        <div className="flex flex-wrap gap-x-3 gap-y-2">
+          <span>Terms</span>
+          <span>Privacy</span>
+          <span>Cookies</span>
         </div>
-        
-        <div className="p-2">
-          {onlineFriends.map((friend) => (
-            <button key={friend.name} className="w-full flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg text-left transition">
-              <div className="relative">
-                <img src={friend.avatar} alt={friend.name} className="w-8 h-8 rounded-full object-cover" />
-                {friend.status === 'Active now' && (
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
-                )}
-              </div>
-              
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">{friend.name}</p>
-                <p className="text-xs text-slate-500">{friend.status}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+        <p className="mt-3">© 2024 Atheneum Inc.</p>
+      </footer>
     </div>
   );
 }

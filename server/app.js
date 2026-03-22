@@ -6,6 +6,7 @@ const cors = require('cors');
 const connectDb = require('./config/db.config');
 const authRoute = require('./routes/auth.routes');
 const postRoute = require('./routes/post.routes');
+const blogRoute = require('./routes/blog.routes');
 const userRoute = require('./routes/user.routes');
 const commentRoute = require('./routes/comment.routes');
 const likeRoute = require("./routes/like.routes")
@@ -16,6 +17,7 @@ app.use(cors('*'));
 
 app.use('/auth', authRoute);
 app.use('/post', postRoute);
+app.use('/blog', blogRoute);
 app.use('/user', userRoute);
 app.use('/comment', commentRoute);
 app.use("/likes",likeRoute)

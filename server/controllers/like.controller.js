@@ -10,13 +10,23 @@
       return res.status(400).json({ msg: 'Post ID is required' });
     }
 
-    // Use upsert: true. If record exists, update isLike to true. 
-    // If not, create a new record.
-     await Like.findOneAndUpdate(
-      { user: userId, post: postId },
-      { isLike: true },
-      { upsert: true, new: true } // 'new: true' returns the updated document
-    );
+    const existingLike = await Like.findOne({
+      userId,
+      'target.type': 'Post',
+      'target.id': postId,
+    });
+
+    if (existingLike) {
+      return res.status(200).json({ msg: 'Post already liked' });
+    }
+
+    await Like.create({
+      userId,
+      target: {
+        type: 'Post',
+        id: postId,
+      },
+    });
 
     await Post.findOneAndUpdate({_id:postId},{
         $inc:{
@@ -27,7 +37,7 @@
     return res.status(200).json({ msg: 'Post liked successfully' });
   } catch (err) {
     console.error(err.message);
-   return  res.status(500).json("Internal server error", err.message);
+   return  res.status(500).json({ message: err.message || 'Internal server error' });
   }
 }
 
@@ -40,11 +50,14 @@ async function unLike(req, res){
       return res.status(400).json({ msg: 'Post ID is required' });
     }
 
-    // Find the record and set isLike to false
-    const like = await Like.deleteOne({ user: userId, post: postId });
+    const like = await Like.deleteOne({
+      userId,
+      'target.type': 'Post',
+      'target.id': postId,
+    });
 
     // If no record was found, it means they never liked it
-    if (!like) {
+    if (!like.deletedCount) {
       return res.status(404).json({ msg: 'Like record not found' });
     }
     await Post.findOneAndUpdate( { _id: postId },{

@@ -14,6 +14,34 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import CommentSection from '../comment/commentSection';
 import { likePost, toggleBookmark, unlikePost } from '../../features/post/postSlice';
+import { isBlogPost } from '../../utils/feedType';
+
+function formatMetaTime(time) {
+  if (!time) return '';
+
+  const date = new Date(time);
+  const diffMs = Date.now() - date.getTime();
+  const diffHours = Math.max(0, Math.floor(diffMs / 3600000));
+
+  if (diffHours < 1) {
+    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+    return `${diffMinutes}m ago`;
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function formatCount(value) {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`;
+  }
+  return `${value}`;
+}
 
 export default function PostCard({
   post,
@@ -43,7 +71,7 @@ export default function PostCard({
   const time = post?.createdAt || post?.time;
   const avatar =
     post?.user?.profileImage?.url ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=f0d9c9&color=4f3427`;
 
   const isOwner = currentUser?.id === post?.user;
   const isLiked = likedPostIds?.includes(postId);
@@ -71,22 +99,25 @@ export default function PostCard({
         setShowDropdown(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const goToDetails = () => {
     if (disableNavigation || !postId) return;
-    navigate(`/post/${postId}`);
+    navigate(isBlogPost(post) ? `/blog/${postId}` : `/post/${postId}`);
   };
 
   const handleLike = (e) => {
     e.stopPropagation();
     if (!postId) return;
+
     if (isLiked) {
       dispatch(unlikePost(postId));
       return;
     }
+
     dispatch(likePost(postId));
   };
 
@@ -127,25 +158,25 @@ export default function PostCard({
 
   return (
     <article
-      className={`rounded-xl border border-slate-100 bg-white p-4 shadow-sm mb-4 ${
+      className={`rounded-[24px] bg-white p-6 shadow-[0_24px_48px_-12px_rgba(44,47,49,0.08)] transition-all duration-300  sm:p-7 ${
         disableNavigation ? '' : 'cursor-pointer'
       }`}
       onClick={goToDetails}
     >
-      <header className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+      <header className="mb-5 flex items-center justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <img
             src={avatar}
-            className="w-10 h-10 rounded-full object-cover bg-slate-100"
+            className="h-10 w-10 rounded-full object-cover bg-[#f0d9c9]"
             alt={authorName}
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}`;
             }}
           />
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">{authorName}</h3>
-            <p className="text-xs text-slate-500">
-              @{username} {time ? `- ${new Date(time).toLocaleString()}` : ''}
+          <div className="min-w-0">
+            <h3 className="truncate font-display text-base font-bold text-slate-900">{authorName}</h3>
+            <p className="truncate text-xs text-slate-500">
+              @{username} {time ? ` - ${formatMetaTime(time)}` : ''}
             </p>
           </div>
         </div>
@@ -156,43 +187,41 @@ export default function PostCard({
               e.stopPropagation();
               setShowDropdown(!showDropdown);
             }}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            className="text-slate-400 transition hover:text-slate-700"
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <MoreHorizontal className="h-5 w-5" />
           </button>
 
           {showDropdown && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-slate-100 shadow-lg z-10 py-1">
+            <div className="absolute right-0 top-full z-10 mt-2 w-52 rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
               {isOwner && (
                 <>
                   <button
                     onClick={handleEdit}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition text-left"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                   >
-                    <Edit3 className="w-4 h-4" /> Edit post
+                    <Edit3 className="h-4 w-4" />
+                    Edit post
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition text-left"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-rose-600 transition hover:bg-rose-50"
                   >
-                    <Trash2 className="w-4 h-4" /> Delete post
+                    <Trash2 className="h-4 w-4" />
+                    Delete post
                   </button>
                   <button
                     onClick={handlePrivacyToggle}
-                    className="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                    className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
                   >
                     <span className="flex items-center gap-2">
-                      {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                      {isPublic ? <Globe className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                       {isPublic ? 'Public' : 'Private'}
                     </span>
-                    <div
-                      className={`w-8 h-4 rounded-full relative transition ${
-                        isPublic ? 'bg-indigo-600' : 'bg-slate-300'
-                      }`}
-                    >
+                    <div className={`h-4 w-8 rounded-full ${isPublic ? 'bg-[#4e44d4]' : 'bg-slate-300'}`}>
                       <div
-                        className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition ${
-                          isPublic ? 'right-0.5' : 'left-0.5'
+                        className={`relative top-0.5 h-3 w-3 rounded-full bg-white transition ${
+                          isPublic ? 'left-[18px]' : 'left-0.5'
                         }`}
                       />
                     </div>
@@ -202,24 +231,25 @@ export default function PostCard({
 
               <button
                 onClick={handleBookmark}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition text-left"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
               >
-                <Bookmark className="w-4 h-4" /> Save post
+                <Bookmark className="h-4 w-4" />
+                Save post
               </button>
             </div>
           )}
         </div>
       </header>
 
-      <p className="text-sm text-slate-800 mb-3 leading-relaxed">{post?.content}</p>
+      <p className="mb-5 text-[16px] leading-6 text-slate-900">{post?.content}</p>
 
       {post?.tags?.length > 0 && (
-        <p className="text-sm text-indigo-600 mb-3">#{post.tags[0]}</p>
+        <p className="mb-5 text-sm font-medium text-[#4e44d4]">#{post.tags[0]}</p>
       )}
 
       {images.length > 0 && (
         <div
-          className={`grid gap-1 rounded-lg overflow-hidden mb-3 ${
+          className={`mb-6 grid gap-1 overflow-hidden rounded-[18px] ${
             images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
           }`}
         >
@@ -228,9 +258,9 @@ export default function PostCard({
             return (
               <div
                 key={index}
-                className={`relative bg-slate-50 cursor-pointer group ${
+                className={`relative cursor-pointer bg-slate-50 ${
                   isFirstOfThree ? 'row-span-2' : ''
-                } ${images.length === 1 ? 'h-64' : 'h-40'}`}
+                } ${images.length === 1 ? 'aspect-video' : 'h-44 sm:h-56'}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   goToDetails();
@@ -239,13 +269,11 @@ export default function PostCard({
                 <img
                   src={img}
                   alt={`Post image ${index + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="h-full w-full object-cover"
                 />
                 {index === 3 && images.length > 4 && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="text-white text-lg font-semibold">
-                      +{images.length - 4}
-                    </span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <span className="text-lg font-semibold text-white">+{images.length - 4}</span>
                   </div>
                 )}
               </div>
@@ -254,50 +282,45 @@ export default function PostCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between border-t border-[#eef1f3] pt-5">
+        <div className="flex flex-wrap gap-6">
           <button
             onClick={handleLike}
             disabled={isLoading && !isLiked}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-              isLiked
-                ? 'text-rose-600 bg-rose-50'
-                : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+            className={`flex items-center gap-2 transition-colors ${
+              isLiked ? 'text-[#4e44d4]' : 'text-slate-500 hover:text-[#4e44d4]'
             }`}
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-xs font-medium">{likeCount}</span>
+            <Heart className={`h-[18px] w-[18px] ${isLiked ? 'fill-current' : ''}`} />
+            <span className="text-xs font-bold uppercase tracking-wider">{formatCount(likeCount)}</span>
           </button>
 
           <button
             onClick={handleComment}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-              showComments
-                ? 'text-indigo-600 bg-indigo-50'
-                : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
+            className={`flex items-center gap-2 transition-colors ${
+              showComments ? 'text-[#4e44d4]' : 'text-slate-500 hover:text-[#4e44d4]'
             }`}
           >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-xs font-medium">{commentCount}</span>
+            <MessageCircle className="h-[18px] w-[18px]" />
+            <span className="text-xs font-bold uppercase tracking-wider">{formatCount(commentCount)}</span>
           </button>
 
           <button
             onClick={(e) => e.stopPropagation()}
-            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+            className="flex items-center gap-2 text-slate-500 transition-colors hover:text-[#4e44d4]"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="h-[18px] w-[18px]" />
+            <span className="text-xs font-bold uppercase tracking-wider">Share</span>
           </button>
         </div>
 
         <button
           onClick={handleBookmark}
-          className={`p-2 rounded-lg transition ${
-            isBookmarked
-              ? 'text-indigo-600 bg-indigo-50'
-              : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+          className={`transition-colors ${
+            isBookmarked ? 'text-[#4e44d4]' : 'text-slate-500 hover:text-[#4e44d4]'
           }`}
         >
-          <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+          <Bookmark className={`h-[18px] w-[18px] ${isBookmarked ? 'fill-current' : ''}`} />
         </button>
       </div>
 
