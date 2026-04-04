@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { accessSecret } = require('../utils/token.util');
 
 const verifyToken = (req, res, next) => {
   try {
-    
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -19,7 +19,6 @@ const verifyToken = (req, res, next) => {
       });
     }
 
-    
     const token = authHeader.substring(7).trim();
 
     if (!token) {
@@ -29,9 +28,15 @@ const verifyToken = (req, res, next) => {
       });
     }
 
-    console.log(process.env.SECRETE_KEY)
-    // 4. Verify Token
-    const decode = jwt.verify(token, process.env.SECRETE_KEY);
+    const secret = accessSecret();
+    if (!secret) {
+      return res.status(500).json({
+        success: false,
+        message: 'Server auth is not configured.',
+      });
+    }
+
+    const decode = jwt.verify(token, secret);
     
     req.user = decode;
     next();

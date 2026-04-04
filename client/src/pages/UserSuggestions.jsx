@@ -6,15 +6,14 @@ import {
   getUserSuggestions,
   unfollowUser,
 } from "../features/users/userSlice";
-import { Link } from "react-router-dom";
-
 export default function UserSuggestions({ limit = 10 }) {
   const dispatch = useDispatch();
   const { suggestions, followingIds, isLoading, isError, message } = useSelector(
     (state) => state.users,
   );
 
-  const fallbackImage = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  const fallbackImage = (name) =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=ccfbf1&color=115e59`;
 
   useEffect(() => {
     dispatch(getUserSuggestions(limit));
@@ -98,53 +97,52 @@ export default function UserSuggestions({ limit = 10 }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
         {suggestions.map((user) => {
           const userId = user._id || user.id;
-          const isFollowing = followingIds.includes(userId);
+          const userIdStr = String(userId ?? "");
+          const isFollowing = followingIds.some((id) => String(id) === userIdStr);
+          const displayName = user?.profile?.fullName || user?.username || 'User';
+          const avatarUrl = user?.profile?.avatar?.url || fallbackImage(displayName);
 
           return (
             <div
               key={userId}
-              className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition"
+              className="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm transition hover:shadow-md"
             >
               {/* Avatar */}
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <img
-                    src={user?.profileImage?.url || user?.profileImage || fallbackImage}
-                    alt={user?.name || "User"}
-                    className="w-14 h-14 rounded-full object-cover bg-slate-100 ring-2 ring-white shadow"
+                    src={avatarUrl}
+                    alt=""
+                    className="h-14 w-14 rounded-full object-cover bg-slate-100 ring-2 ring-white shadow"
                     onError={(e) => {
-                      e.target.src = fallbackImage;
+                      e.target.src = fallbackImage(displayName);
                     }}
                   />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 ring-2 ring-white" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-slate-900 truncate">
-                    {user?.name || "Anonymous"}
-                  </h3>
-                  <p className="text-xs text-slate-500 truncate">
-                    {user?.email || "No email"}
-                  </p>
+                  <h3 className="truncate text-sm font-semibold text-slate-900">{displayName}</h3>
+                  <p className="truncate text-xs text-slate-500">{user?.email || user?.username || ''}</p>
                 </div>
               </div>
 
               {/* Info */}
               {user?.address && (
-                <p className="text-xs text-slate-400 truncate mt-3">
+                <p className="mt-3 truncate text-xs text-slate-400">
                   {user.address}
                 </p>
               )}
 
               {/* Follow Button */}
               <div className="mt-4 flex items-center gap-2">
-                <Link
-                  to={`/profile/${userId}`}
-                  className="flex-1 text-center px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+                <span
+                  className="flex-1 cursor-default text-center rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs font-medium text-slate-400"
+                  title="Per-user public profiles are not wired yet"
                 >
-                  View profile
-                </Link>
+                  Profile
+                </span>
                 <button
-                  onClick={() => handleFollowToggle(userId, isFollowing)}
+                  type="button"
+                  onClick={() => handleFollowToggle(userIdStr, isFollowing)}
                   disabled={isLoading && !isFollowing}
                   className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition ${
                     isFollowing

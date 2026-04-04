@@ -1,6 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
+:root {
+  --bg-page: #e8f5f3;
+  --bg-page-2: #f0fdfa;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f4;
+  --border: rgba(15, 118, 110, 0.12);
+  --text-primary: #0f172a;
+  --accent: #0d9488;
+  --accent-hover: #0f766e;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,16 +21,22 @@ body,
 #root {
   width: 100%;
   min-height: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  overscroll-behavior-y: none;
 }
 
 html {
-  background: #f5f7f9;
+  background: var(--bg-page);
 }
 
 body {
   margin: 0;
-  background-color: #f5f7f9;
-  color: #2c2f31;
+  background: linear-gradient(165deg, var(--bg-page) 0%, var(--bg-page-2) 42%, #f8fafc 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
   scrollbar-width: none;
 }
@@ -58,7 +75,7 @@ textarea {
 
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  scrollbar-color: rgba(13, 148, 136, 0.35) transparent;
 }
 
 .thin-scrollbar::-webkit-scrollbar {
@@ -71,5 +88,5 @@ textarea {
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(13, 148, 136, 0.35);
 }

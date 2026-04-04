@@ -18,6 +18,7 @@ import UserSuggestions from './pages/UserSuggestions';
 import PostDetails from './pages/PostDetails';
 import BlogDetails from './pages/BlogDetails';
 import Bookmarks from './pages/Bookmarks';
+import Notifications from './pages/Notifications';
 import CreatePostPage from './components/posts/CreatePost';
 import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/post/:postId" element={<PostDetails/>} />
           <Route path="/blog/:postId" element={<BlogDetails/>} />
           <Route path="/bookmarks" element={<Bookmarks/>} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/chats" element={<Messages />} />
           <Route path="/login" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />

@@ -1,7 +1,9 @@
+const mongoose = require('mongoose');
 const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const blogsModel = require('../models/blogs.model');
 const postModel = require('../models/post.model');
+const { sanitizePlainText } = require('../utils/sanitize.util');
 
 const updateProfile = async (req, res) => {
   try {
@@ -15,8 +17,12 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    if (req.body.fullName) user.profile.fullName = req.body.fullName;
-    if (req.body.bio) user.profile.bio = req.body.bio;
+    if (req.body.fullName) {
+      user.profile.fullName = sanitizePlainText(req.body.fullName, 120);
+    }
+    if (req.body.bio) {
+      user.profile.bio = sanitizePlainText(req.body.bio, 300);
+    }
     if (req.body.location) user.profile.location = req.body.location;
     if (req.body.website) user.profile.website = req.body.website;
 
@@ -59,9 +65,15 @@ const updateProfile = async (req, res) => {
         message:"user not found"
       })
     }
-     const post = await postModel.find({user:userid})
+    const post = await postModel
+      .find({ user: userid })
+      .sort({ createdAt: -1 })
+      .limit(40)
+      .select('content media createdAt likesCount commentsCount isPublic tags')
+      .lean();
     res.status(200).json({
-      getme,post
+      getme,
+      post,
     });
   } catch (error) {
     return res.status(500).json({
@@ -71,33 +83,36 @@ const updateProfile = async (req, res) => {
   }
 }
 
-async function getSuggestions (req,res){
-try {
-  const limit = Number(req.query.limit) || 10;
-  const user = await User.findById(req.user.id).select('following');
+async function getSuggestions(req, res) {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+    const user = await User.findById(req.user.id).select('following');
 
-  if (!user) {
-    return res.status(404).json({
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const following = Array.isArray(user.following) ? user.following : [];
+    const selfId = req.user.id;
+    const excludeIds = [...following, selfId];
+
+    const suggestions = await User.find({
+      _id: { $nin: excludeIds },
+    })
+      .select('-password')
+      .limit(limit)
+      .lean();
+
+    return res.status(200).json(suggestions);
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: 'User not found',
+      error: error.message,
     });
   }
-
-  const suggestions = await User.find({
-    _id: {$nin: [...user.following,req.user.id]}
-  }).select('-password')
-  .limit(limit);
-
-  res.status(200).json(suggestions);
-  
-  
-} catch (error) {
-   return res.status(500).json({
-      success:false,
-      error:error.message
-    })
-}
-  
 }
 
 
@@ -105,6 +120,13 @@ async function followUser(req,res){
   try {
     const ownerId = req.user.id;
    const {userId} = req.params;
+
+   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid user id',
+    });
+   }
 
    if (ownerId === userId) {
     return res.status(400).json({
@@ -153,6 +175,13 @@ async function unfollowuser (req,res){
   try {
     const {userId} = req.params;
     const ownerId = req.user.id;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user id',
+      });
+    }
 
     const owner = await User.findById(ownerId);
     const target = await User.findById(userId);

@@ -2,6 +2,7 @@ const Comment = require('../models/comment.model');
 const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
 const User = require('../models/user.model');
+const { sanitizePlainText } = require('../utils/sanitize.util');
 
 const serializeComment = (comment) => {
   const commentObject = typeof comment.toObject === 'function' ? comment.toObject() : comment;
@@ -27,7 +28,8 @@ const createComment = async (req, res) => {
     const targetType = req.body.targetType === 'Blog' ? 'Blog' : 'Post';
     const user = await User.findById(userId).select('username profile.avatar');
 
-    if (!text) {
+    const cleaned = sanitizePlainText(text, 4000);
+    if (!cleaned.trim()) {
       return res.status(400).json({
         sucess: false,
         message: 'comment text is required',
@@ -56,7 +58,7 @@ const createComment = async (req, res) => {
         username: user.username,
         avatar: user.profile?.avatar?.url || '',
       },
-      content: text.trim(),
+      content: cleaned,
       target: {
         type: targetType,
         id: postId,

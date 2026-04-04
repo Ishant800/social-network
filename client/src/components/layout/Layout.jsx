@@ -22,31 +22,35 @@ export default function Layout({ children }) {
     isDiscussionRoomPage;
 
   if (isAuthPage) {
-    return <div className="min-h-screen w-full bg-white">{children}</div>;
+    return (
+      <div className="app-shell min-h-dvh w-full">
+        <div className="mx-auto flex min-h-dvh w-full max-w-lg items-center justify-center px-4 py-10">
+          <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-lg shadow-teal-900/10 sm:p-8">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7f9] text-slate-900">
-      <div className="fixed inset-x-0 top-0 z-50">
+    <div className="app-shell min-h-dvh w-full text-slate-900">
+      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-white/90 shadow-sm shadow-teal-900/5 backdrop-blur-md">
         <Navbar />
       </div>
 
-      <main
-        className={`mx-auto px-4 pb-24 pt-20 lg:pb-8 lg:pt-24 ${
-          isDiscussionRoomPage ? 'max-w-390 lg:px-5' : 'max-w-360 lg:px-6'
-        }`}
-      >
+      <main className="mx-auto w-full max-w-[1600px] px-4 pb-24 pt-16 sm:px-6 sm:pt-20 lg:pb-10 lg:pt-24">
         <div
           className={`grid grid-cols-1 ${
             isDiscussionRoomPage ? 'lg:gap-5 xl:gap-6' : 'lg:gap-8'
           } ${
             isFeedPage
-              ? 'lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[256px_minmax(0,1fr)_320px] xl:gap-10'
-              : 'lg:grid-cols-[256px_minmax(0,1fr)]'
+              ? 'lg:grid-cols-[minmax(0,256px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,256px)_minmax(0,1fr)_minmax(0,320px)] xl:gap-10'
+              : 'lg:grid-cols-[minmax(0,256px)_minmax(0,1fr)]'
           }`}
         >
           <aside className="hidden lg:block">
-            <div className="thin-scrollbar fixed top-24 h-[calc(100vh-7rem)] w-64 overflow-y-auto">
+            <div className="thin-scrollbar fixed top-20 h-[calc(100dvh-5rem)] w-64 overflow-y-auto sm:top-24 sm:h-[calc(100dvh-6rem)]">
               <Sidebar />
             </div>
           </aside>
@@ -63,7 +67,7 @@ export default function Layout({ children }) {
 
           {isFeedPage && (
             <aside className="hidden xl:block">
-              <div className="thin-scrollbar fixed top-24 h-[calc(100vh-7rem)] w-80 overflow-y-auto pr-1">
+              <div className="thin-scrollbar fixed top-20 h-[calc(100dvh-5rem)] w-80 overflow-y-auto pr-1 sm:top-24 sm:h-[calc(100dvh-6rem)]">
                 <RightSidebar />
               </div>
             </aside>
@@ -71,7 +75,9 @@ export default function Layout({ children }) {
         </div>
       </main>
 
-      <MobileNav />
+      <div className="lg:hidden">
+        <MobileNav />
+      </div>
     </div>
   );
 }

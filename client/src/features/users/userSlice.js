@@ -17,7 +17,10 @@ export const getUserSuggestions = createAsyncThunk(
       return await userService.getSuggestions(limit);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.error || error.message || "Failed to load suggestions",
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to load suggestions",
       );
     }
   },
@@ -67,11 +70,14 @@ const userSlice = createSlice({
       // suggestions
       .addCase(getUserSuggestions.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.message = "";
       })
       .addCase(getUserSuggestions.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.suggestions = action.payload || [];
+        state.isError = false;
+        state.suggestions = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(getUserSuggestions.rejected, (state, action) => {
         state.isLoading = false;
@@ -85,12 +91,12 @@ const userSlice = createSlice({
       .addCase(followUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        const userId = action.payload;
-        if (userId && !state.followingIds.includes(userId)) {
+        const userId = String(action.payload || "");
+        if (userId && !state.followingIds.some((id) => String(id) === userId)) {
           state.followingIds.push(userId);
         }
         state.suggestions = state.suggestions.filter(
-          (user) => (user._id || user.id) !== userId,
+          (u) => String(u._id || u.id) !== userId,
         );
       })
       .addCase(followUser.rejected, (state, action) => {
@@ -105,8 +111,8 @@ const userSlice = createSlice({
       .addCase(unfollowUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        const userId = action.payload;
-        state.followingIds = state.followingIds.filter((id) => id !== userId);
+        const userId = String(action.payload || "");
+        state.followingIds = state.followingIds.filter((id) => String(id) !== userId);
       })
       .addCase(unfollowUser.rejected, (state, action) => {
         state.isLoading = false;

@@ -4,13 +4,13 @@ import {
   Clock3,
   MessageCircle,
   Share2,
-  Users,
 } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
 import { getBlogDetails } from '../features/post/postSlice';
+import postService from '../features/post/postService';
 
 const formatDate = (value) => {
   if (!value) return '';
@@ -160,42 +160,35 @@ const renderBlogContent = (body) => {
   return <div className="space-y-6">{elements}</div>;
 };
 
-const DiscussionCard = ({ postId, comments, views }) => (
-  <section className="rounded-2xl border border-[#d9ddff] bg-[linear-gradient(180deg,#f7f8ff_0%,#eef1ff_100%)] p-5 shadow-sm">
+const DiscussionCard = ({ postId, comments }) => (
+  <section className="rounded-2xl border border-teal-200/80 bg-gradient-to-b from-teal-50/90 to-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5c61d9]">
-          Live Discussion
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-800">
+          Discussion
         </p>
-        <h3 className="mt-2 text-base font-bold text-slate-900">
-          Join the real-time reader room
-        </h3>
+        <h3 className="mt-2 text-base font-bold text-slate-900">Reader room</h3>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Readers can jump into a focused discussion room while reading, share reactions, and
-          continue the conversation live.
+          Continue the conversation in the live discussion tied to this article.
         </p>
       </div>
-      <div className="rounded-2xl bg-white/80 p-2 text-[#5c61d9]">
-        <Users className="h-5 w-5" />
+      <div className="rounded-2xl bg-white/90 p-2 text-teal-700">
+        <MessageCircle className="h-5 w-5" />
       </div>
     </div>
 
-    <div className="mt-4 flex items-center gap-4 text-xs text-slate-600">
+    <div className="mt-4 text-xs text-slate-600">
       <span className="inline-flex items-center gap-1.5">
         <MessageCircle className="h-4 w-4" />
-        {comments} active replies
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Users className="h-4 w-4" />
-        {Math.max(3, Math.min(views, 28))} readers online
+        {comments} comment{comments === 1 ? '' : 's'} on this article
       </span>
     </div>
 
     <Link
       to={`/discussionroom/${postId}`}
-      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800"
     >
-      Open Discussion Room
+      Open discussion room
       <ChevronRight className="h-4 w-4" />
     </Link>
   </section>
@@ -226,53 +219,53 @@ const SuggestedBlogCard = ({ blog }) => (
   </Link>
 );
 
-const SuggestionsSection = ({ currentBlog }) => {
-  const suggestions = useMemo(() => {
-    const category = currentBlog?.category?.name;
-    return [
-      {
-        _id: 'dummy-1',
-        title: 'Mastering Spring Security in 2026',
-        summary: 'A practical guide to securing your Spring Boot applications with modern best practices.',
-        coverImage: { url: 'https://res.cloudinary.com/djh5owgby/image/upload/v1774365121/meroroom/cn9v9kzyqpe51cve3etl.png' },
-        publishedAt: '2026-03-20T10:00:00Z',
-        category: { name: category },
-      },
-      {
-        _id: 'dummy-2',
-        title: 'React Performance Optimization Tips',
-        summary: 'Learn how to make your React apps faster with memoization, code splitting, and more.',
-        coverImage: { url: 'https://res.cloudinary.com/djh5owgby/image/upload/v1774363609/meroroom/oimoljbgdewkbmybpnbg.jpg' },
-        publishedAt: '2026-03-18T14:30:00Z',
-        category: { name: 'Web Development' },
-      },
-      {
-        _id: 'dummy-3',
-        title: 'Building Scalable APIs with Node.js',
-        summary: 'Architecture patterns and tools for creating production-ready backend services.',
-        coverImage: { url: 'https://res.cloudinary.com/djh5owgby/image/upload/v1774205447/meroroom/nvxc9kkcnvyc1uy1d17v.jpg' },
-        publishedAt: '2026-03-15T09:15:00Z',
-        category: { name: category },
-      },
-    ]
-      .filter((item) => item.category?.name === category)
-      .slice(0, 3);
-  }, [currentBlog]);
+function RelatedFromApi({ blogId, categoryName }) {
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (suggestions.length === 0) return null;
+  useEffect(() => {
+    if (!blogId || !categoryName) {
+      setRelated([]);
+      setLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await postService.exploreBlogs({
+          exclude: String(blogId),
+          category: categoryName,
+          limit: 4,
+        });
+        if (!cancelled) setRelated(data.blogs || []);
+      } catch {
+        if (!cancelled) setRelated([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [blogId, categoryName]);
+
+  if (loading || related.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-      <h3 className="text-base font-bold text-slate-900">You may also like</h3>
-      <p className="mt-1 text-sm text-slate-500">More articles in {currentBlog?.category?.name}</p>
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+      <h3 className="text-base font-bold text-slate-900">More in {categoryName}</h3>
+      <p className="mt-1 text-sm text-slate-500">Other published articles in this category</p>
       <div className="mt-4 space-y-3">
-        {suggestions.map((blog) => (
-          <SuggestedBlogCard key={blog._id} blog={blog} />
+        {related.map((blog) => (
+          <SuggestedBlogCard key={blog._id || blog.id} blog={blog} />
         ))}
       </div>
     </section>
   );
-};
+}
 
 export default function BlogDetails() {
   const { postId } = useParams();
@@ -382,7 +375,7 @@ export default function BlogDetails() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   to={`/discussionroom/${postId}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#eef1ff] px-4 py-2 text-sm font-semibold text-[#5057d6] transition hover:bg-[#e3e8ff]"
+                  className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Discuss Live
@@ -432,8 +425,8 @@ export default function BlogDetails() {
         </article>
 
         <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <DiscussionCard postId={postId} comments={stats.comments} views={stats.views} />
-          <SuggestionsSection currentBlog={blog} />
+          <DiscussionCard postId={postId} comments={stats.comments} />
+          <RelatedFromApi blogId={blog._id || blog.id} categoryName={blog.category?.name} />
         </aside>
       </div>
     </div>

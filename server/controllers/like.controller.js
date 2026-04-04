@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
  const Like = require("../models/postlike.model")
  const Post = require("../models/post.model")
   
@@ -6,8 +7,8 @@
     const  postId  = req.params.postId;
     const userId = req.user.id; 
 
-    if (!postId) {
-      return res.status(400).json({ msg: 'Post ID is required' });
+    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ msg: 'Valid post ID is required' });
     }
 
     const existingLike = await Like.findOne({
@@ -28,12 +29,14 @@
       },
     });
 
-    await Post.findOneAndUpdate({_id:postId},{
-        $inc:{
-            likesCount: 1
-        }
-        
-    },{new:true})
+    const updated = await Post.findOneAndUpdate(
+      { _id: postId },
+      { $inc: { likesCount: 1 } },
+      { new: true },
+    );
+    if (!updated) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     return res.status(200).json({ msg: 'Post liked successfully' });
   } catch (err) {
     console.error(err.message);
@@ -46,8 +49,8 @@ async function unLike(req, res){
      const  postId  = req.params.postId;
     const userId = req.user.id;
 
-    if (!postId) {
-      return res.status(400).json({ msg: 'Post ID is required' });
+    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ msg: 'Valid post ID is required' });
     }
 
     const like = await Like.deleteOne({
@@ -60,11 +63,10 @@ async function unLike(req, res){
     if (!like.deletedCount) {
       return res.status(404).json({ msg: 'Like record not found' });
     }
-    await Post.findOneAndUpdate( { _id: postId },{
-        $inc:{
-            likesCount: -1
-        }
-    })
+    await Post.findOneAndUpdate(
+      { _id: postId, likesCount: { $gt: 0 } },
+      { $inc: { likesCount: -1 } },
+    );
     return res.status(200).json({ msg: 'Post unliked successfully', like });
   } catch (err) {
     console.error(err.message);

@@ -18,7 +18,13 @@ export const login = createAsyncThunk(
         try {
             return await authService.login(userData)
         } catch (error) {
-            return thunkAPI.rejectWithValue(error.response.data.error)
+            const data = error.response?.data;
+            const msg =
+                (typeof data?.error === "string" && data.error) ||
+                (typeof data?.message === "string" && data.message) ||
+                error.message ||
+                "Login failed";
+            return thunkAPI.rejectWithValue(msg);
         }
     }
 )
@@ -29,7 +35,13 @@ export const signup = createAsyncThunk(
     try {
       return await authService.signup(userData);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
+      const data = error.response?.data;
+      const msg =
+        (typeof data?.message === "string" && data.message) ||
+        (typeof data?.error === "string" && data.error) ||
+        error.message ||
+        "Signup failed";
+      return thunkAPI.rejectWithValue(msg);
     }
   }
 );
@@ -55,7 +67,11 @@ const authSlice = createSlice({
     initialState,
     reducers:{
         logout:(state) =>{
-            state.token = null
+            state.token = null;
+            state.user = null;
+            state.profilePosts = [];
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
         },
         reset:(state)=>{
            state.isLoading = false
@@ -71,8 +87,12 @@ const authSlice = createSlice({
         .addCase(login.fulfilled,(state,action)=>{
             state.isLoading = false;
             state.isSuccess = true;
-            state.token = action.payload.token;
-            localStorage.setItem("token",action.payload.token)
+            const access = action.payload.token || action.payload.accessToken;
+            state.token = access;
+            if (access) localStorage.setItem("token", access);
+            if (action.payload.refreshToken) {
+              localStorage.setItem("refreshToken", action.payload.refreshToken);
+            }
         })
         .addCase(login.rejected,(state,action) =>{
             state.isLoading = false;
@@ -88,8 +108,12 @@ const authSlice = createSlice({
         .addCase(signup.fulfilled,(state,action)=>{
           state.isLoading = false;
           state.isSuccess = true;
-            state.token = action.payload.token;
-            localStorage.setItem("token", action.payload.token);
+            const access = action.payload.token || action.payload.accessToken;
+            state.token = access;
+            if (access) localStorage.setItem("token", access);
+            if (action.payload.refreshToken) {
+              localStorage.setItem("refreshToken", action.payload.refreshToken);
+            }
         })
 
         .addCase(signup.rejected,(state,action)=>{
@@ -117,5 +141,5 @@ const authSlice = createSlice({
     }
 })
 
-// export const {logout} = authSlice.actions
+export const { logout, reset } = authSlice.actions;
 export default authSlice.reducer;

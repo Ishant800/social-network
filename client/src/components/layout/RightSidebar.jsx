@@ -1,81 +1,76 @@
-import { useNavigate } from 'react-router-dom';
-
-const suggestedUsers = [
-  {
-    name: 'Julian K.',
-    handle: '@j_visuals',
-    avatar: 'https://i.pravatar.cc/120?u=julian-k',
-  },
-  {
-    name: 'Sarah Chen',
-    handle: '@schen_writes',
-    avatar: 'https://i.pravatar.cc/120?u=sarah-chen',
-  },
-];
-
-const trendingTopics = [
-  { category: 'Social Media', topic: '#EditorialShift', posts: '12.4k posts' },
-  { category: 'Design', topic: 'Asymmetric Layouts', posts: '8.2k posts' },
-  { category: 'Technology', topic: 'Ethical AI Feed', posts: '21.5k posts' },
-];
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { followUser, getUserSuggestions } from '../../features/users/userSlice';
 
 export default function RightSidebar() {
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { suggestions, isLoading, isError } = useSelector((s) => s.users);
+
+  useEffect(() => {
+    dispatch(getUserSuggestions(6));
+  }, [dispatch]);
 
   return (
     <div className="space-y-4">
-      {/* <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <h2 className="font-display text-base font-bold text-slate-900">Trending topics</h2>
-        <div className="mt-4 space-y-4">
-          {trendingTopics.map((item) => (
-            <button
-              key={item.topic}
-              type="button"
-              onClick={() => navigate('/explore')}
-              className="block w-full text-left"
-            >
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                {item.category}
-              </p>
-              <h3 className="mt-1 text-sm font-semibold text-slate-900">{item.topic}</h3>
-              <p className="mt-1 text-xs text-slate-500">{item.posts}</p>
-            </button>
-          ))}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-base font-bold text-slate-900">Who to follow</h2>
+          <Link to="/friendsexplore" className="text-xs font-semibold text-teal-700 hover:text-teal-800">
+            See all
+          </Link>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate('/explore')}
-          className="mt-4 text-sm font-medium text-indigo-600 transition hover:text-indigo-700"
-        >
-          View more
-        </button>
-      </section> */}
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <h2 className="font-display text-base font-bold text-slate-900">Who to follow</h2>
-        <div className="mt-4 space-y-4">
-          {suggestedUsers.map((user) => (
-            <div key={user.handle} className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
-                  <p className="truncate text-xs text-slate-500">{user.handle}</p>
+        {isLoading && suggestions.length === 0 && (
+          <div className="mt-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex animate-pulse items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-slate-200" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-24 rounded bg-slate-200" />
+                  <div className="h-2 w-20 rounded bg-slate-100" />
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate('/friendsexplore')}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-              >
-                Follow
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <p className="mt-4 text-sm text-slate-500">Could not load suggestions.</p>
+        )}
+
+        {!isLoading && !isError && suggestions.length === 0 && (
+          <p className="mt-4 text-sm text-slate-500">No suggestions right now. Invite friends to join.</p>
+        )}
+
+        <div className="mt-4 space-y-3">
+          {suggestions.map((user) => {
+            const id = user._id || user.id;
+            const name = user.profile?.fullName || user.username || 'User';
+            const handle = user.username ? `@${user.username}` : '';
+            const avatar =
+              user.profile?.avatar?.url ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ccfbf1&color=115e59`;
+
+            return (
+              <div key={id} className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <img src={avatar} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
+                    <p className="truncate text-xs text-slate-500">{handle}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => dispatch(followUser(id))}
+                  className="shrink-0 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800 transition hover:bg-teal-100"
+                >
+                  Follow
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -83,9 +78,8 @@ export default function RightSidebar() {
         <div className="flex flex-wrap gap-x-3 gap-y-2">
           <span>Terms</span>
           <span>Privacy</span>
-          <span>Cookies</span>
         </div>
-        <p className="mt-3">© 2024 Atheneum Inc.</p>
+        <p className="mt-3 text-slate-400">© {new Date().getFullYear()} Atheneum</p>
       </footer>
     </div>
   );

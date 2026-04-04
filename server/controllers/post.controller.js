@@ -1,19 +1,29 @@
+const mongoose = require('mongoose');
 const Post = require('../models/post.model');
 const Comment = require('../models/comment.model');
 const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
+const { sanitizePlainText } = require('../utils/sanitize.util');
 
 // post create
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { content,  isPublic } = req.body;
+    const { content: rawContent, isPublic } = req.body;
+    const content = sanitizePlainText(rawContent, 10000);
     const user = await User.findById(userId).select('username profile.avatar');
 
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
+      });
+    }
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Post content is required',
       });
     }
 
@@ -32,9 +42,15 @@ if (req.body.tags) {
   if (Array.isArray(req.body.tags)) {
     tagsArray = req.body.tags;
   } else {
-    tagsArray = [req.body.tags];
+    tagsArray = String(req.body.tags)
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
   }
 }
+tagsArray = tagsArray
+  .map((t) => sanitizePlainText(String(t), 48))
+  .filter(Boolean);
 
     const post = await Post.create({
       user: userId,
@@ -120,6 +136,13 @@ const getMyPost = async (req, res) => {
 const getPostDetails = async (req, res) => {
   try {
     const postId = req.params.postId;
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid post id',
+      });
+    }
+
     const post = await Post.findById(postId).populate(
       'user',
       'username profile.fullName profile.avatar',
@@ -178,14 +201,22 @@ const updatePost = async (req, res) => {
       });
     }
 
-    if (req.body.content) post.content = req.body.content;
-    if (req.body.tags) {
-      post.tags = Array.isArray(req.body.tags)
-        ? req.body.tags
-        : req.body.tags
+    if (req.body.content !== undefined) {
+      const next = sanitizePlainText(req.body.content, 10000);
+      if (!next.trim()) {
+        return res.status(400).json({ success: false, message: 'Post content cannot be empty' });
+      }
+      post.content = next;
+    }
+    if (req.body.tags !== undefined) {
+      const raw = req.body.tags;
+      const list = Array.isArray(raw)
+        ? raw
+        : String(raw)
             .split(',')
             .map((tag) => tag.trim())
             .filter(Boolean);
+      post.tags = list.map((t) => sanitizePlainText(String(t), 48)).filter(Boolean);
     }
     if (req.body.isPublic !== undefined) {
       post.isPublic = req.body.isPublic === true || req.body.isPublic === 'true';
@@ -232,37 +263,9 @@ const updatePost = async (req, res) => {
 };
 
 
-const randomPosts = async(req,res)=>{
-  try {
-    const posts = await Post.find().populate('user', 'username profile.fullName profile.avatar');
-    if(!posts) return  res.status(200).json({
-      
-      message: "no post available"
-    });
-    return res.status(200).json({
-      posts: posts.map((post) => {
-        const postData = post.toObject();
-        postData.id = postData._id;
-
-        if (postData.user) {
-          postData.user.name = postData.user.profile?.fullName || postData.user.username;
-          postData.user.profileImage = postData.user.profile?.avatar || null;
-        }
-
-        return postData;
-      })
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-}
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
-  randomPosts
 };
