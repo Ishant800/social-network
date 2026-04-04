@@ -4,6 +4,7 @@ import authService from "./authService";
 const initialState ={
     token: localStorage.getItem("token"),
     user:null,
+    profilePosts:[],
     isLoading:false,
     isError:false,
     isSuccess:false,
@@ -104,13 +105,14 @@ const authSlice = createSlice({
         })
         .addCase(getMe.fulfilled,(state,action)=>{
             state.isLoading = false;
-            state.user = action.payload;
-            console.log(action.payload)
+            state.user = action.payload.getme;
+            state.profilePosts = action.payload.post || [];
 
         })
         .addCase(getMe.rejected,(state)=>{
             state.isLoading = false;
             state.user = null;
+            state.profilePosts = [];
         })
     }
 })

@@ -24,7 +24,7 @@ export default function RightSidebar() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
+      {/* <section className="rounded-2xl bg-white p-4 shadow-sm">
         <h2 className="font-display text-base font-bold text-slate-900">Trending topics</h2>
         <div className="mt-4 space-y-4">
           {trendingTopics.map((item) => (
@@ -49,7 +49,7 @@ export default function RightSidebar() {
         >
           View more
         </button>
-      </section>
+      </section> */}
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <h2 className="font-display text-base font-bold text-slate-900">Who to follow</h2>

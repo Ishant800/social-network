@@ -20,7 +20,7 @@ const logout = ()=>{
 
 const getMe = async ()=>{
     const response = await API.get("/user/getMe")
-    return response.data.getme
+    return response.data
 }
 
 export default {signup,login,logout,getMe};

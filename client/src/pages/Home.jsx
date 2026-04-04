@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import PostCard from '../components/post/PostCard';
-import PostSkeleton from '../components/skeleton/postSkeleton';
+import PostCard from '../components/posts/PostCard';
+import PostSkeleton from '../components/skeletons/PostSkeleton';
 import { getPosts } from '../features/post/postSlice';
 import { getFeedType } from '../utils/feedType';
 
@@ -28,7 +28,7 @@ export default function Home() {
 
   if (isError) {
     return (
-      <div className="rounded-[32px] border border-[#e3e8ee] bg-white px-6 py-10 text-center shadow-[0_24px_48px_-32px_rgba(44,47,49,0.2)]">
+      <div className="rounded-xl   px-6 py-10 text-center shadow-[0_24px_48px_-32px_rgba(44,47,49,0.2)]">
         <p className="font-display text-xl font-bold text-slate-900">
           We&apos;re doing some maintenance
         </p>
@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      <div className="sticky top-20 z-20 border-b border-slate-200 bg-[#f5f7f9]/95 backdrop-blur-sm">
+      <div className="sticky top-15 z-20 border-b border-slate-200 bg-[#f5f7f9]/95 backdrop-blur-sm">
         <div className="flex gap-6 overflow-x-auto whitespace-nowrap">
           {feedTabs.map((tab) => (
             <button
@@ -69,7 +69,7 @@ export default function Home() {
       )}
 
       {!isLoading && (!filteredPosts || filteredPosts.length === 0) && !isError && (
-        <div className="rounded-[24px] border border-dashed border-[#d5dbe4] bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-[0_24px_48px_-12px_rgba(44,47,49,0.08)]">
+        <div className="rounded-3xl border border-dashed border-[#d5dbe4] bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-[0_24px_48px_-12px_rgba(44,47,49,0.08)]">
           No items available in this feed right now.
         </div>
       )}
@@ -78,5 +78,5 @@ export default function Home() {
         filteredPosts?.length > 0 &&
         filteredPosts.map((post) => <PostCard key={post._id} post={post} />)}
     </div>
-  );
+  );  
 }

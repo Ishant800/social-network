@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Mail, Lock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { signup } from "../../features/auth/authSlice";
+import { signup } from "../features/auth/authSlice";
 
 
 function Signup() {

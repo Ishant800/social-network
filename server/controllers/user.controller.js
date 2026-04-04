@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
+const blogsModel = require('../models/blogs.model');
+const postModel = require('../models/post.model');
 
 const updateProfile = async (req, res) => {
   try {
@@ -57,9 +59,9 @@ const updateProfile = async (req, res) => {
         message:"user not found"
       })
     }
-
+     const post = await postModel.find({user:userid})
     res.status(200).json({
-      getme
+      getme,post
     });
   } catch (error) {
     return res.status(500).json({

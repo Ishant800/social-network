@@ -3,7 +3,7 @@ import { ArrowLeft, Camera, MapPin, User, Info, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-export default function EditProfile() {
+export default function EditProfile({ onSave }) {
   const navigate = useNavigate();
   const {user}= useSelector((state)=> state.auth)
   

@@ -2,23 +2,25 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Home from './pages/Home';
-import Layout from './components/layout/Layout'
-import Explore from './components/sections/Explore';
-import Settings from './components/sections/Settings';
-import Profile from './components/sections/Profile';
-import Messages from './components/sections/Message';
-import Signin from './components/authentication/signin';
-import Signup from './components/authentication/signup';
+import Layout from './components/layout/Layout';
+import Explore from './pages/Explore';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
+import Messages from './pages/Messages';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
 import { useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { getMe } from './features/auth/authSlice';
-import EditProfile from './components/sections/EditProfileModel';
-import EditPost from './components/sections/EditPost';
-import CreatePost from './components/post/CreatePost';
-import UserSuggestions from './components/sections/UserSuggestionCard';
+import EditProfile from './pages/EditProfile';
+import EditPost from './pages/EditPost';
+import UserSuggestions from './pages/UserSuggestions';
 import PostDetails from './pages/PostDetails';
 import BlogDetails from './pages/BlogDetails';
 import Bookmarks from './pages/Bookmarks';
+import CreatePostPage from './components/posts/CreatePost';
+import CreateBlog from './components/blogs/CreateBlog';
+import DiscussionRoom from './components/chats/DiscussionRoom';
 export default function App() {
 
   const dispatch = useDispatch();
@@ -40,15 +42,17 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/friendsexplore" element={<UserSuggestions />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/discussionroom/:blogId" element={<DiscussionRoom />} />
           <Route path="/profile/edit" element={<EditProfile/>} />
-          <Route path="/post/create" element={<CreatePost/>} />
+          <Route path="/post/create" element={<CreatePostPage/>} />
+          <Route path="/blog/create" element={<CreateBlog/>} />
            <Route path="/post/edit" element={<EditPost/>} />
           <Route path="/post/:postId" element={<PostDetails/>} />
           <Route path="/blog/:postId" element={<BlogDetails/>} />
           <Route path="/bookmarks" element={<Bookmarks/>} />
           <Route path="/chats" element={<Messages />} />
-          <Route path="/login" element={<Signin />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </Layout>
     </Router>

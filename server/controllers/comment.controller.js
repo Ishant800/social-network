@@ -1,5 +1,6 @@
 const Comment = require('../models/comment.model');
 const Post = require('../models/post.model');
+const Blog = require('../models/blogs.model');
 const User = require('../models/user.model');
 
 const serializeComment = (comment) => {
@@ -23,6 +24,7 @@ const createComment = async (req, res) => {
     const userId = req.user.id;
     const postId = req.params.postId;
     const { text } = req.body;
+    const targetType = req.body.targetType === 'Blog' ? 'Blog' : 'Post';
     const user = await User.findById(userId).select('username profile.avatar');
 
     if (!text) {
@@ -32,11 +34,12 @@ const createComment = async (req, res) => {
       });
     }
 
-    const postExists = await Post.findById(postId);
-    if (!postExists) {
+    const targetExists =
+      targetType === 'Blog' ? await Blog.findById(postId) : await Post.findById(postId);
+    if (!targetExists) {
       return res.status(404).json({
         success: false,
-        message: 'Post not found',
+        message: `${targetType} not found`,
       });
     }
 
@@ -55,12 +58,16 @@ const createComment = async (req, res) => {
       },
       content: text.trim(),
       target: {
-        type: 'Post',
+        type: targetType,
         id: postId,
       },
     });
 
-    await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+    if (targetType === 'Blog') {
+      await Blog.findByIdAndUpdate(postId, { $inc: { 'stats.comments': 1 } });
+    } else {
+      await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+    }
 
     return res.status(201).json({
       sucess: true,
@@ -78,9 +85,10 @@ const createComment = async (req, res) => {
 const getPostComments = async (req, res) => {
   try {
     const postId = req.params.postId;
+    const targetType = req.query.type === 'Blog' ? 'Blog' : 'Post';
 
     const comments = await Comment.find({
-      'target.type': 'Post',
+      'target.type': targetType,
       'target.id': postId,
       parentComment: null,
     })
@@ -164,6 +172,12 @@ const deleteComment = async (req, res) => {
       });
     }
     await Comment.findByIdAndDelete(commentId);
+
+    if (comment.target?.type === 'Blog') {
+      await Blog.findByIdAndUpdate(comment.target.id, {
+        $inc: { 'stats.comments': -1 },
+      });
+    }
 
     if (comment.target?.type === 'Post') {
       await Post.findByIdAndUpdate(comment.target.id, {

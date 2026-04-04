@@ -16,7 +16,7 @@ const serializeUser = (user) => ({
   updatedAt: user.updatedAt,
 });
 
-// signup controller
+
 const createUser = async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -55,7 +55,6 @@ const createUser = async (req, res) => {
   }
 };
 
-// sign in controller
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
