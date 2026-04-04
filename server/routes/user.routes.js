@@ -5,7 +5,7 @@ const { verifyToken } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-router.put('/update-profile/:id',verifyToken,upload.single('profileImage'), updateProfile);
+router.put('/update-profile',verifyToken,upload.single('profileImage'), updateProfile);
 router.get('/getMe',verifyToken,getMe);
 router.get('/usersuggestions',verifyToken, getSuggestions);
 router.post('/follow/:userId',verifyToken,followUser)

@@ -1,11 +1,29 @@
 const Comment = require('../models/comment.model');
 const Post = require('../models/post.model');
+const User = require('../models/user.model');
+
+const serializeComment = (comment) => {
+  const commentObject = typeof comment.toObject === 'function' ? comment.toObject() : comment;
+  const user = commentObject.user || {};
+
+  return {
+    ...commentObject,
+    id: commentObject._id,
+    text: commentObject.content,
+    user: {
+      ...user,
+      name: user.username || user.name,
+      profileImage: user.avatar ? { url: user.avatar } : undefined,
+    },
+  };
+};
 
 const createComment = async (req, res) => {
   try {
     const userId = req.user.id;
     const postId = req.params.postId;
     const { text } = req.body;
+    const user = await User.findById(userId).select('username profile.avatar');
 
     if (!text) {
       return res.status(400).json({
@@ -21,23 +39,33 @@ const createComment = async (req, res) => {
         message: 'Post not found',
       });
     }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
     const comment = await Comment.create({
-      post: postId,
-      user: userId,
-      text,
+      user: {
+        _id: user._id,
+        username: user.username,
+        avatar: user.profile?.avatar?.url || '',
+      },
+      content: text.trim(),
+      target: {
+        type: 'Post',
+        id: postId,
+      },
     });
 
     await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
 
-    const populatedComment = await Comment.findById(comment._id).populate(
-      'user',
-      'name profileImage',
-    );
-
     return res.status(201).json({
       sucess: true,
       message: 'comment created sucessfully',
-      comment: populatedComment,
+      comment: serializeComment(comment),
     });
   } catch (error) {
     return res.status(500).json({
@@ -51,17 +79,65 @@ const getPostComments = async (req, res) => {
   try {
     const postId = req.params.postId;
 
-    const comments = await Comment.find({ post: postId })
-      .populate('user', 'name profileImage')
+    const comments = await Comment.find({
+      'target.type': 'Post',
+      'target.id': postId,
+      parentComment: null,
+    })
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      comments,
+      comments: comments.map(serializeComment),
     });
   } catch (error) {
     return res.status(500).json({
       sucess: false,
+      message: error.message,
+    });
+  }
+};
+
+const updateComment = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const commentId = req.params.commentId;
+    const { text } = req.body;
+
+    if (!text?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'comment text is required',
+      });
+    }
+
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found',
+      });
+    }
+
+    if (comment.user?._id?.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+    }
+
+    comment.content = text.trim();
+    await comment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Comment updated successfully',
+      comment: serializeComment(comment),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -81,7 +157,7 @@ const deleteComment = async (req, res) => {
       });
     }
 
-    if (comment.user.toString() !== userId) {
+    if (comment.user?._id?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: 'Unauthorized',
@@ -89,9 +165,11 @@ const deleteComment = async (req, res) => {
     }
     await Comment.findByIdAndDelete(commentId);
 
-    await Post.findByIdAndUpdate(comment.post, {
-      $inc: { commentsCount: -1 },
-    });
+    if (comment.target?.type === 'Post') {
+      await Post.findByIdAndUpdate(comment.target.id, {
+        $inc: { commentsCount: -1 },
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -108,5 +186,6 @@ const deleteComment = async (req, res) => {
 module.exports = {
   createComment,
   getPostComments,
+  updateComment,
   deleteComment,
 };

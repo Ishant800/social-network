@@ -1,0 +1,249 @@
+{
+  "baseUrl": "http://localhost:5000",
+  "notes": [
+    "Use the login token in Authorization header as: Bearer YOUR_TOKEN",
+    "For file upload endpoints use form-data in Postman",
+    "Replace all ids like USER_ID, POST_ID, BLOG_ID, COMMENT_ID with real values from your database or previous API responses"
+  ],
+  "workflow": [
+    "1. Signup",
+    "2. Login",
+    "3. Get current user",
+    "4. Create post",
+    "5. Get post details",
+    "6. Create comment on post",
+    "7. Like post",
+    "8. Create blog",
+    "9. Get blog details",
+    "10. Update profile or follow users if needed"
+  ],
+  "auth": {
+    "signup": {
+      "method": "POST",
+      "url": "/auth/signup",
+      "bodyType": "json",
+      "body": {
+        "username": "sanyam01",
+        "email": "sanyam01@gmail.com",
+        "password": "12345678"
+      }
+    },
+    "login": {
+      "method": "POST",
+      "url": "/auth/login",
+      "bodyType": "json",
+      "body": {
+        "email": "sanyam01@gmail.com",
+        "password": "12345678"
+      }
+    }
+  },
+  "user": {
+    "getMe": {
+      "method": "GET",
+      "url": "/user/getMe",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "updateProfile": {
+      "method": "PUT",
+      "url": "/user/update-profile/USER_ID",
+      "bodyType": "form-data",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "fields": {
+        "fullName": "Sanyam Shrestha",
+        "bio": "I build simple social apps",
+        "location": "Kathmandu",
+        "website": "https://mysite.com",
+        "profileImage": "attach file in Postman"
+      }
+    },
+    "getSuggestions": {
+      "method": "GET",
+      "url": "/user/usersuggestions?limit=5",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "followUser": {
+      "method": "POST",
+      "url": "/user/follow/USER_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "unfollowUser": {
+      "method": "POST",
+      "url": "/user/unfollow/USER_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  },
+  "post": {
+    "createPost": {
+      "method": "POST",
+      "url": "/post/create",
+      "bodyType": "form-data",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "fields": {
+        "content": "This is my first social post",
+        "tags": "social,firstpost",
+        "isPublic": "true",
+        "media": "attach image file in Postman"
+      }
+    },
+    "getRandomPosts": {
+      "method": "GET",
+      "url": "/post/randomposts"
+    },
+    "getMyPosts": {
+      "method": "GET",
+      "url": "/post/myPost",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "getPostDetails": {
+      "method": "GET",
+      "url": "/post/post-details/POST_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "updatePost": {
+      "method": "PUT",
+      "url": "/post/update/POST_ID",
+      "bodyType": "form-data",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "fields": {
+        "content": "Updated post content",
+        "tags": "updated,post",
+        "isPublic": "false",
+        "media": "attach image file in Postman"
+      }
+    }
+  },
+  "comment": {
+    "createComment": {
+      "method": "POST",
+      "url": "/comment/create/POST_ID",
+      "bodyType": "json",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "body": {
+        "text": "This is my comment"
+      }
+    },
+    "getComments": {
+      "method": "GET",
+      "url": "/comment/getComment/POST_ID"
+    },
+    "updateComment": {
+      "method": "PUT",
+      "url": "/comment/update/COMMENT_ID",
+      "bodyType": "json",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "body": {
+        "text": "Updated comment text"
+      }
+    },
+    "deleteComment": {
+      "method": "DELETE",
+      "url": "/comment/delete/COMMENT_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  },
+  "like": {
+    "likePost": {
+      "method": "POST",
+      "url": "/likes/post/like/POST_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "unlikePost": {
+      "method": "POST",
+      "url": "/likes/post/unlike/POST_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  },
+  "blog": {
+    "createBlog": {
+      "method": "POST",
+      "url": "/blog/create",
+      "bodyType": "form-data",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "fields": {
+        "title": "My First Blog",
+        "slug": "my-first-blog",
+        "body": "This is the full blog content",
+        "summary": "Simple summary for the blog",
+        "categoryName": "Technology",
+        "categorySlug": "technology",
+        "tags": "blog,tech,node",
+        "readTime": "5",
+        "status": "published",
+        "isFeatured": "false",
+        "publishedAt": "2026-03-23T10:00:00.000Z",
+        "coverImage": "attach image file in Postman"
+      }
+    },
+    "getRandomBlogs": {
+      "method": "GET",
+      "url": "/blog/randomblogs"
+    },
+    "getMyBlogs": {
+      "method": "GET",
+      "url": "/blog/myBlogs",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "getBlogDetails": {
+      "method": "GET",
+      "url": "/blog/blog-details/BLOG_ID",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    },
+    "updateBlog": {
+      "method": "PUT",
+      "url": "/blog/update/BLOG_ID",
+      "bodyType": "form-data",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      },
+      "fields": {
+        "title": "Updated Blog Title",
+        "slug": "updated-blog-title",
+        "body": "Updated full blog content",
+        "summary": "Updated summary",
+        "categoryName": "Programming",
+        "categorySlug": "programming",
+        "tags": "updated,node,backend",
+        "readTime": "8",
+        "status": "draft",
+        "isFeatured": "true",
+        "publishedAt": "2026-03-24T10:00:00.000Z",
+        "coverImage": "attach image file in Postman"
+      }
+    }
+  }
+}

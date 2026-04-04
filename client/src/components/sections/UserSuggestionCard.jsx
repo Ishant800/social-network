@@ -6,6 +6,7 @@ import {
   getUserSuggestions,
   unfollowUser,
 } from "../../features/users/userSlice";
+import { Link } from "react-router-dom";
 
 export default function UserSuggestions({ limit = 10 }) {
   const dispatch = useDispatch();
@@ -18,6 +19,7 @@ export default function UserSuggestions({ limit = 10 }) {
   useEffect(() => {
     dispatch(getUserSuggestions(limit));
   }, [dispatch, limit]);
+
 
   const handleFollowToggle = (userId, isFollowing) => {
     if (isFollowing) {
@@ -51,14 +53,21 @@ export default function UserSuggestions({ limit = 10 }) {
   // --- Error ---
   if (isError) {
     return (
-      <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg w-full max-w-md">
-        Warning: {message}
-        <button
-          onClick={() => dispatch(getUserSuggestions(limit))}
-          className="ml-2 underline"
-        >
-          Retry
-        </button>
+      <div className="w-full max-w-3xl mx-auto p-5 rounded-2xl border border-amber-200 bg-amber-50 text-amber-900">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold text-sm">Suggestions unavailable</p>
+            <p className="text-xs text-amber-800/80 mt-1">
+              {message || "Please try again in a moment."}
+            </p>
+          </div>
+          <button
+            onClick={() => dispatch(getUserSuggestions(limit))}
+            className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-md bg-amber-900 text-amber-50 hover:bg-amber-800 transition"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -74,9 +83,19 @@ export default function UserSuggestions({ limit = 10 }) {
 
   // --- Cards ---
   return (
-    <div>
-      <h1 className="font-medium text-sm mb-4">Suggested Users</h1>
-      <div className="grid grid-cols-2 mb-10 md:grid-cols-3 gap-5 w-full">
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-base font-semibold text-slate-900">Suggested Users</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            People you may want to connect with
+          </p>
+        </div>
+        <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+          {suggestions.length} suggestions
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
         {suggestions.map((user) => {
           const userId = user._id || user.id;
           const isFollowing = followingIds.includes(userId);
@@ -84,48 +103,56 @@ export default function UserSuggestions({ limit = 10 }) {
           return (
             <div
               key={userId}
-              className="flex flex-col items-center text-center gap-3 p-5 bg-white rounded-sm border border-gray-100 hover:shadow-md transition"
+              className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition"
             >
               {/* Avatar */}
-              <img
-                src={user?.profileImage?.url || user?.profileImage || fallbackImage}
-                alt={user?.name || "User"}
-                className="w-16 h-16 rounded-full object-cover bg-gray-100"
-                onError={(e) => {
-                  e.target.src = fallbackImage;
-                }}
-              />
-
-              {/* Info */}
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">
-                  {user?.name || "Anonymous"}
-                </h3>
-
-                <p className="text-xs text-gray-500 truncate">
-                  {user?.email || "No email"}
-                </p>
-
-                {user?.address && (
-                  <p className="text-xs text-gray-400 truncate">{user.address}</p>
-                )}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <img
+                    src={user?.profileImage?.url || user?.profileImage || fallbackImage}
+                    alt={user?.name || "User"}
+                    className="w-14 h-14 rounded-full object-cover bg-slate-100 ring-2 ring-white shadow"
+                    onError={(e) => {
+                      e.target.src = fallbackImage;
+                    }}
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 ring-2 ring-white" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-slate-900 truncate">
+                    {user?.name || "Anonymous"}
+                  </h3>
+                  <p className="text-xs text-slate-500 truncate">
+                    {user?.email || "No email"}
+                  </p>
+                </div>
               </div>
 
+              {/* Info */}
+              {user?.address && (
+                <p className="text-xs text-slate-400 truncate mt-3">
+                  {user.address}
+                </p>
+              )}
+
               {/* Follow Button */}
-              <div className="flex gap-2">
-                <button className="mt-2 px-4 py-1.5 text-xs shadow font-medium rounded-lg transition">
-                  view
-                </button>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  to={`/profile/${userId}`}
+                  className="flex-1 text-center px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+                >
+                  View profile
+                </Link>
                 <button
                   onClick={() => handleFollowToggle(userId, isFollowing)}
                   disabled={isLoading && !isFollowing}
-                  className={`mt-2 px-4 py-1.5 text-xs font-medium rounded-lg transition ${
+                  className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition ${
                     isFollowing
-                      ? "bg-gray-200 text-gray-500"
-                      : "bg-indigo-600 text-white hover:bg-blue-700"
+                      ? "bg-slate-100 text-slate-500"
+                      : "bg-slate-900 text-white hover:bg-slate-800"
                   }`}
                 >
-                  {isFollowing ? "Unfollow" : "Follow"}
+                  {isFollowing ? "Following" : "Follow"}
                 </button>
               </div>
             </div>

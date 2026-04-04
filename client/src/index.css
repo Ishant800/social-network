@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 * {
@@ -11,9 +12,64 @@ body,
   min-height: 100%;
 }
 
+html {
+  background: #f5f7f9;
+}
+
 body {
   margin: 0;
-  background-color: #f3f4f6;
-  color: #111827;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f5f7f9;
+  color: #2c2f31;
+  font-family: 'Inter', system-ui, sans-serif;
+  scrollbar-width: none;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+  display: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+textarea {
+  resize: none;
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.45);
 }

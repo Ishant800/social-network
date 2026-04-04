@@ -1,16 +1,28 @@
 const Post = require('../models/post.model');
 const Comment = require('../models/comment.model');
+const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
 
 // post create
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { content,  tags, isPublic } = req.body;
+    const { content,  isPublic } = req.body;
+    const user = await User.findById(userId).select('username profile.avatar');
 
-    let mediaUrls = [];
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+     let mediaUrls = [];
     if (req.files && req.files.length > 0) {
-      mediaUrls = req.files.map((file) => file.path);
+      mediaUrls = req.files.map((file) => ({
+        url: file.path,
+        public_id: file.filename,
+      }));
     }
 
 
@@ -29,7 +41,7 @@ if (req.body.tags) {
       content,
       media: mediaUrls,
       tags: tagsArray,
-      isPublic: isPublic !== undefined ? isPublic : true,
+      isPublic: isPublic !== undefined ? isPublic === true || isPublic === 'true' : true,
     });
 
     if (!post) {
@@ -39,15 +51,24 @@ if (req.body.tags) {
       });
     }
 
+    await User.findByIdAndUpdate(userId, { $inc: { 'stats.posts': 1 } });
+
     const populatedPost = await Post.findById(post._id).populate(
       'user',
-      'name profileImage',
+      'username profile.fullName profile.avatar',
     );
+    const postData = populatedPost.toObject();
+
+    postData.id = postData._id;
+    if (postData.user) {
+      postData.user.name = postData.user.profile?.fullName || postData.user.username;
+      postData.user.profileImage = postData.user.profile?.avatar || null;
+    }
 
     return res.status(201).json({
       sucess: true,
       message: 'post create sucessfully',
-      post: populatedPost,
+      post: postData,
     });
   } catch (error) {
     return res.status(500).json({
@@ -61,7 +82,7 @@ const getMyPost = async (req, res) => {
   try {
     const userId = req.user.id;
     const posts = await Post.find({ user: userId })
-      .populate('user', 'name username avatar')
+      .populate('user', 'username profile.fullName profile.avatar')
       .sort({ createdAt: -1 });
 
     if (!posts || posts.length === 0) {
@@ -75,7 +96,17 @@ const getMyPost = async (req, res) => {
     return res.status(200).json({
       sucess: 'ok',
       totalCount: posts.length,
-      posts,
+      posts: posts.map((post) => {
+        const postData = post.toObject();
+        postData.id = postData._id;
+
+        if (postData.user) {
+          postData.user.name = postData.user.profile?.fullName || postData.user.username;
+          postData.user.profileImage = postData.user.profile?.avatar || null;
+        }
+
+        return postData;
+      }),
     });
   } catch (error) {
     return res.status(500).json({
@@ -91,7 +122,7 @@ const getPostDetails = async (req, res) => {
     const postId = req.params.postId;
     const post = await Post.findById(postId).populate(
       'user',
-      'name profileImage',
+      'username profile.fullName profile.avatar',
     );
     if (!post) {
       return res.status(400).json({
@@ -100,13 +131,23 @@ const getPostDetails = async (req, res) => {
       });
     }
 
-    const comments = await Comment.find({ post: postId })
-      .populate('user', 'name profileImage')
+    const comments = await Comment.find({
+      'target.type': 'Post',
+      'target.id': postId,
+      parentComment: null,
+    })
       .sort({ createdAt: -1 });
+    const postData = post.toObject();
+
+    postData.id = postData._id;
+    if (postData.user) {
+      postData.user.name = postData.user.profile?.fullName || postData.user.username;
+      postData.user.profileImage = postData.user.profile?.avatar || null;
+    }
 
     return res.status(200).json({
       sucess: 'ok',
-      post,
+      post: postData,
       comments,
     });
   } catch (error) {
@@ -128,7 +169,7 @@ const updatePost = async (req, res) => {
         success: false,
         message: 'post not found',
       });
-    }
+    }  
 
     if (post.user.toString() !== userId) {
       return res.status(203).json({
@@ -138,26 +179,49 @@ const updatePost = async (req, res) => {
     }
 
     if (req.body.content) post.content = req.body.content;
-    if (req.body.tags) post.tags = req.body.tags;
-    if (req.body.isPublic !== undefined) post.isPublic = req.body.isPublic;
+    if (req.body.tags) {
+      post.tags = Array.isArray(req.body.tags)
+        ? req.body.tags
+        : req.body.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean);
+    }
+    if (req.body.isPublic !== undefined) {
+      post.isPublic = req.body.isPublic === true || req.body.isPublic === 'true';
+    }
 
     if (req.files && req.files.length > 0) {
       if (post.media.length > 0) {
-        for (let url of post.media) {
-          const parts = url.split('/');
-          const filename = parts[parts.length - 1];
-          const publicId = filename.split('.')[0];
-          await cloudinary.uploader.destroy(`meroroom/${publicId}`);
+        for (const mediaItem of post.media) {
+          if (mediaItem.public_id) {
+            await cloudinary.uploader.destroy(mediaItem.public_id);
+          }
         }
       }
-      post.media = req.files.map((file) => file.path);
+      post.media = req.files.map((file) => ({
+        url: file.path,
+        public_id: file.filename,
+      }));
     }
 
     await post.save();
+    const updatedPost = await Post.findById(postId).populate(
+      'user',
+      'username profile.fullName profile.avatar',
+    );
+    const postData = updatedPost.toObject();
+
+    postData.id = postData._id;
+    if (postData.user) {
+      postData.user.name = postData.user.profile?.fullName || postData.user.username;
+      postData.user.profileImage = postData.user.profile?.avatar || null;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Post updated successfully',
-      post,
+      post: postData,
     });
   } catch (error) {
     res.status(500).json({
@@ -170,13 +234,23 @@ const updatePost = async (req, res) => {
 
 const randomPosts = async(req,res)=>{
   try {
-    const posts = await Post.find().populate('user', 'name profileImage');
+    const posts = await Post.find().populate('user', 'username profile.fullName profile.avatar');
     if(!posts) return  res.status(200).json({
       
       message: "no post available"
     });
     return res.status(200).json({
-      posts
+      posts: posts.map((post) => {
+        const postData = post.toObject();
+        postData.id = postData._id;
+
+        if (postData.user) {
+          postData.user.name = postData.user.profile?.fullName || postData.user.username;
+          postData.user.profileImage = postData.user.profile?.avatar || null;
+        }
+
+        return postData;
+      })
     })
   } catch (error) {
     res.status(500).json({

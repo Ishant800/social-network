@@ -1,50 +1,43 @@
-import { Search, Bell, MessageSquare, PlusSquare } from 'lucide-react';
-
-import { useDispatch, useSelector } from 'react-redux';
+import { Bell, Search } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 export default function Navbar() {
+  const { user } = useSelector((state) => state.auth);
+  const image =
+    user?.profileImage?.url ||
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4XoGpSkgybe5fubd2XlhO_zNXDF9CjbTrEw&s';
 
-  const dispatch = useDispatch()
-    const {user} = useSelector((state)=> state.auth)
-  // useEffect
-
-
-  const image = user?.profileImage?.url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4XoGpSkgybe5fubd2XlhO_zNXDF9CjbTrEw&s"
-
-   
   return (
-    <header className="w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
-        
-        {/* Logo */}
+    <header className="w-full border-b border-white/60 bg-white/88 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 lg:px-8">
+        <p className="font-display text-xl font-bold tracking-tight text-[#3f3fe3]">
+          Atheneum
+        </p>
+
+        <div className="hidden w-full max-w-md px-4 md:block">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Explore thoughts..."
+              className="w-full rounded-2xl bg-[#dfe3e6] py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none"
+            />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
-            <span className="text-slate-800 font-bold text-xl">Sanyukt</span>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative w-full max-w-md px-4">
-          <Search className="absolute left-7 top-2.5 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search communities, people..."
-            className="w-full rounded-sm border-none outline-none bg-gray-100 py-2.5 pl-11 pr-4 text-sm "
+          <button className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 md:hidden">
+            <Search className="h-5 w-5" />
+          </button>
+          <button className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100">
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-[#4e44d4]" />
+          </button>
+          <img
+            src={image}
+            alt="Profile"
+            className="h-9 w-9 rounded-full object-cover"
           />
-        </div>
-
-        {/* Action Icons */}
-        <div className="flex items-center gap-2 sm:gap-4">
-        
-          
-          <div className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer transition">
-            <Bell className="h-6 w-6" />
-            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold border-2 border-white">
-              3
-            </span>
-          </div>
-          
-          <div className="h-9 w-9 overflow-hidden transition cursor-pointer">
-            <img src={image} alt="Profile" className='rounded-full' />
-          </div>
         </div>
       </div>
     </header>

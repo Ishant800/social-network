@@ -17,6 +17,7 @@ import EditPost from './components/sections/EditPost';
 import CreatePost from './components/post/CreatePost';
 import UserSuggestions from './components/sections/UserSuggestionCard';
 import PostDetails from './pages/PostDetails';
+import BlogDetails from './pages/BlogDetails';
 import Bookmarks from './pages/Bookmarks';
 export default function App() {
 
@@ -40,9 +41,10 @@ export default function App() {
           <Route path="/friendsexplore" element={<UserSuggestions />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile/>} />
-           <Route path="/post/create" element={<CreatePost/>} />
+          <Route path="/post/create" element={<CreatePost/>} />
            <Route path="/post/edit" element={<EditPost/>} />
           <Route path="/post/:postId" element={<PostDetails/>} />
+          <Route path="/blog/:postId" element={<BlogDetails/>} />
           <Route path="/bookmarks" element={<Bookmarks/>} />
           <Route path="/chats" element={<Messages />} />
           <Route path="/login" element={<Signin />} />

@@ -1,28 +1,23 @@
 const mongoose = require('mongoose');
-const likeSchema = mongoose.Schema({
-  // Reference to the User model
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  // Reference to the Post model
-  post: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
-    required: true  
-  },
-  // Boolean status: true = Liked, false = Unliked/Removed
-  isLike: {
-    type: Boolean,
-    default: false,
-    required: true
+
+const LikeSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+  target: {
+    type: {
+      type: String,
+      enum: ["Post", "Blog", "Comment"],
+      required: true
+    },
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      refPath: "target.type"
+    }
   }
-}, {
-  timestamps: true // Adds createdAt and updatedAt automatically
-});
 
+}, { timestamps: true });
 
-likeSchema.index({ user: 1, post: 1 }, { unique: true });
+LikeSchema.index({ userId: 1, "target.type": 1, "target.id": 1 }, { unique: true });
 
-module.exports = mongoose.model('Like', likeSchema);
+module.exports = mongoose.model('Like', LikeSchema);
