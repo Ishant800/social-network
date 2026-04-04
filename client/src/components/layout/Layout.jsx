@@ -13,7 +13,13 @@ export default function Layout({ children }) {
   const isExplorePage = location.pathname === '/explore';
   const isPostDetailsPage = location.pathname.startsWith('/post/');
   const isBlogDetailsPage = location.pathname.startsWith('/blog/');
-  const isWidePage = isProfilePage || isExplorePage || isPostDetailsPage || isBlogDetailsPage;
+  const isDiscussionRoomPage = location.pathname.startsWith('/discussionroom/');
+  const isWidePage =
+    isProfilePage ||
+    isExplorePage ||
+    isPostDetailsPage ||
+    isBlogDetailsPage ||
+    isDiscussionRoomPage;
 
   if (isAuthPage) {
     return <div className="min-h-screen w-full bg-white">{children}</div>;
@@ -25,9 +31,15 @@ export default function Layout({ children }) {
         <Navbar />
       </div>
 
-      <main className="mx-auto max-w-[1440px] px-4 pb-24 pt-20 lg:px-6 lg:pb-8 lg:pt-24">
+      <main
+        className={`mx-auto px-4 pb-24 pt-20 lg:pb-8 lg:pt-24 ${
+          isDiscussionRoomPage ? 'max-w-[1560px] lg:px-5' : 'max-w-360 lg:px-6'
+        }`}
+      >
         <div
-          className={`grid grid-cols-1 lg:gap-8 ${
+          className={`grid grid-cols-1 ${
+            isDiscussionRoomPage ? 'lg:gap-5 xl:gap-6' : 'lg:gap-8'
+          } ${
             isFeedPage
               ? 'lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[256px_minmax(0,1fr)_320px] xl:gap-10'
               : 'lg:grid-cols-[256px_minmax(0,1fr)]'

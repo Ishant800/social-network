@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { ArrowLeft, Image, Video, X, Globe, Lock, Sparkles } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ArrowLeft, Image, X, Globe, Lock, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { createpost } from '../../features/post/postSlice';
 
-export default function CreatePostPage({ onPost }) {
-
+export default function CreatePostPage() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-
+  const { isLoading } = useSelector((state) => state.posts);
 
   if(!user) return (
       <div className="max-w-3xl mx-auto p-6 text-center">
@@ -29,9 +30,8 @@ export default function CreatePostPage({ onPost }) {
   const [tags, setTags] = useState('');
   const [media, setMedia] = useState([]);
   const [isPublic, setIsPublic] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
-  const firstName = user?.name?.split(' ')[0] || 'there';
+  const firstName = user?.profile?.fullName?.split(' ')[0] || user?.username || 'there';
 
   const greetings = [
     `Hey ${firstName}, what's on your mind?`,
@@ -58,8 +58,7 @@ export default function CreatePostPage({ onPost }) {
 
     const newMedia = files.slice(0, remainingSlots).map(file => ({
       file,
-      preview: URL.createObjectURL(file),
-      type: file.type.startsWith('video/') ? 'video' : 'image'
+      preview: URL.createObjectURL(file)
     }));
 
     setMedia(prev => [...prev, ...newMedia]);
@@ -88,8 +87,6 @@ export default function CreatePostPage({ onPost }) {
       return;
     }
 
-    setSubmitting(true);
-
     const formData = new FormData();
 
     formData.append('content', content);
@@ -101,16 +98,11 @@ export default function CreatePostPage({ onPost }) {
     });
 
     try {
-
-      await onPost?.(formData);
-
+      await dispatch(createpost(formData)).unwrap();
       handleDiscard();
-
     } catch (err) {
       console.error(err);
     }
-
-    setSubmitting(false);
   };
 
   // cleanup previews
@@ -121,17 +113,18 @@ export default function CreatePostPage({ onPost }) {
   }, [media]);
 
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full bg-[#f5f7f9]">
 
       {/* HEADER */}
     
-      <div className="sticky top-0 bg-white border-b border-slate-100">
+      <div className="sticky top-0 z-10 border-b border-slate-200 bg-[#f5f7f9]/95 backdrop-blur">
 
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
 
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 rounded-lg"
+            className="rounded-xl p-2 transition hover:bg-white"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600" />
           </button>
@@ -146,16 +139,16 @@ export default function CreatePostPage({ onPost }) {
 
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-5 pb-28">
+      <div className="mx-auto max-w-2xl px-4 py-5 pb-24">
 
         {/* Greeting */}
 
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2 px-1">
           <Sparkles className="w-4 h-4 text-indigo-500"/>
           <p className="text-sm text-slate-700 font-medium">{greeting}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-sm bg-slate-50 p-5 shadow-sm md:p-6">
 
           {/* CONTENT */}
 
@@ -164,7 +157,7 @@ export default function CreatePostPage({ onPost }) {
             onChange={(e)=>setContent(e.target.value)}
             placeholder="Share something..."
             rows={10}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full resize-none rounded-sm border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#4e44d4]"
           />
 
           {/* TAGS */}
@@ -173,30 +166,26 @@ export default function CreatePostPage({ onPost }) {
             value={tags}
             onChange={(e)=>setTags(e.target.value)}
             placeholder="tags: tech, coding"
-            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#4e44d4]"
           />
 
           {/* MEDIA PREVIEW */}
 
           {media.length > 0 && (
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 
               {media.map((item,index)=>(
                 <div
                   key={index}
-                  className="relative aspect-square rounded-lg overflow-hidden"
+                  className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100"
                 >
-
-                  {item.type === "video"
-                    ? <video src={item.preview} className="w-full h-full object-cover"/>
-                    : <img src={item.preview} className="w-full h-full object-cover"/>
-                  }
+                  <img src={item.preview} className="w-full h-full object-cover" />
 
                   <button
                     type="button"
                     onClick={()=>removeMedia(index)}
-                    className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full"
+                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
                   >
                     <X className="w-3 h-3"/>
                   </button>
@@ -212,33 +201,18 @@ export default function CreatePostPage({ onPost }) {
 
           {media.length < 5 && (
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
 
-              <label className="flex items-center gap-2 text-sm border border-slate-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50">
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#4e44d4] hover:text-[#4e44d4]">
 
                 <Image className="w-4 h-4"/>
 
-                Photo
+                Add Photo
 
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={handleMediaChange}
-                  className="hidden"
-                />
-
-              </label>
-
-              <label className="flex items-center gap-2 text-sm border border-slate-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50">
-
-                <Video className="w-4 h-4"/>
-
-                Video
-
-                <input
-                  type="file"
-                  accept="video/*"
                   onChange={handleMediaChange}
                   className="hidden"
                 />
@@ -255,44 +229,44 @@ export default function CreatePostPage({ onPost }) {
 
           {/* SIMPLE PRIVACY */}
 
-          <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+            <div className="flex items-center gap-2">
+              {isPublic
+                ? <span className="flex items-center gap-1.5">
+                    <Globe className="w-4 h-4"/> Public post
+                  </span>
+                : <span className="flex items-center gap-1.5">
+                    <Lock className="w-4 h-4"/> Private post
+                  </span>
+              }
+            </div>
 
             <input
               type="checkbox"
               checked={isPublic}
               onChange={()=>setIsPublic(!isPublic)}
-              className="w-4 h-4 accent-indigo-600"
+              className="h-4 w-4 accent-[#4e44d4]"
             />
-
-            {isPublic
-              ? <span className="flex items-center gap-1">
-                  <Globe className="w-4 h-4"/> Public post
-                </span>
-              : <span className="flex items-center gap-1">
-                  <Lock className="w-4 h-4"/> Private post
-                </span>
-            }
-
           </div>
 
           {/* ACTION BUTTONS */}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2">
 
             <button
               type="button"
               onClick={handleDiscard}
-              className="flex-1 py-2.5 text-sm font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+              className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Discard
             </button>
 
             <button
               type="submit"
-              disabled={submitting || (!content.trim() && media.length===0)}
-              className="flex-1 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+              disabled={isLoading || (!content.trim() && media.length===0)}
+              className="flex-1 rounded-xl bg-[#02a7ed] py-3 text-sm font-semibold text-white transition hover:bg-[#4339bb] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? "Posting..." : "Post"}
+              {isLoading ? "Posting..." : "Post"}
             </button>
 
           </div>

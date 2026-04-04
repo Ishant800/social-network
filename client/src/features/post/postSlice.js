@@ -5,6 +5,7 @@ const initialState ={
     posts:[],
     likedPostIds:[],
     postDetails:null,
+    blogDetails:null,
     bookmarks:[],
     isLoading:false,
     isError:false,
@@ -66,6 +67,17 @@ export const getPostDetails = createAsyncThunk(
             return await postService.getPostDetails(postId)
         } catch (error) {
             return thunkAPI.rejectWithValue(error.response?.data?.error || error.message)
+        }
+    }
+)
+
+export const getBlogDetails = createAsyncThunk(
+    "blog/details",
+    async(blogId,thunkAPI)=>{
+        try {
+            return await postService.getBlogDetails(blogId)
+        } catch (error) {
+            return thunkAPI.rejectWithValue(error.response?.data?.error || error.response?.data?.message || error.message)
         }
     }
 )
@@ -172,6 +184,19 @@ const postSlice = createSlice({
             state.postDetails = action.payload;
         })
         .addCase(getPostDetails.rejected,(state,action)=>{
+            state.isLoading = false;
+            state.isError = true;
+            state.message = action.payload;
+        })
+        .addCase(getBlogDetails.pending,(state)=>{
+            state.isLoading = true;
+        })
+        .addCase(getBlogDetails.fulfilled,(state,action)=>{
+            state.isLoading = false;
+            state.isSuccess = true;
+            state.blogDetails = action.payload;
+        })
+        .addCase(getBlogDetails.rejected,(state,action)=>{
             state.isLoading = false;
             state.isError = true;
             state.message = action.payload;

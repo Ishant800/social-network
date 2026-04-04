@@ -19,7 +19,7 @@ function formatCommentTime(value) {
   return `${diffDays}d ago`;
 }
 
-export default function CommentSection({ postId, compact = false }) {
+export default function CommentSection({ postId, compact = false, targetType = 'Post', title = 'Discussion' }) {
   const { user } = useSelector((state) => state.auth);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -37,7 +37,7 @@ export default function CommentSection({ postId, compact = false }) {
       try {
         setLoading(true);
         setError(null);
-        const response = await API.get(`/comment/getComment/${postId}`);
+          const response = await API.get(`/comment/getComment/${postId}?type=${targetType}`);
         if (isMounted) {
           setComments(response.data?.comments || []);
         }
@@ -59,7 +59,7 @@ export default function CommentSection({ postId, compact = false }) {
     return () => {
       isMounted = false;
     };
-  }, [postId]);
+  }, [postId, targetType]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -70,6 +70,7 @@ export default function CommentSection({ postId, compact = false }) {
       setError(null);
       const response = await API.post(`/comment/create/${postId}`, {
         text: commentText.trim(),
+        targetType,
       });
       setComments((prev) => [response.data.comment, ...prev]);
       setCommentText('');
@@ -133,28 +134,23 @@ export default function CommentSection({ postId, compact = false }) {
   return (
     <section className={compact ? 'space-y-5' : 'space-y-6'}>
       <div>
-        <h3 className="font-['Plus_Jakarta_Sans'] text-xl font-bold text-slate-900">Discussion</h3>
-        <p className="mt-1 text-sm text-slate-500">Share your thoughts and manage your comments here.</p>
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
       </div>
 
-      <form
-        className={`rounded-[1.5rem] bg-white shadow-sm ${compact ? 'p-4' : 'p-5'}`}
-        onSubmit={handleSubmit}
-      >
-        <textarea
-          value={commentText}
-          onChange={(event) => setCommentText(event.target.value)}
-          placeholder="Write a comment..."
-          className="min-h-[96px] w-full resize-none rounded-[1rem] bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
-        />
-        <div className="mt-3 flex justify-end">
+      <form className="rounded-xl border border-slate-200 bg-white p-3" onSubmit={handleSubmit}>
+        <div className="relative">
+          <input
+            value={commentText}
+            onChange={(event) => setCommentText(event.target.value)}
+            placeholder="Write a comment..."
+            className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-11 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          />
           <button
             type="submit"
             disabled={!commentText.trim() || submitting}
-            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-[#4e44d4] disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Post comment
           </button>
         </div>
       </form>
@@ -180,7 +176,7 @@ export default function CommentSection({ postId, compact = false }) {
             `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}`;
 
           return (
-            <article key={commentId} className="rounded-[1.5rem] bg-white p-4 shadow-sm">
+            <article key={commentId} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-start gap-3">
                 <img src={avatar} alt={comment.user?.name || 'User'} className="h-10 w-10 rounded-full object-cover" />
 
@@ -233,13 +229,13 @@ export default function CommentSection({ postId, compact = false }) {
                       <textarea
                         value={editingText}
                         onChange={(event) => setEditingText(event.target.value)}
-                        className="min-h-[88px] w-full resize-none rounded-[1rem] bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none"
+                        className="min-h-[72px] w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none"
                       />
                       <div className="mt-3 flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={cancelEditing}
-                          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600"
                         >
                           Cancel
                         </button>
@@ -247,7 +243,7 @@ export default function CommentSection({ postId, compact = false }) {
                           type="button"
                           onClick={() => handleUpdate(commentId)}
                           disabled={!editingText.trim() || actionLoadingId === commentId}
-                          className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          className="rounded-lg bg-[#4e44d4] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
                         >
                           {actionLoadingId === commentId ? 'Saving...' : 'Save'}
                         </button>

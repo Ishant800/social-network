@@ -3,22 +3,79 @@ const Comment = require('../models/comment.model');
 const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
 
+const slugify = (value = '') =>
+  value
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const splitTags = (tags) => {
+  if (!tags) {
+    return [];
+  }
+
+  if (Array.isArray(tags)) {
+    return tags.map((tag) => tag.trim()).filter(Boolean);
+  }
+
+  return tags
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+};
+
+const calculateReadTime = (body = '') => {
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+};
+
+const buildPublishedAt = (status, publishedAt, currentPublishedAt) => {
+  if (publishedAt) {
+    const parsedDate = new Date(publishedAt);
+    return Number.isNaN(parsedDate.getTime()) ? currentPublishedAt : parsedDate;
+  }
+
+  if (status === 'published') {
+    return currentPublishedAt || new Date();
+  }
+
+  return currentPublishedAt;
+};
+
+const generateUniqueSlug = async (title, excludeBlogId) => {
+  const baseSlug = slugify(title) || `blog-${Date.now()}`;
+  let slug = baseSlug;
+  let suffix = 1;
+
+  while (true) {
+    const existingBlog = await Blog.findOne({
+      slug,
+      ...(excludeBlogId ? { _id: { $ne: excludeBlogId } } : {}),
+    }).select('_id');
+
+    if (!existingBlog) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+};
+
 const createBlog = async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
-      title,
-      slug,
-      body,
-      summary,
-      categoryName,
-      categorySlug,
-      tags,
-      readTime,
-      status,
-      isFeatured,
-      publishedAt,
-    } = req.body;
+    const { title, body, summary, categoryName, tags, status, isFeatured, publishedAt } = req.body;
+
+    const trimmedTitle = title?.trim();
+    const trimmedBody = body?.trim();
+    const trimmedSummary = summary?.trim();
+    const trimmedCategoryName = categoryName?.trim();
+    const normalizedStatus = status === 'published' ? 'published' : 'draft';
 
     const user = await User.findById(userId).select('username profile.avatar');
     if (!user) {
@@ -28,15 +85,16 @@ const createBlog = async (req, res) => {
       });
     }
 
-    let tagsArray = [];
-
-if (req.body.tags) {
-  if (Array.isArray(req.body.tags)) {
-    tagsArray = req.body.tags;
-  } else {
-    tagsArray = [req.body.tags];
-  }
-}
+    if (!trimmedTitle || !trimmedBody) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and article content are required',
+      });
+    }
+    const slug = await generateUniqueSlug(trimmedTitle);
+    const tagsArray = splitTags(tags);
+    const readTime = calculateReadTime(trimmedBody);
+    const categorySlug = slugify(trimmedCategoryName);
 
     const blog = await Blog.create({
       author: {
@@ -44,12 +102,12 @@ if (req.body.tags) {
         username: user.username,
         avatar: user.profile?.avatar?.url || '',
       },
-      title,
+      title: trimmedTitle,
       slug,
       content: {
-        body,
+        body: trimmedBody,
       },
-      summary,
+      summary: trimmedSummary || undefined,
       coverImage: req.file
         ? {
             url: req.file.path,
@@ -57,14 +115,14 @@ if (req.body.tags) {
           }
         : undefined,
       category: {
-        name: categoryName,
-        slug: categorySlug,
+        name: trimmedCategoryName || undefined,
+        slug: categorySlug || undefined,
       },
       tags: tagsArray,
       readTime,
-      status: status || 'draft',
+      status: normalizedStatus,
       isFeatured: isFeatured === true || isFeatured === 'true',
-      publishedAt: publishedAt || undefined,
+      publishedAt: buildPublishedAt(normalizedStatus, publishedAt),
     });
 
     await User.findByIdAndUpdate(userId, { $inc: { 'stats.blogs': 1 } });
@@ -151,28 +209,48 @@ const updateBlog = async (req, res) => {
       });
     }
 
-    if (req.body.title) blog.title = req.body.title;
-    if (req.body.slug) blog.slug = req.body.slug;
-    if (req.body.body) blog.content.body = req.body.body;
-    if (req.body.summary) blog.summary = req.body.summary;
-    if (req.body.categoryName) blog.category.name = req.body.categoryName;
-    if (req.body.categorySlug) blog.category.slug = req.body.categorySlug;
-    if (req.body.readTime) blog.readTime = req.body.readTime;
-    if (req.body.status) blog.status = req.body.status;
+    if (req.body.title !== undefined) {
+      const trimmedTitle = req.body.title.trim();
+
+      if (!trimmedTitle) {
+        return res.status(400).json({
+          success: false,
+          message: 'Title cannot be empty',
+        });
+      }
+
+      blog.title = trimmedTitle;
+      blog.slug = await generateUniqueSlug(trimmedTitle, blog._id);
+    }
+
+    if (req.body.body !== undefined) {
+      const trimmedBody = req.body.body.trim();
+
+      if (!trimmedBody) {
+        return res.status(400).json({
+          success: false,
+          message: 'Article content cannot be empty',
+        });
+      }
+
+      blog.content.body = trimmedBody;
+      blog.readTime = calculateReadTime(trimmedBody);
+    }
+
+    if (req.body.summary !== undefined) blog.summary = req.body.summary.trim() || undefined;
+    if (req.body.categoryName !== undefined) {
+      const trimmedCategoryName = req.body.categoryName.trim();
+      blog.category.name = trimmedCategoryName || undefined;
+      blog.category.slug = slugify(trimmedCategoryName) || undefined;
+    }
+    if (req.body.status) blog.status = req.body.status === 'published' ? 'published' : 'draft';
     if (req.body.isFeatured !== undefined) {
       blog.isFeatured = req.body.isFeatured === true || req.body.isFeatured === 'true';
     }
-    if (req.body.publishedAt) blog.publishedAt = req.body.publishedAt;
+    blog.publishedAt = buildPublishedAt(blog.status, req.body.publishedAt, blog.publishedAt);
 
-    if (req.body.tags) {
-      if (Array.isArray(req.body.tags)) {
-        blog.tags = req.body.tags;
-      } else {
-        blog.tags = req.body.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean);
-      }
+    if (req.body.tags !== undefined) {
+      blog.tags = splitTags(req.body.tags);
     }
 
     if (req.file) {

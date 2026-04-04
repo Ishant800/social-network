@@ -5,7 +5,7 @@ import {
   followUser,
   getUserSuggestions,
   unfollowUser,
-} from "../../features/users/userSlice";
+} from "../features/users/userSlice";
 import { Link } from "react-router-dom";
 
 export default function UserSuggestions({ limit = 10 }) {
