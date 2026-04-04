@@ -33,7 +33,7 @@ export default function Layout({ children }) {
 
       <main
         className={`mx-auto px-4 pb-24 pt-20 lg:pb-8 lg:pt-24 ${
-          isDiscussionRoomPage ? 'max-w-[1560px] lg:px-5' : 'max-w-360 lg:px-6'
+          isDiscussionRoomPage ? 'max-w-390 lg:px-5' : 'max-w-360 lg:px-6'
         }`}
       >
         <div
