@@ -64,7 +64,7 @@ export default function Profile() {
 
   return (
     <main className="w-full bg-[#f5f7f9] py-4">
-      <div className="mx-auto max-w-[1100px] px-4">
+      <div className="mx-auto max-w-275 px-4">
         <section className="rounded-[2rem] bg-white p-6 shadow-sm md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end">
             <img

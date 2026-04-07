@@ -34,7 +34,7 @@ export default function Layout({ children }) {
   }
 
   return (
-    <div className="app-shell min-h-dvh w-full text-slate-900">
+    <div className="app-shell min-h-dvh w-full ">
       <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-white/90 shadow-sm shadow-teal-900/5 backdrop-blur-md">
         <Navbar />
       </div>

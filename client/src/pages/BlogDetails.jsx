@@ -4,13 +4,20 @@ import {
   Clock3,
   MessageCircle,
   Share2,
+  Heart,
+  Eye,
+  Bookmark,
+  ThumbsUp,
+  Reply,
+  Send,
+  User,
+  Users,
+  MessageSquare,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getBlogDetails } from '../features/post/postSlice';
-import postService from '../features/post/postService';
+import API from '../api/axios';
 
 const formatDate = (value) => {
   if (!value) return '';
@@ -29,23 +36,23 @@ const getAuthor = (blog) => {
     avatar:
       author.avatar?.trim() ||
       author.profileImage?.url ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(author.username || 'Writer')}`,
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(author.username || 'Writer')}&background=3b82f6&color=ffffff`,
     id: author._id || author.id,
   };
 };
 
 const getStats = (blog) => ({
-  views: blog?.stats?.views ?? 0,
-  comments: blog?.stats?.comments ?? blog?.commentsCount ?? 0,
+  views: blog?.stats?.views ?? blog?.views ?? 0,
+  comments: blog?.stats?.comments ?? blog?.commentsCount ?? blog?.comments?.length ?? 0,
+  likes: blog?.stats?.likes ?? blog?.likesCount ?? 0,
 });
 
 const getReadTime = (blog) => blog?.readTime || 1;
 
 const getBlogBody = (blog) => {
-  if (typeof blog?.content?.body === 'string' && blog.content.body.trim()) return blog.content.body;
   if (typeof blog?.content === 'string' && blog.content.trim()) return blog.content;
+  if (typeof blog?.content?.body === 'string' && blog.content.body.trim()) return blog.content.body;
   if (typeof blog?.body === 'string' && blog.body.trim()) return blog.body;
-  if (typeof blog?.summary === 'string' && blog.summary.trim()) return blog.summary;
   return '';
 };
 
@@ -56,259 +63,268 @@ const parseTags = (tags) => {
     .filter(Boolean);
 };
 
-const renderBlogContent = (body) => {
-  if (!body) return <p className="italic text-slate-500">No content available.</p>;
-
-  const lines = body
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
-
-  const elements = [];
-  let listItems = [];
-  let inCodeBlock = false;
-  let codeContent = [];
-
-  const flushList = () => {
-    if (listItems.length === 0) return;
-    elements.push(
-      <ul key={`list-${elements.length}`} className="ml-5 list-disc space-y-2 text-[1.02rem] leading-8 text-slate-700">
-        {listItems.map((item, idx) => (
-          <li key={idx}>{item}</li>
-        ))}
-      </ul>,
-    );
-    listItems = [];
-  };
-
-  const flushCodeBlock = () => {
-    if (codeContent.length === 0) return;
-    elements.push(
-      <pre
-        key={`code-${elements.length}`}
-        className="overflow-x-auto rounded-2xl bg-slate-900 p-5 text-sm text-slate-100"
-      >
-        <code>{codeContent.join('\n')}</code>
-      </pre>,
-    );
-    codeContent = [];
-  };
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    if (line.startsWith('```')) {
-      if (inCodeBlock) {
-        flushCodeBlock();
-        inCodeBlock = false;
-      } else {
-        flushList();
-        inCodeBlock = true;
-      }
-      continue;
-    }
-
-    if (inCodeBlock) {
-      codeContent.push(line);
-      continue;
-    }
-
-    if (line.startsWith('### ')) {
-      flushList();
-      elements.push(
-        <h3 key={elements.length} className="mt-10 font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900">
-          {line.replace('### ', '')}
-        </h3>,
-      );
-      continue;
-    }
-
-    if (line.startsWith('## ')) {
-      flushList();
-      elements.push(
-        <h2 key={elements.length} className="mt-12 font-['Plus_Jakarta_Sans'] text-3xl font-bold tracking-tight text-slate-900">
-          {line.replace('## ', '')}
-        </h2>,
-      );
-      continue;
-    }
-
-    if (line.startsWith('- ') || line.startsWith('* ') || /^\d+\.\s/.test(line)) {
-      listItems.push(line.replace(/^[-*]\s|^(\d+\.\s)/, ''));
-      continue;
-    }
-
-    flushList();
-
-    const formattedLine = line
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-indigo-600">$1</code>');
-
-    elements.push(
-      <p
-        key={elements.length}
-        className="text-[1.06rem] leading-8 text-slate-700"
-        dangerouslySetInnerHTML={{ __html: formattedLine }}
-      />,
-    );
-  }
-
-  flushList();
-  flushCodeBlock();
-
-  return <div className="space-y-6">{elements}</div>;
+// Render HTML content directly
+const renderBlogContent = (htmlContent) => {
+  if (!htmlContent) return <p className="text-gray-500">No content available.</p>;
+  
+  let formattedContent = htmlContent;
+  
+  formattedContent = formattedContent.replace(/<p>/g, '<p class="mb-4 leading-relaxed">');
+  formattedContent = formattedContent.replace(/<h1>/g, '<h1 class="text-3xl font-bold mt-8 mb-4">');
+  formattedContent = formattedContent.replace(/<h2>/g, '<h2 class="text-2xl font-bold mt-8 mb-3">');
+  formattedContent = formattedContent.replace(/<h3>/g, '<h3 class="text-xl font-bold mt-6 mb-3">');
+  formattedContent = formattedContent.replace(/<ul>/g, '<ul class="list-disc ml-6 mb-4 space-y-1">');
+  formattedContent = formattedContent.replace(/<ol>/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">');
+  formattedContent = formattedContent.replace(/<li>/g, '<li class="text-gray-700">');
+  formattedContent = formattedContent.replace(/<blockquote>/g, '<blockquote class="border-l-4 border-blue-500 bg-blue-50 p-4 my-4 italic rounded-r-lg">');
+  formattedContent = formattedContent.replace(/<code>/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-blue-600">');
+  formattedContent = formattedContent.replace(/<pre>/g, '<pre class="bg-gray-900 rounded-lg p-4 my-4 overflow-x-auto">');
+  formattedContent = formattedContent.replace(/<strong>/g, '<strong class="font-bold text-gray-900">');
+  formattedContent = formattedContent.replace(/<em>/g, '<em class="italic text-gray-700">');
+  
+  return (
+    <div 
+      className="blog-content"
+      dangerouslySetInnerHTML={{ __html: formattedContent }}
+    />
+  );
 };
 
-const DiscussionCard = ({ postId, comments }) => (
-  <section className="rounded-2xl border border-teal-200/80 bg-gradient-to-b from-teal-50/90 to-white p-5 shadow-sm">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-800">
-          Discussion
-        </p>
-        <h3 className="mt-2 text-base font-bold text-slate-900">Reader room</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Continue the conversation in the live discussion tied to this article.
-        </p>
-      </div>
-      <div className="rounded-2xl bg-white/90 p-2 text-teal-700">
-        <MessageCircle className="h-5 w-5" />
-      </div>
-    </div>
-
-    <div className="mt-4 text-xs text-slate-600">
-      <span className="inline-flex items-center gap-1.5">
-        <MessageCircle className="h-4 w-4" />
-        {comments} comment{comments === 1 ? '' : 's'} on this article
-      </span>
-    </div>
-
-    <Link
-      to={`/discussionroom/${postId}`}
-      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800"
-    >
-      Open discussion room
-      <ChevronRight className="h-4 w-4" />
-    </Link>
-  </section>
-);
-
-const SuggestedBlogCard = ({ blog }) => (
-  <Link
-    to={`/blog/${blog._id || blog.id}`}
-    className="group block rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:border-slate-300 hover:shadow-md"
-  >
-    {blog.coverImage?.url && (
-      <div className="mb-3 overflow-hidden rounded-xl bg-slate-100">
-        <img
-          src={blog.coverImage.url.trim()}
-          alt={blog.title}
-          className="h-24 w-full object-cover transition group-hover:scale-105"
-        />
-      </div>
-    )}
-    <h4 className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-indigo-600">
-      {blog.title}
-    </h4>
-    <p className="mt-1 line-clamp-2 text-xs text-slate-500">{blog.summary}</p>
-    <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-      <CalendarDays className="h-3 w-3" />
-      {formatDate(blog.publishedAt || blog.createdAt)}
-    </div>
-  </Link>
-);
-
-function RelatedFromApi({ blogId, categoryName }) {
-  const [related, setRelated] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!blogId || !categoryName) {
-      setRelated([]);
-      setLoading(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await postService.exploreBlogs({
-          exclude: String(blogId),
-          category: categoryName,
-          limit: 4,
-        });
-        if (!cancelled) setRelated(data.blogs || []);
-      } catch {
-        if (!cancelled) setRelated([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [blogId, categoryName]);
-
-  if (loading || related.length === 0) return null;
+// Comment Component
+function Comment({ comment, depth = 0 }) {
+  const [showReply, setShowReply] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [liked, setLiked] = useState(false);
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-      <h3 className="text-base font-bold text-slate-900">More in {categoryName}</h3>
-      <p className="mt-1 text-sm text-slate-500">Other published articles in this category</p>
-      <div className="mt-4 space-y-3">
-        {related.map((blog) => (
-          <SuggestedBlogCard key={blog._id || blog.id} blog={blog} />
-        ))}
+    <div className={`${depth > 0 ? 'ml-8 pl-4 border-l-2 border-gray-100' : ''}`}>
+      <div className="py-3">
+        <div className="flex items-start gap-3">
+          <img
+            src={comment.avatar || `https://ui-avatars.com/api/?name=${comment.author}&background=3b82f6&color=ffffff`}
+            alt={comment.author}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-gray-900">{comment.author}</span>
+              <span className="text-xs text-gray-400">{comment.time || 'Just now'}</span>
+            </div>
+            <p className="text-sm text-gray-700 mt-1">{comment.text}</p>
+            <div className="flex items-center gap-4 mt-2">
+              <button
+                onClick={() => setLiked(!liked)}
+                className={`flex items-center gap-1 text-xs ${liked ? 'text-blue-600' : 'text-gray-400'} hover:text-blue-600 transition`}
+              >
+                <ThumbsUp className="h-3 w-3" />
+                {liked ? 'Liked' : 'Like'}
+              </button>
+              <button
+                onClick={() => setShowReply(!showReply)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+              >
+                <Reply className="h-3 w-3" />
+                Reply
+              </button>
+            </div>
+
+            {showReply && (
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Write a reply..."
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
+  );
+}
+
+// Combined Discussion Section (Comments + Live Discussion)
+function DiscussionSection({ comments = [], postId }) {
+  const [activeTab, setActiveTab] = useState('comments');
+  const [newComment, setNewComment] = useState('');
+
+  const sampleComments = [
+    { author: 'Sarah Johnson', text: 'This is incredibly insightful! Thanks for sharing.', time: '2 hours ago', avatar: '' },
+    { author: 'Michael Chen', text: 'I have a different perspective on this. Would love to discuss further.', time: '5 hours ago', avatar: '' },
+    { author: 'Emma Watson', text: 'The part about practical applications really stood out to me.', time: '1 day ago', avatar: '' },
+  ];
+
+  const displayComments = comments.length > 0 ? comments : sampleComments;
+
+  return (
+    <div className="mt-8 border-t border-gray-100 pt-6">
+      {/* Tab Buttons */}
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setActiveTab('comments')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+            activeTab === 'comments'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          Comments ({displayComments.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('live')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+            activeTab === 'live'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Live Discussion
+          <span className="ml-1 w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+        </button>
+      </div>
+
+      {/* Comments Tab Content */}
+      {activeTab === 'comments' && (
+        <div>
+          {/* Write Comment */}
+          <div className="flex items-start gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <User className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add to the discussion..."
+                rows="3"
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+              <div className="flex justify-end mt-2">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                  Post Comment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Comments List */}
+          <div className="space-y-1">
+            {displayComments.map((comment, idx) => (
+              <Comment key={idx} comment={comment} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Live Discussion Tab Content */}
+      {activeTab === 'live' && (
+        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Live Now</span>
+              </div>
+              <h3 className="mt-2 text-lg font-bold text-gray-900">Join the Live Discussion</h3>
+              <p className="mt-1 text-sm text-gray-600">
+                Chat in real-time with readers and the author
+              </p>
+            </div>
+            <div className="rounded-full bg-blue-100 p-2.5">
+              <MessageCircle className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <MessageCircle className="h-3.5 w-3.5" />
+              {displayComments.length} people discussing
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+              12 active now
+            </span>
+          </div>
+
+          <Link
+            to={`/discussionroom/${postId}`}
+            className="mt-5 flex items-center justify-between w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium transition"
+          >
+            Join live discussion room
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function BlogDetails() {
   const { postId } = useParams();
-  const dispatch = useDispatch();
-  const { posts, blogDetails, isLoading, isError, message } = useSelector((state) => state.posts);
+  const [blog, setBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [liked, setLiked] = useState(false);
 
-  const blog = useMemo(() => {
-    const fromList = posts?.find(
-      (item) => item?.feedType === 'blog' && (item._id || item.id) === postId,
-    );
-    if (fromList) return fromList;
-    if ((blogDetails?._id || blogDetails?.id) === postId) return blogDetails;
-    return null;
-  }, [posts, blogDetails, postId]);
-
+  // Fetch blog data directly
   useEffect(() => {
-    if (!postId || blog) return;
-    dispatch(getBlogDetails(postId));
-  }, [dispatch, postId, blog]);
+    const fetchBlog = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get(`/blog/blog-details/${postId}`);
+        if (response.data.success) {
+          setBlog(response.data.blog);
+        } else {
+          setError('Blog not found');
+        }
+      } catch (err) {
+        console.error('Error fetching blog:', err);
+        setError(err.response?.data?.message || 'Failed to load blog');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (isLoading && !blog) {
+    if (postId) {
+      fetchBlog();
+    }
+  }, [postId]);
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: blog?.title,
+        text: blog?.summary,
+        url: window.location.href,
+      });
+    } catch {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="mx-auto max-w-[1240px] px-4 py-4">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <PostSkeleton />
       </div>
     );
   }
 
-  if (isError) {
+  if (error || !blog) {
     return (
-      <div className="mx-auto max-w-[1240px] px-4 py-4">
-        <div className="rounded-2xl border border-rose-100 bg-white p-4 text-sm text-rose-600">
-          {message || 'Something went wrong while loading this blog.'}
-        </div>
-      </div>
-    );
-  }
-
-  if (!blog) {
-    return (
-      <div className="mx-auto max-w-[1240px] px-4 py-4">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600">
-          Blog not found.
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
+          {error || 'Blog not found'}
         </div>
       </div>
     );
@@ -320,115 +336,191 @@ export default function BlogDetails() {
   const readTime = getReadTime(blog);
   const articleBody = getBlogBody(blog);
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: blog.title,
-        text: blog.summary,
-        url: window.location.href,
-      });
-    } catch {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
-    }
-  };
-
   return (
-    <div className="mx-auto w-full max-w-[1380px] px-3 py-3 sm:px-6">
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <article className="min-w-0">
-          <header className="mx-auto max-w-[760px] border-b border-slate-200/80 pb-8">
-            {blog?.category?.name && (
-              <span className="inline-flex rounded-full bg-[#eef1ff] px-3 py-1 text-xs font-semibold text-[#5b61d6]">
-                {blog.category.name}
-              </span>
-            )}
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* Main Content */}
+      <article>
+        {/* Header */}
+        <header className="pb-6 border-b border-gray-100">
+          {blog?.category?.name && (
+            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
+              {blog.category.name}
+            </span>
+          )}
 
-            <h1 className="mt-4 max-w-[16ch] font-['Plus_Jakarta_Sans'] text-[2.1rem] font-bold leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-[3.5rem]">
-              {blog?.title}
-            </h1>
+          <h1 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+            {blog?.title}
+          </h1>
 
-            {blog?.summary && (
-              <p className="mt-5 max-w-[680px] text-lg leading-8 text-slate-600">
-                {blog.summary}
-              </p>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-3">
-                <img src={author.avatar} alt={author.name} className="h-11 w-11 rounded-full object-cover" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">{author.name}</p>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="h-4 w-4" />
-                      {formatDate(blog.publishedAt || blog.createdAt)}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock3 className="h-4 w-4" />
-                      {readTime} min read
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  to={`/discussionroom/${postId}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Discuss Live
-                </Link>
-                <button
-                  onClick={handleShare}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {blog?.coverImage?.url && (
-            <div className="mx-auto my-10 max-w-[980px] overflow-hidden rounded-[28px] bg-slate-100 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)]">
-              <img
-                src={blog.coverImage.url.trim()}
-                alt={blog.title || 'Blog cover'}
-                className="h-[260px] w-full object-cover sm:h-[420px]"
-              />
+          {/* Summary */}
+          {blog?.summary && (
+            <div className="mt-4 text-lg text-gray-600 leading-relaxed border-l-4 border-blue-500 pl-4 italic">
+              {blog.summary}
             </div>
           )}
 
-          <div className="mx-auto max-w-[760px]">
-            <div className="mt-10">
-              {renderBlogContent(articleBody)}
-            </div>
-
-            {tags.length > 0 && (
-              <div className="mt-10 border-t border-slate-200/80 pt-6">
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+          {/* Author & Meta */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src={author.avatar} alt={author.name} className="w-10 h-10 rounded-full object-cover" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{author.name}</p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {formatDate(blog.publishedAt || blog.createdAt)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {readTime} min read
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
 
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLiked(!liked)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                  liked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${liked ? 'fill-red-600' : ''}`} />
+                {stats.likes}
+              </button>
+              <button
+                onClick={() => setBookmarked(!bookmarked)}
+                className={`p-1.5 rounded-full transition ${
+                  bookmarked ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-blue-600' : ''}`} />
+              </button>
+              <button
+                onClick={handleShare}
+                className="p-1.5 rounded-full text-gray-500 hover:text-gray-700 transition"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
           </div>
-        </article>
+        </header>
 
-        <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <DiscussionCard postId={postId} comments={stats.comments} />
-          <RelatedFromApi blogId={blog._id || blog.id} categoryName={blog.category?.name} />
-        </aside>
-      </div>
+        {/* Cover Image */}
+        {blog?.coverImage?.url && (
+          <div className="my-8 rounded-xl overflow-hidden bg-gray-100 shadow-md">
+            <img
+              src={blog.coverImage.url.trim()}
+              alt={blog.title}
+              className="w-full h-auto object-cover max-h-[500px]"
+            />
+          </div>
+        )}
+
+        {/* Blog Body */}
+        <div className="mt-8">
+          {renderBlogContent(articleBody)}
+        </div>
+
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span key={tag} className="bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Stats Row */}
+        <div className="mt-6 flex items-center gap-6 text-sm text-gray-500 py-4 border-t border-gray-100">
+          <span className="flex items-center gap-1.5">
+            <Eye className="h-4 w-4" />
+            {stats.views} views
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Heart className="h-4 w-4" />
+            {stats.likes} likes
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MessageCircle className="h-4 w-4" />
+            {stats.comments} comments
+          </span>
+        </div>
+
+        {/* Discussion Section (Comments + Live Discussion Tabs) */}
+        <DiscussionSection comments={blog?.comments || []} postId={postId} />
+      </article>
+
+      {/* Custom CSS for blog content */}
+      <style>{`
+        .blog-content p {
+          margin-bottom: 1.5rem;
+          line-height: 1.75;
+          color: #374151;
+        }
+        .blog-content h1 {
+          font-size: 2rem;
+          font-weight: 700;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+          color: #111827;
+        }
+        .blog-content h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-top: 1.75rem;
+          margin-bottom: 0.75rem;
+          color: #111827;
+        }
+        .blog-content h3 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          color: #111827;
+        }
+        .blog-content ul, .blog-content ol {
+          margin-bottom: 1.5rem;
+          padding-left: 1.5rem;
+        }
+        .blog-content li {
+          margin-bottom: 0.25rem;
+          color: #374151;
+        }
+        .blog-content blockquote {
+          border-left: 4px solid #3b82f6;
+          background-color: #eff6ff;
+          padding: 1rem 1.5rem;
+          margin: 1.5rem 0;
+          font-style: italic;
+          border-radius: 0.5rem;
+        }
+        .blog-content code {
+          background-color: #f3f4f6;
+          padding: 0.125rem 0.375rem;
+          border-radius: 0.25rem;
+          font-size: 0.875rem;
+          font-family: monospace;
+          color: #2563eb;
+        }
+        .blog-content pre {
+          background-color: #111827;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          margin: 1.5rem 0;
+          overflow-x: auto;
+        }
+        .blog-content pre code {
+          background-color: transparent;
+          color: #f3f4f6;
+          padding: 0;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,69 +1,82 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Clock3, Loader2, Newspaper, Search } from 'lucide-react';
+import { Loader2, Newspaper, Search, ChevronDown, Eye, MessageCircle, Heart, Bookmark, MoreHorizontal, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import postService from '../features/post/postService';
-
-const formatDate = (value) => {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
 
 function BlogCard({ blog }) {
   const id = blog._id || blog.id;
   const cover = blog.coverImage?.url?.trim();
-  const author = blog.author?.username || 'Author';
-  const readTime = blog.readTime ? `${blog.readTime} min` : '';
+  const author = blog.author?.fullName || blog.author?.username || 'Anonymous';
+  const authorAvatar = blog.author?.avatar?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=3b82f6&color=ffffff`;
+  const date = blog.publishedAt || blog.createdAt;
+  
+  const formatDate = (value) => {
+    if (!value) return '';
+    return new Date(value).toLocaleDateString(undefined, { 
+      month: 'short', 
+      day: 'numeric'
+    });
+  };
 
   return (
-    <Link
-      to={`/blog/${id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition hover:border-teal-300/60 hover:shadow-md"
-    >
-      {cover ? (
-        <div className="aspect-[16/9] w-full overflow-hidden bg-slate-200">
-          <img
-            src={cover}
-            alt=""
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        </div>
-      ) : (
-        <div className="flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-teal-50 to-slate-100">
-          <Newspaper className="h-12 w-12 text-teal-700/35" strokeWidth={1.25} />
-        </div>
-      )}
-      <div className="flex flex-1 flex-col p-5">
-        {blog.category?.name && (
-          <span className="mb-2 w-fit rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800">
-            {blog.category.name}
-          </span>
-        )}
-        <h2 className="font-display text-lg font-bold leading-snug text-slate-900 group-hover:text-teal-800">
-          {blog.title}
-        </h2>
-        {blog.summary && (
-          <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600">{blog.summary}</p>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
-          <span className="font-medium text-slate-700">{author}</span>
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5" />
-            {formatDate(blog.publishedAt || blog.createdAt)}
-          </span>
-          {readTime && (
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="h-3.5 w-3.5" />
-              {readTime}
+    <div className="group py-6 border-b border-gray-100 hover:bg-gray-50/30 -mx-4 px-4 transition-all duration-200">
+      <div className="flex gap-5">
+        {/* Left Content Section */}
+        <div className="flex-1 min-w-0">
+          {/* Author Row - Avatar + Name */}
+          <div className="flex items-center gap-2 mb-2">
+            <img 
+              src={authorAvatar} 
+              alt={author}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <span className="text-sm font-medium text-gray-900">{author}</span>
+          </div>
+
+          {/* Title - Bold, Multi-line */}
+          <Link to={`/blog/${id}`}>
+            <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 leading-tight mb-2 line-clamp-2">
+              {blog.title}
+            </h2>
+          </Link>
+
+          {/* Description - Muted preview text */}
+         {/* Description - Muted preview text */}
+<p className="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">
+  {blog.summary || (typeof blog.content === 'string' ? blog.content.substring(0, 140) : '') || ''}
+</p>
+          {/* Bottom Metadata Row */}
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span>{formatDate(date)}</span>
+            <span className="flex items-center gap-1">
+              <Heart className="h-3.5 w-3.5" />
+              {blog.likes?.length || 0}
             </span>
-          )}
+            <span className="flex items-center gap-1">
+              <MessageCircle className="h-3.5 w-3.5" />
+              {blog.comments?.length || 0}
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />
+              {blog.views || 0}
+            </span>
+          </div>
         </div>
+
+        {/* Right Section - Thumbnail */}
+        {cover && (
+          <Link to={`/blog/${id}`} className="shrink-0">
+            <div className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100">
+              <img 
+                src={cover} 
+                alt={blog.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </Link>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -76,110 +89,164 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [filter, setFilter] = useState('latest');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  const limit = 12;
+  const limit = 10;
+
+  const filterOptions = [
+    { value: 'latest', label: 'Latest' },
+    { value: 'popular', label: 'Most viewed' },
+    { value: 'trending', label: 'Trending' },
+  ];
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = useCallback(
-    async (offset, append) => {
-      try {
-        if (append) setLoadingMore(true);
-        else setLoading(true);
-        setError('');
-        const data = await postService.exploreBlogs({
-          search: debouncedSearch,
-          skip: offset,
-          limit,
-        });
-        const list = data.blogs || [];
-        setTotal(data.total ?? list.length);
-        if (append) {
-          setBlogs((prev) => [...prev, ...list]);
-        } else {
-          setBlogs(list);
-        }
-        setSkip(offset + list.length);
-      } catch (e) {
-        setError(e.response?.data?.message || e.message || 'Could not load articles.');
-        if (!append) setBlogs([]);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
+  const load = useCallback(async (offset, append) => {
+    try {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      setError('');
+      
+      const data = await postService.exploreBlogs({
+        search: debouncedSearch,
+        skip: offset,
+        limit,
+        sort: filter,
+      });
+      
+      const list = data.blogs || [];
+      setTotal(data.total ?? list.length);
+      
+      if (append) {
+        setBlogs((prev) => [...prev, ...list]);
+      } else {
+        setBlogs(list);
       }
-    },
-    [debouncedSearch, limit],
-  );
+      setSkip(offset + list.length);
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || 'Could not load articles.');
+      if (!append) setBlogs([]);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [debouncedSearch, filter, limit]);
 
   useEffect(() => {
     setSkip(0);
     load(0, false);
-  }, [debouncedSearch, load]);
+  }, [debouncedSearch, filter, load]);
 
   const hasMore = useMemo(() => skip < total && blogs.length > 0, [skip, total, blogs.length]);
 
+  const currentFilterLabel = filterOptions.find(f => f.value === filter)?.label;
+
   return (
-    <div className="min-h-[60vh] pb-10">
-      <header className="mb-8">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Explore</h1>
-        <p className="mt-1 text-sm text-slate-600">Published articles from the community.</p>
-      </header>
+    <div className="max-w-4xl mx-auto px-6 py-2">
+      {/* Header - Minimal with proper margin */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold text-gray-900">Explore</h1>
+      </div>
 
-      <label className="mb-8 flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 shrink-0 text-slate-400" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title, summary, or tag…"
-          className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-        />
-      </label>
+      {/* Search & Filter Row */}
+      <div className="flex items-center gap-3 mb-8">
+        {/* Search Input */}
+        <div className="flex-1 max-w-md relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search articles..."
+            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:bg-white text-sm transition-all"
+          />
+        </div>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
+        {/* Filter Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50 transition-all"
+          >
+            {currentFilterLabel}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showFilterDropdown && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowFilterDropdown(false)} />
+              <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1">
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setFilter(option.value);
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                      filter === option.value ? 'text-blue-600 font-medium bg-blue-50/50' : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Results count */}
+      {!loading && blogs.length > 0 && (
+        <div className="text-xs text-gray-400 mb-4">
+          {total} {total === 1 ? 'article' : 'articles'}
+        </div>
       )}
 
+      {/* Error */}
+      {error && (
+        <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-md px-4 py-3">
+          {error}
+        </div>
+      )}
+
+      {/* Loading */}
       {loading && (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-teal-600" />
+          <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
         </div>
       )}
 
+      {/* Empty */}
       {!loading && blogs.length === 0 && !error && (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-[var(--surface-muted)] px-6 py-14 text-center">
-          <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
-          <p className="mt-3 font-medium text-slate-800">No published articles yet</p>
-          <p className="mt-1 text-sm text-slate-500">Check back later or publish your first story.</p>
-          <Link
-            to="/blog/create"
-            className="mt-5 inline-flex rounded-full bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-          >
-            Write a blog
-          </Link>
+        <div className="text-center py-20">
+          <Newspaper className="mx-auto h-12 w-12 text-gray-300" />
+          <p className="mt-3 text-gray-500 text-sm">No articles found</p>
         </div>
       )}
 
+      {/* Blog List */}
       {!loading && blogs.length > 0 && (
         <>
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="-mx-4">
             {blogs.map((blog) => (
               <BlogCard key={blog._id || blog.id} blog={blog} />
             ))}
           </div>
+
+          {/* Load More */}
           {hasMore && (
-            <div className="mt-10 flex justify-center">
+            <div className="flex justify-center mt-10">
               <button
-                type="button"
-                disabled={loadingMore}
                 onClick={() => load(skip, true)}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-teal-300 hover:text-teal-800 disabled:opacity-50"
+                disabled={loadingMore}
+                className="text-sm text-gray-500 hover:text-gray-700 py-2 px-4 transition-colors"
               >
-                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
-                Load more
+                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Load more'}
               </button>
             </div>
           )}

@@ -22,6 +22,7 @@ import Notifications from './pages/Notifications';
 import CreatePostPage from './components/posts/CreatePost';
 import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
+import MessageSystem from './pages/Messagebox';
 export default function App() {
 
   const dispatch = useDispatch();
@@ -52,7 +53,7 @@ export default function App() {
           <Route path="/blog/:postId" element={<BlogDetails/>} />
           <Route path="/bookmarks" element={<Bookmarks/>} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/chats" element={<Messages />} />
+          <Route path="/chats" element={<MessageSystem />} />
           <Route path="/login" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
         </Routes>
