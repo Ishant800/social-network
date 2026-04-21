@@ -71,7 +71,7 @@ const authSlice = createSlice({
             state.user = null;
             state.profilePosts = [];
             localStorage.removeItem("token");
-            localStorage.removeItem("refreshToken");
+           
         },
         reset:(state)=>{
            state.isLoading = false
@@ -87,12 +87,10 @@ const authSlice = createSlice({
         .addCase(login.fulfilled,(state,action)=>{
             state.isLoading = false;
             state.isSuccess = true;
-            const access = action.payload.token || action.payload.accessToken;
+            const access = action.payload.token ;
             state.token = access;
             if (access) localStorage.setItem("token", access);
-            if (action.payload.refreshToken) {
-              localStorage.setItem("refreshToken", action.payload.refreshToken);
-            }
+            
         })
         .addCase(login.rejected,(state,action) =>{
             state.isLoading = false;
@@ -108,12 +106,10 @@ const authSlice = createSlice({
         .addCase(signup.fulfilled,(state,action)=>{
           state.isLoading = false;
           state.isSuccess = true;
-            const access = action.payload.token || action.payload.accessToken;
+            const access = action.payload.token;
             state.token = access;
             if (access) localStorage.setItem("token", access);
-            if (action.payload.refreshToken) {
-              localStorage.setItem("refreshToken", action.payload.refreshToken);
-            }
+            
         })
 
         .addCase(signup.rejected,(state,action)=>{

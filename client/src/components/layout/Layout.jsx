@@ -35,11 +35,11 @@ export default function Layout({ children }) {
 
   return (
     <div className="app-shell min-h-dvh w-full ">
-      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-white/90 shadow-sm shadow-teal-900/5 backdrop-blur-md">
+      <div className="fixed inset-x-0 top-0 z-50 border-b border-(--border) bg-white/90 shadow-sm shadow-teal-900/5 backdrop-blur-md">
         <Navbar />
       </div>
 
-      <main className="mx-auto w-full max-w-[1600px] px-4 pb-24 pt-16 sm:px-6 sm:pt-20 lg:pb-10 lg:pt-24">
+      <main className="mx-auto w-full max-w-400 px-4 pb-24 pt-16 sm:px-6 sm:pt-20 lg:pb-10 lg:pt-24">
         <div
           className={`grid grid-cols-1 ${
             isDiscussionRoomPage ? 'lg:gap-5 xl:gap-6' : 'lg:gap-8'
@@ -50,7 +50,7 @@ export default function Layout({ children }) {
           }`}
         >
           <aside className="hidden lg:block">
-            <div className="thin-scrollbar fixed top-20 h-[calc(100dvh-5rem)] w-64 overflow-y-auto sm:top-24 sm:h-[calc(100dvh-6rem)]">
+  <div className="fixed top-18 h-[calc(100dvh-6rem)] w-64 overflow-y-auto">
               <Sidebar />
             </div>
           </aside>

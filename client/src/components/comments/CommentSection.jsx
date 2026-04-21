@@ -19,7 +19,7 @@ function formatCommentTime(value) {
   return `${diffDays}d ago`;
 }
 
-export default function CommentSection({ postId, compact = false, targetType = 'Post', title = 'Discussion' }) {
+export default function CommentSection({ postId, compact = false, targetType = 'Post' }) {
   const { user } = useSelector((state) => state.auth);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -134,10 +134,10 @@ export default function CommentSection({ postId, compact = false, targetType = '
   return (
     <section className={compact ? 'space-y-5' : 'space-y-6'}>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Comments</h3>
       </div>
 
-      <form className="rounded-xl border border-slate-200 bg-white p-3" onSubmit={handleSubmit}>
+      <form className="rounded-xl p-1" onSubmit={handleSubmit}>
         <div className="relative">
           <input
             value={commentText}
@@ -148,8 +148,8 @@ export default function CommentSection({ postId, compact = false, targetType = '
           <button
             type="submit"
             disabled={!commentText.trim() || submitting}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-[#4e44d4] disabled:opacity-50"
-          >
+            className="absolute flex items-center gap-2 border px-2 py-2 rounded-sm right-2 top-1/2 -translate-y-1/2 text-slate-700 transition bg-blue-600 hover:text-[#4e44d4] disabled:opacity-50"
+          > Send
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>

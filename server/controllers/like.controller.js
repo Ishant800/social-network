@@ -1,76 +1,96 @@
 const mongoose = require('mongoose');
- const Like = require("../models/postlike.model")
- const Post = require("../models/post.model")
-  
- async function postLike(req, res){
+const Like = require('../models/postlike.model');
+const Post = require('../models/post.model');
+const { pushNotification } = require('./notification.controller');
+ async function postLike(req, res) {
   try {
-    const  postId  = req.params.postId;
-    const userId = req.user.id; 
+    const postId = req.params.postId;
+    const userId = req.user.id;
 
-    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(400).json({ msg: 'Valid post ID is required' });
+    if (!postId) {
+      return res.status(400).json({ msg: 'Post ID is required' });
     }
 
-    const existingLike = await Like.findOne({
-      userId,
-      'target.type': 'Post',
-      'target.id': postId,
-    });
-
-    if (existingLike) {
-      return res.status(200).json({ msg: 'Post already liked' });
-    }
-
-    await Like.create({
-      userId,
-      target: {
-        type: 'Post',
-        id: postId,
-      },
-    });
-
-    const updated = await Post.findOneAndUpdate(
-      { _id: postId },
-      { $inc: { likesCount: 1 } },
-      { new: true },
-    );
-    if (!updated) {
+    const postExists = await Post.findById(postId);
+    if (!postExists) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    return res.status(200).json({ msg: 'Post liked successfully' });
+
+    try {
+      await Like.create({
+        userId,
+        target: {
+          type: "Post",
+          id: postId
+        }
+      });
+
+      await Post.findByIdAndUpdate(postId, { $inc: { likesCount: 1 } });
+
+      // Notify post owner
+      pushNotification({
+        recipient: postExists.user,
+        actor:     userId,
+        type:      'like',
+        post:      postId,
+      });
+
+      return res.status(200).json({ msg: 'Post liked successfully' });
+
+    } catch (err) {
+      //  duplicate like handled here
+      if (err.code === 11000) {
+        return res.status(200).json({ msg: "Post already liked" });
+      }
+      throw err;
+    }
+
   } catch (err) {
-    console.error(err.message);
-   return  res.status(500).json({ message: err.message || 'Internal server error' });
+    console.error(err);
+    return res.status(500).json({
+      message: err.message || "Internal server error"
+    });
   }
 }
 
-async function unLike(req, res){
+ const unLike = async (req, res) => {
   try {
-     const  postId  = req.params.postId;
+    const postId = req.params.postId;
     const userId = req.user.id;
 
+   
     if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(400).json({ msg: 'Valid post ID is required' });
+      return res.status(400).json({ msg: "Valid post ID is required" });
     }
 
-    const like = await Like.deleteOne({
+   
+    const deleted = await Like.findOneAndDelete({
       userId,
-      'target.type': 'Post',
-      'target.id': postId,
+      "target.type": "Post",
+      "target.id": postId,
     });
 
-    // If no record was found, it means they never liked it
-    if (!like.deletedCount) {
-      return res.status(404).json({ msg: 'Like record not found' });
+    
+    if (!deleted) {
+      return res.status(404).json({ msg: "Like not found" });
     }
-    await Post.findOneAndUpdate(
-      { _id: postId, likesCount: { $gt: 0 } },
+
+
+    await Post.findByIdAndUpdate(
+      postId,
       { $inc: { likesCount: -1 } },
+      { new: true }
     );
-    return res.status(200).json({ msg: 'Post unliked successfully', like });
+
+    return res.status(200).json({
+      msg: "Post unliked successfully",
+    });
+
   } catch (err) {
-    console.error(err.message);
-   return res.status(500).send('Server Error');
+    console.error(err);
+    return res.status(500).json({
+      message: err.message || "Internal server error",
+    });
   }
 };
 

@@ -1,64 +1,53 @@
 const jwt = require('jsonwebtoken');
-const { accessSecret } = require('../utils/token.util');
 
 const verifyToken = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    // Check header
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided.',
+        message: 'Unauthorized: No token provided',
       });
     }
 
-    if (!authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token format. Expected "Bearer <token>".',
-      });
-    }
-
-    const token = authHeader.substring(7).trim();
-
+    // Extract token
+    const token = authHeader.split(' ')[1];
+  
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Token is empty.',
+        message: 'Unauthorized: Token missing',
       });
     }
 
-    const secret = accessSecret();
-    if (!secret) {
-      return res.status(500).json({
-        success: false,
-        message: 'Server auth is not configured.',
-      });
-    }
+ 
+    const decoded = jwt.verify(token, process.env.SECRETE_KEY);
+    req.user = decoded;
 
-    const decode = jwt.verify(token, secret);
-    
-    req.user = decode;
     next();
+
   } catch (error) {
+    console.error('JWT Error:', error.message);
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Token expired. Please login again.',
+        message: 'Token expired',
       });
     }
 
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token signature.',
+        message: 'Invalid token',
       });
     }
 
-    // Catch-all for unexpected errors
-    return res.status(500).json({
+    return res.status(401).json({
       success: false,
-      message: 'Authentication failed.',
+      message: 'Unauthorized',
     });
   }
 };

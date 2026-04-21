@@ -2,7 +2,7 @@ const path = require('path');
 const http = require('http');
 const dotenv = require('dotenv');
 
-// Support .env next to app (server/.env) and repo root (social-network/.env)
+
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
@@ -19,6 +19,8 @@ const userRoute = require('./routes/user.routes');
 const commentRoute = require('./routes/comment.routes');
 const likeRoute = require('./routes/like.routes');
 const feedRoute = require('./routes/feed.routes');
+const bookmarkRoute = require('./routes/bookmark.routes');
+const notificationRoute = require('./routes/notification.routes');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -59,6 +61,8 @@ app.use('/blog', blogRoute);
 app.use('/user', userRoute);
 app.use('/comment', commentRoute);
 app.use('/likes', likeRoute);
+app.use('/bookmark', bookmarkRoute);
+app.use('/notifications', notificationRoute);
 
 connectDb();
 

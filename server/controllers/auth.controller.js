@@ -1,143 +1,123 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
-const {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} = require('../utils/token.util');
-const { sanitizePlainText } = require('../utils/sanitize.util');
+const { generateToken } = require('../utils/token.util');
 
 const BCRYPT_ROUNDS = 12;
 const MIN_PASSWORD_LENGTH = 8;
 
-const serializeUser = (user) => ({
-  _id: user._id,
-  id: user._id,
-  username: user.username,
-  email: user.email,
-  role: user.role,
-  profile: user.profile,
-  stats: user.stats,
-  followers: user.followers || [],
-  following: user.following || [],
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
+//  Generate unique username
+const generateUsername = async (email) => {
+  const base = email.split('@')[0].toLowerCase().replace(/\s+/g, '_');
 
-function authPayload(user) {
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
-  return {
-    token: accessToken,
-    accessToken,
-    refreshToken,
-    user: serializeUser(user),
-  };
-}
+  let username;
+  let exists = true;
 
-const createUser = async (req, res) => {
+  while (exists) {
+    const random = Math.floor(Math.random() * 10000);
+    username = `${base}_${random}`;
+    exists = await User.findOne({ username });
+  }
+
+  return username;
+};
+
+//  REGISTER
+const register = async (req, res) => {
   try {
-    const { email, username, password, name } = req.body;
-    const rawHandle = (username ?? name ?? '').toString().trim();
-    const normalizedUsername = rawHandle.toLowerCase().replace(/\s+/g, '_');
-    const fullName = (name ?? '').toString().trim()
-      ? sanitizePlainText((name ?? '').toString().trim(), 120)
-      : undefined;
+    const { email, password, name } = req.body;
 
-    if (!email || !normalizedUsername || !password) {
-      return res.status(400).json({ error: 'all fields are required' });
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Email and password are required'
+      });
     }
 
     if (password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
-        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
       });
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const userExists = await User.findOne({
-      $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
-    });
-
-    if (userExists) {
-      return res.status(400).json({ message: ' user already exists' });
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'Email already in use'
+      });
     }
 
-    const hashedpassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const username = await generateUsername(normalizedEmail);
+
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
     const user = await User.create({
-      username: normalizedUsername,
+      username,
       email: normalizedEmail,
-      password: hashedpassword,
-      ...(fullName ? { profile: { fullName } } : {}),
+      password: hashedPassword,
+      profile: name ? { fullName: name.trim() } : {}
     });
 
-    if (!user) {
-      return res.status(501).json({ error: 'failed to create user' });
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      token
+    });
+
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        error: 'Duplicate field value'
+      });
     }
 
-    return res.status(201).json({
-      message: 'user created sucessfully',
-      ...authPayload(user),
+    res.status(500).json({
+      error: 'Failed to register user'
     });
-  } catch (error) {
-    return res.status(501).json({ error: error.message || 'internal server error' });
   }
 };
 
+//  LOGIN
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ error: 'all fields are required' });
+      return res.status(400).json({
+        error: 'Email and password are required'
+      });
     }
+    const user = await User.findOne({ email:email }).select('+password');
 
-    const normalizedEmail = String(email).toLowerCase().trim();
-    const userExists = await User.findOne({ email: normalizedEmail });
-    if (!userExists) {
-      return res
-        .status(400)
-        .json({ message: ' user not exists, please create your account.' });
-    }
-
-    const pm = await bcrypt.compare(password, userExists.password);
-    if (!pm) {
-      return res.status(400).json({ error: 'password not matched' });
-    }
-
-    return res.status(200).json({
-      sucess: 'ok',
-      message: 'Login sucessfully',
-      ...authPayload(userExists),
-    });
-  } catch (error) {
-    return res.status(501).json({ error: error.message || 'internal server error' });
-  }
-};
-
-const refresh = async (req, res) => {
-  try {
-    const token = req.body?.refreshToken;
-    if (!token || typeof token !== 'string') {
-      return res.status(401).json({ success: false, message: 'Refresh token required' });
-    }
-
-    let payload;
-    try {
-      payload = verifyRefreshToken(token);
-    } catch {
-      return res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
-    }
-
-    const user = await User.findById(payload.id).select('_id role username email');
     if (!user) {
-      return res.status(401).json({ success: false, message: 'User not found' });
+      return res.status(401).json({
+        error: 'Invalid email or password'
+      });
     }
 
-    return res.status(200).json(authPayload(user));
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: 'Invalid email or password'
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token
+    });
+
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Could not refresh session' });
+    res.status(500).json({
+      error: 'Failed to login'
+    });
   }
 };
 
-module.exports = { createUser, login, refresh };
+module.exports = { register, login };

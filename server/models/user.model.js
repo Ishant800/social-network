@@ -1,9 +1,22 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  username: {
+     type: String,
+     required: true, 
+     unique: true, 
+     trim: true },
+
+  email: { 
+    type: String,
+     required: true,
+      unique: true ,
+    }, 
+
+  password: { 
+    type: String,
+     required: true,
+    select: false },
 
   profile: {
     fullName: String,
@@ -16,13 +29,10 @@ const UserSchema = new mongoose.Schema({
       url: String,
       public_id: String
     },
-    location: String,
-    website: String
+    location: String
   },
 
   stats: {
-    followers: { type: Number, default: 0 },
-    following: { type: Number, default: 0 },
     posts: { type: Number, default: 0 },
     blogs: { type: Number, default: 0 }
   },
@@ -34,15 +44,18 @@ const UserSchema = new mongoose.Schema({
       push: { type: Boolean, default: true }
     }
   },
+  chatList:[{
+    type:mongoose.Schema.Types.ObjectId,ref:"User"
+  }],
+  lastSeen:{
+    type:Date,
+    default: Date.now
+  },
 
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
-  role: {
-    type: String,
-    enum: ["user", "admin"],
-    default: "user"
-  }
+
 
 }, { timestamps: true });
 

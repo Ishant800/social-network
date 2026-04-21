@@ -1,22 +1,15 @@
 import { useState } from 'react';
-import { Search, User, Bell, MessageCircle } from 'lucide-react';
+import { Search, Bell, MessageCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import Logo from '../../assets/logo.png';
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchMobile, setShowSearchMobile] = useState(false);
-  
-  const { user } = useSelector((state) => state.auth);
-  
-  // Get user display name
-  const displayName = user?.profile?.fullName || user?.username || 'User';
-  
-  // Get avatar URL
-  const avatarUrl = user?.profile?.avatar?.url || 
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=3b82f6&color=ffffff`;
 
-  // Handle search submit
+  const { user } = useSelector((state) => state.auth);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -25,56 +18,54 @@ export default function Navbar() {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          
-          {/* Logo - reduced left margin */}
-          <Link to="/" className="flex items-center shrink-0 -ml-2 sm:ml-0">
-            {/* Mobile logo */}
-            <span className="text-xl font-bold text-blue-600 block sm:hidden px-2">
-              A
-            </span>
-            {/* Desktop logo */}
-            <span className="text-xl font-bold text-blue-600 hidden sm:block px-2">
-              Atheneum
-            </span>
+    <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center h-16 gap-4">
+
+          {/* Logo */}
+          <Link to="/" className="flex items-center shrink-0">
+            <img src={Logo} className="h-30 w-50 rounded-xl" alt="Sanjal" />
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:block flex-1 max-w-md mx-4">
-            <form onSubmit={handleSearch} className="relative">
+          {/* Search Bar — Desktop */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search users, posts, articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-sm border border-gray-300 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 text-sm transition-all"
               />
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
             </form>
           </div>
 
-          {/* Right Section - Icons + Profile */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            
-            {/* Search Icon - Mobile */}
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right icon group */}
+          <div className="flex items-center gap-1">
+
+            {/* Search Icon — Mobile only */}
             <div className="flex md:hidden items-center">
               {showSearchMobile ? (
-                <form onSubmit={handleSearch} className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-48 pl-8 pr-3 py-1.5 rounded-full border border-gray-300 bg-gray-50 text-sm"
-                    autoFocus
-                  />
-                  <Search className="absolute left-2 top-2 w-3.5 h-3.5 text-gray-400" />
+                <form onSubmit={handleSearch} className="relative flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-44 pl-8 pr-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm focus:outline-none"
+                      autoFocus
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowSearchMobile(false)}
-                    className="ml-2 text-xs text-gray-500"
+                    className="text-xs text-gray-500 whitespace-nowrap"
                   >
                     Cancel
                   </button>
@@ -82,57 +73,32 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowSearchMobile(true)}
-                  className="p-2 rounded-full text-gray-600 hover:bg-gray-100"
+                  className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
                 >
                   <Search className="w-5 h-5" />
                 </button>
               )}
             </div>
 
-            {/* Messages Icon */}
-            <Link 
-              to="/chats" 
-              className="p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
+            {/* Messages */}
+            <Link
+              to="/chats"
+              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
               aria-label="Messages"
             >
               <MessageCircle className="w-5 h-5" />
             </Link>
 
-            {/* Notifications Icon */}
-            <Link 
-              to="/notifications" 
-              className="p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors relative"
+            {/* Notifications */}
+            <Link
+              to="/notifications"
+              className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
-              {/* Notification badge - shows if unread */}
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
             </Link>
 
-            {/* Profile Section - Desktop */}
-            <Link 
-              to="/profile" 
-              className="hidden md:flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors ml-1"
-            >
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-200"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-900">{displayName}</span>
-                <span className="text-xs text-gray-500">Profile</span>
-              </div>
-            </Link>
-
-            {/* Profile Icon - Mobile */}
-            <Link to="/profile" className="flex md:hidden p-1">
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
-              />
-            </Link>
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ export default function Settings() {
       description: 'Profile and contact information.',
       items: [
         {
-          title: 'Profile information',
+          title: 'Update profile',
           description: 'Photo, name, and bio',
           type: 'profile',
         },

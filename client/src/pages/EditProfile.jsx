@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, MapPin, User, Info, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import API from '../api/axios';
 
-export default function EditProfile({ onSave }) {
+export default function EditProfile() {
   const navigate = useNavigate();
   const {user}= useSelector((state)=> state.auth)
   
@@ -49,10 +50,18 @@ export default function EditProfile({ onSave }) {
     data.append('bio', formData.bio);
     data.append('address', formData.address);
     if (selectedFile) data.append('profileImage', selectedFile);
-
+    console.log(data)
     try {
-      await onSave?.(data);
+      const response = await API.put("/user/update-profile",data)
+      console.log(response)
+      if(response.status === 200){
       navigate('/profile');
+      }
+
+      else{
+        alert("failed to update post")
+      }
+      
     } catch (err) {
       console.error('Save failed:', err);
     } finally {
@@ -61,7 +70,7 @@ export default function EditProfile({ onSave }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-white">
       
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-slate-100">

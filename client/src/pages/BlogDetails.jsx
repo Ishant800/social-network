@@ -196,23 +196,18 @@ function DiscussionSection({ comments = [], postId }) {
         <div>
           {/* Write Comment */}
           <div className="flex items-start gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <User className="h-5 w-5 text-blue-600" />
-            </div>
+            
             <div className="flex-1">
-              <textarea
+              <input
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add to the discussion..."
+                placeholder="write comments...."
                 rows="3"
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
-              <div className="flex justify-end mt-2">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
-                  Post Comment
-                </button>
-              </div>
+              
             </div>
+           
           </div>
 
           {/* Comments List */}
@@ -226,7 +221,7 @@ function DiscussionSection({ comments = [], postId }) {
 
       {/* Live Discussion Tab Content */}
       {activeTab === 'live' && (
-        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 p-6">
+        <div className="bg-linear-to-br from-blue-50 to-white rounded-xl border border-blue-100 p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -412,7 +407,7 @@ export default function BlogDetails() {
             <img
               src={blog.coverImage.url.trim()}
               alt={blog.title}
-              className="w-full h-auto object-cover max-h-[500px]"
+              className="w-full h-auto object-cover max-h-125"
             />
           </div>
         )}

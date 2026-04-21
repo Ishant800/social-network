@@ -3,29 +3,41 @@ const User = require('../models/user.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const blogsModel = require('../models/blogs.model');
 const postModel = require('../models/post.model');
-const { sanitizePlainText } = require('../utils/sanitize.util');
+const { pushNotification } = require('./notification.controller');
+
 
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const user = await User.findById(userId);
+
+    let user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
-    if (req.body.fullName) {
-      user.profile.fullName = sanitizePlainText(req.body.fullName, 120);
+    
+    if (!user.profile) {
+      user.profile = {};
     }
-    if (req.body.bio) {
-      user.profile.bio = sanitizePlainText(req.body.bio, 300);
-    }
-    if (req.body.location) user.profile.location = req.body.location;
-    if (req.body.website) user.profile.website = req.body.website;
 
+   
+    if (req.body.fullName) {
+      user.profile.fullName = req.body.fullName;
+    }
+
+    if (req.body.bio) {
+      user.profile.bio = req.body.bio;
+    }
+
+    if (req.body.location) {
+      user.profile.location = req.body.location;
+    }
+
+    
     if (req.file) {
       if (user.profile?.avatar?.public_id) {
         await cloudinary.uploader.destroy(user.profile.avatar.public_id);
@@ -35,16 +47,16 @@ const updateProfile = async (req, res) => {
         url: req.file.path,
         public_id: req.file.filename,
       };
-    } 
+    }
 
     await user.save();
-    const updatedUser = await User.findById(userId).select('-password');
 
     res.status(200).json({
-      sucess: true,
-      message: 'profile update',
-      user: updatedUser,
+      success: true,
+      message: "Profile updated successfully",
+      user,
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -85,7 +97,6 @@ const updateProfile = async (req, res) => {
 
 async function getSuggestions(req, res) {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
     const user = await User.findById(req.user.id).select('following');
 
     if (!user) {
@@ -99,14 +110,24 @@ async function getSuggestions(req, res) {
     const selfId = req.user.id;
     const excludeIds = [...following, selfId];
 
+    // Removed limit - get all suggestions
     const suggestions = await User.find({
       _id: { $nin: excludeIds },
     })
       .select('-password')
-      .limit(limit)
+      .populate('followers', 'username')
       .lean();
 
-    return res.status(200).json(suggestions);
+    // Add online status if you have it
+    const suggestionsWithStatus = suggestions.map(suggestion => ({
+      ...suggestion,
+      isOnline: false // You can set this from your socket active users
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: suggestionsWithStatus
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -149,15 +170,18 @@ async function followUser(req,res){
     (id) => id.toString() === userId,
    );
 
-   if (!alreadyFollowing) {
-    owner.following.push(userId);
-    target.followers.push(ownerId);
-    owner.stats.following += 1;
-    target.stats.followers += 1;
+    if (!alreadyFollowing) {
+     owner.following.push(userId);
+     target.followers.push(ownerId);
+     owner.stats.following += 1;
+     target.stats.followers += 1;
 
-    await owner.save();
-    await target.save();
-   }
+     await owner.save();
+     await target.save();
+
+     // Notify the followed user
+     pushNotification({ recipient: userId, actor: ownerId, type: 'follow' });
+    }
 
    return res.status(200).json({
     message:"following user"

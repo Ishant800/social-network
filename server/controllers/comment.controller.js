@@ -3,6 +3,7 @@ const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
 const User = require('../models/user.model');
 const { sanitizePlainText } = require('../utils/sanitize.util');
+const { pushNotification } = require('./notification.controller');
 
 const serializeComment = (comment) => {
   const commentObject = typeof comment.toObject === 'function' ? comment.toObject() : comment;
@@ -67,8 +68,12 @@ const createComment = async (req, res) => {
 
     if (targetType === 'Blog') {
       await Blog.findByIdAndUpdate(postId, { $inc: { 'stats.comments': 1 } });
+      // Notify blog author
+      pushNotification({ recipient: targetExists.author, actor: userId, type: 'comment', blog: postId, comment: comment._id });
     } else {
       await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+      // Notify post owner
+      pushNotification({ recipient: targetExists.user, actor: userId, type: 'comment', post: postId, comment: comment._id });
     }
 
     return res.status(201).json({
