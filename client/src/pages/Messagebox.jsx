@@ -14,7 +14,7 @@ import {
 import { setChatList, decrementUnreadCount } from '../features/messages/messageSlice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost';
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 const getAvatar = (u) =>
   u?.profile?.avatar?.url ||
