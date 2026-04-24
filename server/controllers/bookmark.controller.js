@@ -45,12 +45,12 @@ const getBookmarks = async (req, res) => {
       .populate({
         path: 'post',
         select: 'content media tags createdAt user likesCount commentsCount',
-        populate: { path: 'user', select: 'username profile.avatar profile.fullName' },
+        populate: { path: 'user', select: 'username name profile' },
       })
       .populate({
         path: 'blog',
         select: 'title summary coverImage category readTime publishedAt author stats',
-        populate: { path: 'author', select: 'username profile.avatar profile.fullName' },
+        populate: { path: 'author', select: 'username name profile' },
       });
 
     // Flatten into a unified list and attach feedType for PostCard

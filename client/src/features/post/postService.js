@@ -5,20 +5,24 @@ const normalizePost = (post) => ({
   feedType: 'post',
 });
 
-const fetchFeed = async ({ cursor, limit = 15 } = {}) => {
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (cursor) {
-    params.set('cursor', cursor);
-  }
-  const { data } = await API.get(`/feed/home?${params.toString()}`);
-  const items = (data.items || []).map((item) => ({
-    ...item,
-    id: item._id || item.id,
-  }));
+const fetchFeed = async ({ feedType = 'posts', page = 1, limit = 15 } = {}) => {
+  const params = new URLSearchParams({ 
+    page: String(page),
+    limit: String(limit) 
+  });
+  
+  const endpoint = feedType === 'articles' ? '/feed/blogs' : '/feed/posts';
+  const { data } = await API.get(`${endpoint}?${params.toString()}`);
+  
+  const items = feedType === 'articles' 
+    ? (data.blogs || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'blog' }))
+    : (data.posts || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'post' }));
+  
   return {
     items,
-    nextCursor: data.nextCursor || null,
-    hasMore: Boolean(data.hasMore),
+    hasMore: Boolean(data.pagination?.hasMore),
+    page: data.pagination?.page || page,
+    total: data.pagination?.total || 0
   };
 };
 
@@ -28,13 +32,35 @@ const createPost = async (postData) => {
 };
 
 const likePost = async (postId) => {
-  const response = await API.post(`/likes/post/like/${postId}`);
-  return response.data;
+  const response = await API.post(`/likes/post/${postId}/like`);
+  return {
+    postId,
+    ...response.data
+  };
 };
 
 const unlikePost = async (postId) => {
-  const response = await API.post(`/likes/post/unlike/${postId}`);
-  return response.data;
+  const response = await API.delete(`/likes/post/${postId}/unlike`);
+  return {
+    postId,
+    ...response.data
+  };
+};
+
+const likeBlog = async (blogId) => {
+  const response = await API.post(`/likes/blog/${blogId}/like`);
+  return {
+    postId: blogId, // Keep consistent naming for reducer
+    ...response.data
+  };
+};
+
+const unlikeBlog = async (blogId) => {
+  const response = await API.delete(`/likes/blog/${blogId}/unlike`);
+  return {
+    postId: blogId, // Keep consistent naming for reducer
+    ...response.data
+  };
 };
 
 const getPostDetails = async (postId) => {
@@ -45,6 +71,11 @@ const getPostDetails = async (postId) => {
 const getBlogDetails = async (blogId) => {
   const response = await API.get(`/blog/blog-details/${blogId}`);
   return response.data.blog;
+};
+
+const updatePost = async (postId, postData) => {
+  const response = await API.put(`/post/${postId}`, postData);
+  return normalizePost(response.data.post);
 };
 
 const exploreBlogs = async ({ search = '', skip = 0, limit = 24, exclude = '', category = '' } = {}) => {
@@ -62,8 +93,11 @@ const exploreBlogs = async ({ search = '', skip = 0, limit = 24, exclude = '', c
 export default {
   fetchFeed,
   createPost,
+  updatePost,
   likePost,
   unlikePost,
+  likeBlog,
+  unlikeBlog,
   getPostDetails,
   getBlogDetails,
   exploreBlogs,

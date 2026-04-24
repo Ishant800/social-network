@@ -1,99 +1,157 @@
-const mongoose = require('mongoose');
 const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
-const User = require('../models/user.model');
+const PostLike = require('../models/post-like.model');
+const BlogLike = require('../models/blog-like.model');
 
-
-function scoreContent(item, userFollowing = []) {
-  let score = 0;
-
-  // ✅ Recency (latest gets higher)
-  const hoursOld = (Date.now() - new Date(item.createdAt)) / (1000 * 60 * 60);
-  score += Math.max(0, 50 - hoursOld); // decay
-
-  // ✅ Engagement
-  score += (item.likesCount || 0) * 2;
-  score += (item.commentsCount || 0) * 3;
-  score += (item.views || 0) * 0.5;
-
-  // ✅ Following boost
-  if (userFollowing.includes(String(item.user?._id))) {
-    score += 30;
-  }
-
-  return score;
-}
-
-// ===== MAIN FEED =====
-
-async function getHomeFeed(req, res) {
+// Get posts feed
+const getPostsFeed = async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 15, 30);
     const userId = req.user?.id;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
 
-    let followingIds = [];
+    // Get posts with minimal author details
+    const posts = await Post.find({ isPublic: true })
+      .populate('user', '_id username profile.fullName profile.avatar')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
+    // Get user's liked posts if authenticated
+    let likedPostIds = [];
     if (userId) {
-      const user = await User.findById(userId).select('following').lean();
-      followingIds = user?.following?.map(id => String(id)) || [];
+      const likes = await PostLike.find({ 
+        userId, 
+        postId: { $in: posts.map(p => p._id) } 
+      }).select('postId').lean();
+      
+      likedPostIds = likes.map(like => String(like.postId));
     }
 
-    // ✅ Fetch data
-    const [posts, blogs] = await Promise.all([
-      Post.find({ isPublic: true })
-        .sort({ createdAt: -1 })
-        .limit(limit * 2)
-        .populate('user', 'username profile.fullName profile.avatar')
-        .lean(),
+    // Format posts with clean author data
+    const postsWithLikes = posts.map(post => {
+      const { user, ...postData } = post;
+      
+      return {
+        _id: postData._id,
+        content: postData.content,
+        media: postData.media,
+        tags: postData.tags,
+        likesCount: postData.likesCount || 0,
+        commentsCount: postData.commentsCount || 0,
+        createdAt: postData.createdAt,
+        isLiked: likedPostIds.includes(String(postData._id)),
+        author: {
+          userId: user?._id,
+          username: user?.username,
+          fullName: user?.profile?.fullName || user?.username,
+          avatar: user?.profile?.avatar?.url || null
+        }
+      };
+    });
 
-      Blog.find({ status: 'published' })
-        .sort({ createdAt: -1 })
-        .limit(limit * 2)
-        .populate('author', 'username avatar')
-        .lean(),
-    ]);
+    const total = await Post.countDocuments({ isPublic: true });
+    const hasMore = skip + posts.length < total;
 
-    // ✅ Normalize (minimal)
-    const normalizedPosts = posts.map(p => ({
-      ...p,
-      feedType: 'post',
-    }));
-
-    const normalizedBlogs = blogs.map(b => ({
-      ...b,
-      feedType: 'blog',
-      user: b.author
-    }));
-
-    // ✅ Merge
-    let allItems = [...normalizedPosts, ...normalizedBlogs];
-
-    // ✅ Score each item
-    allItems = allItems.map(item => ({
-      ...item,
-      score: scoreContent(item, followingIds),
-    }));
-
-    // ✅ Sort by score (NOT just date)
-    allItems.sort((a, b) => b.score - a.score);
-
-    // ✅ Limit result
-    const page = allItems.slice(0, limit);
-
-    return res.status(200).json({
+    res.json({
       success: true,
-      items: page,
+      posts: postsWithLikes,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore
+      }
     });
 
   } catch (error) {
-    console.error('Feed error:', error);
-    return res.status(500).json({
+    console.error('Get posts feed error:', error);
+    res.status(500).json({
       success: false,
-      message: 'Failed to load feed',
+      error: 'Failed to load posts feed'
     });
   }
-}
-module.exports = { 
-  getHomeFeed 
-  
+};
+
+// Get blogs feed
+const getBlogsFeed = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
+    // Get blogs with minimal author details
+    const blogs = await Blog.find({ status: 'published' })
+      .populate('author', '_id username profile.fullName profile.avatar')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Get user's liked blogs if authenticated
+    let likedBlogIds = [];
+    if (userId) {
+      const likes = await BlogLike.find({ 
+        userId, 
+        blogId: { $in: blogs.map(b => b._id) } 
+      }).select('blogId').lean();
+      
+      likedBlogIds = likes.map(like => String(like.blogId));
+    }
+
+    // Format blogs with clean author data
+    const blogsWithLikes = blogs.map(blog => {
+      const { author, ...blogData } = blog;
+      
+      return {
+        _id: blogData._id,
+        title: blogData.title,
+        summary: blogData.summary,
+        coverImage: blogData.coverImage,
+        readTime: blogData.readTime,
+        category: blogData.category,
+        likesCount: blogData.stats?.likes || 0,
+        commentsCount: blogData.stats?.comments || 0,
+        views: blogData.stats?.views || 0,
+        createdAt: blogData.createdAt,
+        publishedAt: blogData.publishedAt,
+        isLiked: likedBlogIds.includes(String(blogData._id)),
+        author: {
+          userId: author?._id,
+          username: author?.username,
+          fullName: author?.profile?.fullName || author?.username,
+          avatar: author?.profile?.avatar?.url || null
+        }
+      };
+    });
+
+    const total = await Blog.countDocuments({ status: 'published' });
+    const hasMore = skip + blogs.length < total;
+
+    res.json({
+      success: true,
+      blogs: blogsWithLikes,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore
+      }
+    });
+
+  } catch (error) {
+    console.error('Get blogs feed error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load blogs feed'
+    });
+  }
+};
+
+module.exports = {
+  getPostsFeed,
+  getBlogsFeed
 };

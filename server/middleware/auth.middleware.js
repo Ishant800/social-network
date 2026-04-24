@@ -2,27 +2,26 @@ const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
   try {
+    let token;
     const authHeader = req.headers.authorization;
 
-    // Check header
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check header first
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+    
+    // If no header token, check query parameter (for SSE)
+    if (!token && req.query.token) {
+      token = req.query.token;
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized: No token provided',
       });
     }
 
-    // Extract token
-    const token = authHeader.split(' ')[1];
-  
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Token missing',
-      });
-    }
-
- 
     const decoded = jwt.verify(token, process.env.SECRETE_KEY);
     req.user = decoded;
 

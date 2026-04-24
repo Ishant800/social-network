@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import RightSidebar from './RightSidebar';
 import MobileNav from './MobileNav';
 import Navbar from './Navbar';
+import NotificationManager from '../notifications/NotificationManager';
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -24,11 +25,7 @@ export default function Layout({ children }) {
   if (isAuthPage) {
     return (
       <div className="app-shell min-h-dvh w-full">
-        <div className="mx-auto flex min-h-dvh w-full max-w-lg items-center justify-center px-4 py-10">
-          <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-lg shadow-teal-900/10 sm:p-8">
-            {children}
-          </div>
-        </div>
+        {children}
       </div>
     );
   }
@@ -78,6 +75,9 @@ export default function Layout({ children }) {
       <div className="lg:hidden">
         <MobileNav />
       </div>
+
+      {/* Notification Manager for real-time toasts */}
+      <NotificationManager />
     </div>
   );
 }

@@ -1,15 +1,43 @@
 version: '3.9'
 
 services:
-  server:
-  build:
-  context: ./server
-  dockerfile: Dockerfile
-  container_name: social_backend
-  restart: unless-stopped
-  ports:
-    - "5000:5000"
-  env_file:
-    - .env
-  environment:
-    - NODE_ENV=production
+  # Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: social_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app_network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: social_frontend
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: social_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app_network
+    depends_on:
+      - backend
+      - frontend
+
+networks:
+  app_network:
+    driver: bridge

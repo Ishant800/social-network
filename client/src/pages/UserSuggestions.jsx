@@ -206,8 +206,10 @@ export default function UserSuggestions() {
 
   useEffect(() => {
     if (suggestions?.length && currentUser) {
+      // Check which users the current user is following
+      const currentUserFollowing = currentUser.following || [];
       const ids = suggestions
-        .filter((u) => u.followers?.some((f) => f._id === currentUser._id))
+        .filter((u) => currentUserFollowing.some((f) => String(f._id || f) === String(u._id)))
         .map((u) => u._id);
       setFollowingUsers(ids);
     }

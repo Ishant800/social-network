@@ -7,17 +7,17 @@ import {
   Heart,
   Eye,
   Bookmark,
-  ThumbsUp,
-  Reply,
-  Send,
-  User,
   Users,
   MessageSquare,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
-import API from '../api/axios';
+import CommentSection from '../components/comments/CommentSection';
+import { getBlogDetails, likeBlog, unlikeBlog } from '../features/post/postSlice';
+import { toggleBookmark } from '../features/bookmarks/bookmarkSlice';
+import { getcomments } from '../features/comment/commentSlice';
 
 const formatDate = (value) => {
   if (!value) return '';
@@ -90,77 +90,12 @@ const renderBlogContent = (htmlContent) => {
   );
 };
 
-// Comment Component
-function Comment({ comment, depth = 0 }) {
-  const [showReply, setShowReply] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [liked, setLiked] = useState(false);
-
-  return (
-    <div className={`${depth > 0 ? 'ml-8 pl-4 border-l-2 border-gray-100' : ''}`}>
-      <div className="py-3">
-        <div className="flex items-start gap-3">
-          <img
-            src={comment.avatar || `https://ui-avatars.com/api/?name=${comment.author}&background=3b82f6&color=ffffff`}
-            alt={comment.author}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-900">{comment.author}</span>
-              <span className="text-xs text-gray-400">{comment.time || 'Just now'}</span>
-            </div>
-            <p className="text-sm text-gray-700 mt-1">{comment.text}</p>
-            <div className="flex items-center gap-4 mt-2">
-              <button
-                onClick={() => setLiked(!liked)}
-                className={`flex items-center gap-1 text-xs ${liked ? 'text-blue-600' : 'text-gray-400'} hover:text-blue-600 transition`}
-              >
-                <ThumbsUp className="h-3 w-3" />
-                {liked ? 'Liked' : 'Like'}
-              </button>
-              <button
-                onClick={() => setShowReply(!showReply)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
-              >
-                <Reply className="h-3 w-3" />
-                Reply
-              </button>
-            </div>
-
-            {showReply && (
-              <div className="mt-3 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <button className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Combined Discussion Section (Comments + Live Discussion)
-function DiscussionSection({ comments = [], postId }) {
+function DiscussionSection({ postId }) {
   const [activeTab, setActiveTab] = useState('comments');
-  const [newComment, setNewComment] = useState('');
-
-  const sampleComments = [
-    { author: 'Sarah Johnson', text: 'This is incredibly insightful! Thanks for sharing.', time: '2 hours ago', avatar: '' },
-    { author: 'Michael Chen', text: 'I have a different perspective on this. Would love to discuss further.', time: '5 hours ago', avatar: '' },
-    { author: 'Emma Watson', text: 'The part about practical applications really stood out to me.', time: '1 day ago', avatar: '' },
-  ];
-
-  const displayComments = comments.length > 0 ? comments : sampleComments;
+  const commentState = useSelector((state) => state.comment);
+  const comments = commentState?.comments || [];
+  const commentsCount = Array.isArray(comments) ? comments.length : 0;
 
   return (
     <div className="mt-8 border-t border-gray-100 pt-6">
@@ -175,7 +110,7 @@ function DiscussionSection({ comments = [], postId }) {
           }`}
         >
           <MessageSquare className="h-4 w-4" />
-          Comments ({displayComments.length})
+          Comments ({commentsCount})
         </button>
         <button
           onClick={() => setActiveTab('live')}
@@ -194,34 +129,13 @@ function DiscussionSection({ comments = [], postId }) {
       {/* Comments Tab Content */}
       {activeTab === 'comments' && (
         <div>
-          {/* Write Comment */}
-          <div className="flex items-start gap-3 mb-6">
-            
-            <div className="flex-1">
-              <input
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="write comments...."
-                rows="3"
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              />
-              
-            </div>
-           
-          </div>
-
-          {/* Comments List */}
-          <div className="space-y-1">
-            {displayComments.map((comment, idx) => (
-              <Comment key={idx} comment={comment} />
-            ))}
-          </div>
+          <CommentSection postId={postId} targetType="Blog" />
         </div>
       )}
 
       {/* Live Discussion Tab Content */}
       {activeTab === 'live' && (
-        <div className="bg-linear-to-br from-blue-50 to-white rounded-xl border border-blue-100 p-6">
+        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -241,7 +155,7 @@ function DiscussionSection({ comments = [], postId }) {
           <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <MessageCircle className="h-3.5 w-3.5" />
-              {displayComments.length} people discussing
+              {commentsCount} people discussing
             </span>
             <span className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -264,35 +178,55 @@ function DiscussionSection({ comments = [], postId }) {
 
 export default function BlogDetails() {
   const { postId } = useParams();
-  const [blog, setBlog] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { blogDetails, likedPostIds, isLoading } = useSelector((state) => state.posts);
+  const { ids: bookmarkIds } = useSelector((state) => state.bookmarks);
+  const commentState = useSelector((state) => state.comment);
+  const comments = commentState?.comments || [];
+  
   const [error, setError] = useState(null);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
-  // Fetch blog data directly
+  const blog = (blogDetails?._id || blogDetails?.id) === postId ? blogDetails : null;
+  const isLiked = likedPostIds?.includes(postId);
+  const isBookmarked = bookmarkIds?.includes(postId);
+
+  // Fetch blog data using Redux
   useEffect(() => {
-    const fetchBlog = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get(`/blog/blog-details/${postId}`);
-        if (response.data.success) {
-          setBlog(response.data.blog);
-        } else {
-          setError('Blog not found');
-        }
-      } catch (err) {
-        console.error('Error fetching blog:', err);
-        setError(err.response?.data?.message || 'Failed to load blog');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (postId) {
-      fetchBlog();
+    if (postId && !blog) {
+      dispatch(getBlogDetails(postId)).catch((err) => {
+        setError(err.message || 'Failed to load blog');
+      });
     }
-  }, [postId]);
+  }, [dispatch, postId, blog]);
+
+  // Fetch comments for this blog
+  useEffect(() => {
+    if (postId) {
+      dispatch(getcomments(postId));
+    }
+  }, [dispatch, postId]);
+
+  const handleLike = async () => {
+    if (isLiking) return;
+    
+    setIsLiking(true);
+    try {
+      if (isLiked) {
+        await dispatch(unlikeBlog(postId)).unwrap();
+      } else {
+        await dispatch(likeBlog(postId)).unwrap();
+      }
+    } catch (error) {
+      console.error('Like error:', error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleBookmark = () => {
+    dispatch(toggleBookmark({ itemId: postId, type: 'blog' }));
+  };
 
   const handleShare = async () => {
     try {
@@ -307,7 +241,7 @@ export default function BlogDetails() {
     }
   };
 
-  if (loading) {
+  if (isLoading && !blog) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <PostSkeleton />
@@ -326,7 +260,11 @@ export default function BlogDetails() {
   }
 
   const author = getAuthor(blog);
-  const stats = getStats(blog);
+  const stats = {
+    views: blog?.stats?.views ?? blog?.views ?? 0,
+    comments: comments?.length ?? blog?.stats?.comments ?? blog?.commentsCount ?? 0,
+    likes: blog?.stats?.likes ?? blog?.likesCount ?? 0,
+  };
   const tags = parseTags(blog.tags);
   const readTime = getReadTime(blog);
   const articleBody = getBlogBody(blog);
@@ -375,21 +313,22 @@ export default function BlogDetails() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={handleLike}
+                disabled={isLiking}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                  liked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  isLiked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <Heart className={`h-4 w-4 ${liked ? 'fill-red-600' : ''}`} />
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-600' : ''}`} />
                 {stats.likes}
               </button>
               <button
-                onClick={() => setBookmarked(!bookmarked)}
+                onClick={handleBookmark}
                 className={`p-1.5 rounded-full transition ${
-                  bookmarked ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                  isBookmarked ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-blue-600' : ''}`} />
+                <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-blue-600' : ''}`} />
               </button>
               <button
                 onClick={handleShare}
@@ -448,7 +387,7 @@ export default function BlogDetails() {
         </div>
 
         {/* Discussion Section (Comments + Live Discussion Tabs) */}
-        <DiscussionSection comments={blog?.comments || []} postId={postId} />
+        <DiscussionSection postId={postId} />
       </article>
 
       {/* Custom CSS for blog content */}

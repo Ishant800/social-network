@@ -35,34 +35,49 @@ const commentSlice = createSlice({
     
     name:"comment",
     initialState,
-    reducers:{},
+    reducers:{
+        reset: (state) => {
+            state.isLoading = false;
+            state.isError = false;
+            state.isSuccess = false;
+            state.errormessage = "";
+        }
+    },
     extraReducers:(builder)=>{
         //create comments
         builder.addCase(comment.pending,(state)=>{
-            state.isLoading=true
+            state.isLoading = true;
+            state.isError = false;
         })
-        builder.addCase(comment.fulfilled,(state,action)=>{
-            state.isLoading=false;
-            state.isSuccess=true;
-            state.comments.unshift(action.payload)
+        .addCase(comment.fulfilled,(state,action)=>{
+            state.isLoading = false;
+            state.isSuccess = true;
+            if (state.comments) {
+                state.comments.unshift(action.payload);
+            } else {
+                state.comments = [action.payload];
+            }
         })
-        builder.addCase(comment.rejected,(state,error)=>{
+        .addCase(comment.rejected,(state,action)=>{
+            state.isLoading = false;
             state.isError = true;
-            state.errormessage= error.payload
+            state.errormessage = action.payload;
         })
 
         //get comments
-        builder.addCase(getcomments.pending,(state)=>{
-            state.isLoading = true
+        .addCase(getcomments.pending,(state)=>{
+            state.isLoading = true;
+            state.isError = false;
         })
-        builder.addCase(comment.fulfilled,(state,action)=>{
+        .addCase(getcomments.fulfilled,(state,action)=>{
             state.isLoading = false;
+            state.isSuccess = true;
             state.comments = action.payload;
         })
-
-        builder.addCase(getcomments.rejected,(state,error)=>{
-            state.isError=true;
-            state.errormessage= error.payload
+        .addCase(getcomments.rejected,(state,action)=>{
+            state.isLoading = false;
+            state.isError = true;
+            state.errormessage = action.payload;
         })
     }
 

@@ -78,9 +78,27 @@ module.exports = (io) => {
     // ============ PRIVATE CHAT FEATURES ============
     
     // Register user for private chat
-    socket.on("register_private_user", ({ userId }) => {
+    socket.on("register_private_user", async ({ userId }) => {
       if (!userId) return;
       privateActiveUsers[userId] = socket.id;
+      
+      // Update user's lastSeen to mark as online
+      await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+      
+      // Notify all users in their chat list that this user is online
+      const user = await User.findById(userId).select('chatList');
+      if (user && user.chatList) {
+        user.chatList.forEach(chatUserId => {
+          const chatUserSocketId = privateActiveUsers[chatUserId.toString()];
+          if (chatUserSocketId) {
+            io.to(chatUserSocketId).emit("user_status_changed", { 
+              userId, 
+              isOnline: true 
+            });
+          }
+        });
+      }
+      
       console.log(`User ${userId} registered for private chat`);
     });
 
@@ -200,10 +218,14 @@ module.exports = (io) => {
               read: false
             });
 
+            // Check if user is online (connected in last 30 seconds)
+            const isOnline = privateActiveUsers[chatUser._id.toString()] !== undefined;
+
             return {
               user: chatUser,
               lastMessage,
-              unreadCount
+              unreadCount,
+              isOnline
             };
           })
         );
@@ -225,7 +247,7 @@ module.exports = (io) => {
     });
 
     // Handle disconnect
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       // Remove from blog discussions
       for (const blogId in activeUsers) {
         const beforeLength = activeUsers[blogId].length;
@@ -236,9 +258,26 @@ module.exports = (io) => {
         }
       }
 
-      // Remove from private chat users
+      // Remove from private chat users and update lastSeen
       for (const userId in privateActiveUsers) {
         if (privateActiveUsers[userId] === socket.id) {
+          // Update user's lastSeen to mark as offline
+          await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+          
+          // Notify all users in their chat list that this user is offline
+          const user = await User.findById(userId).select('chatList');
+          if (user && user.chatList) {
+            user.chatList.forEach(chatUserId => {
+              const chatUserSocketId = privateActiveUsers[chatUserId.toString()];
+              if (chatUserSocketId) {
+                io.to(chatUserSocketId).emit("user_status_changed", { 
+                  userId, 
+                  isOnline: false 
+                });
+              }
+            });
+          }
+          
           delete privateActiveUsers[userId];
           break;
         }

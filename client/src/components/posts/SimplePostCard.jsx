@@ -1,0 +1,134 @@
+import { useState } from 'react';
+import { Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { likePost, unlikePost } from '../../features/post/postSlice';
+import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
+
+export default function SimplePostCard({ post }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { likedPostIds } = useSelector((state) => state.posts);
+  const { ids: bookmarkIds } = useSelector((state) => state.bookmarks);
+
+  const postId = post._id || post.id;
+  const [localLiked, setLocalLiked] = useState(post.isLiked || likedPostIds.includes(postId));
+  const [localLikes, setLocalLikes] = useState(post.likesCount || 0);
+  const [isLiking, setIsLiking] = useState(false);
+
+  const isBookmarked = bookmarkIds.includes(postId);
+  const authorName = post.author?.fullName || post.author?.username || 'Unknown';
+  const authorAvatar = post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=ffffff`;
+  
+  // Format date: "Jan 15, 2024 at 3:45 PM"
+  const createdDate = new Date(post.createdAt);
+  const formattedDate = createdDate.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+  const formattedTime = createdDate.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+
+  const handleLike = async (e) => {
+    e.stopPropagation();
+    if (isLiking) return;
+
+    const wasLiked = localLiked;
+    setLocalLiked(!wasLiked);
+    setLocalLikes(wasLiked ? localLikes - 1 : localLikes + 1);
+    setIsLiking(true);
+
+    try {
+      if (wasLiked) {
+        await dispatch(unlikePost(postId)).unwrap();
+      } else {
+        await dispatch(likePost(postId)).unwrap();
+      }
+    } catch (error) {
+      setLocalLiked(wasLiked);
+      setLocalLikes(wasLiked ? localLikes : localLikes - 1);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleBookmark = (e) => {
+    e.stopPropagation();
+    dispatch(toggleBookmark({ itemId: postId, type: 'post' }));
+  };
+
+  return (
+    <article 
+      onClick={() => navigate(`/post/${postId}`)}
+      className="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer"
+    >
+      {/* Author Info */}
+      <div className="flex items-center gap-3 mb-3">
+        <img src={authorAvatar} alt={authorName} className="w-10 h-10 rounded-full" />
+        <div>
+          <h3 className="text-sm font-medium text-gray-900">{authorName}</h3>
+          <p className="text-xs text-gray-500">{formattedDate} at {formattedTime}</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      {post.content && (
+        <p className="text-gray-800 text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
+      )}
+
+      {/* Tags */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+            #{post.tags[0]}
+          </span>
+        </div>
+      )}
+
+      {/* Media */}
+      {post.media && post.media.length > 0 && (
+        <div className={`grid gap-1 mb-3 rounded-lg overflow-hidden ${
+          post.media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+        }`}>
+          {post.media.slice(0, 4).map((img, idx) => (
+            <div key={idx} className={`bg-gray-100 ${post.media.length === 1 ? 'max-h-80' : 'h-32'}`}>
+              <img src={img.url} alt="" className="w-full h-full object-cover" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="grid grid-cols-4 gap-1 mt-3">
+        <button
+          onClick={handleLike}
+          disabled={isLiking}
+          className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
+        >
+          <Heart className={`h-3.5 w-3.5 ${localLiked ? 'fill-black text-black' : 'text-gray-500'}`} />
+          <span className="text-gray-500">{localLikes}</span>
+        </button>
+
+        <button className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition">
+          <MessageCircle className="h-3.5 w-3.5" />
+          {post.commentsCount || 0}
+        </button>
+
+        <button className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition">
+          <Share2 className="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          onClick={handleBookmark}
+          className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
+        >
+          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
+        </button>
+      </div>
+    </article>
+  );
+}

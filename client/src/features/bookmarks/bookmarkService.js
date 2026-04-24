@@ -1,7 +1,16 @@
 import API from '../../api/axios';
 
-const getBookmarks    = ()         => API.get('/bookmark').then((r) => r.data.bookmarks);
-const getBookmarkIds  = ()         => API.get('/bookmark/ids').then((r) => r.data.ids);
-const toggleBookmark  = (itemId, type) => API.post(`/bookmark/${itemId}?type=${type}`).then((r) => r.data);
+const getBookmarks = async () => {
+  const response = await API.get('/bookmark');
+  return response.data?.bookmarks || [];
+};
+
+const getBookmarkIds = async () => {
+  const response = await API.get('/bookmark/ids');
+  return response.data?.ids || [];
+};
+
+const toggleBookmark = (itemId, type) => 
+  API.post(`/bookmark/${itemId}?type=${type}`).then((r) => r.data);
 
 export default { getBookmarks, getBookmarkIds, toggleBookmark };

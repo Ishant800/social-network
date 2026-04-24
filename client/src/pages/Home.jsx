@@ -1,48 +1,47 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import PostCard from '../components/posts/PostCard';
+import SimplePostCard from '../components/posts/SimplePostCard';
+import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getFeed } from '../features/post/postSlice';
+import { getFeed, setLikedPosts } from '../features/post/postSlice';
 
-const feedTabs = ['For You', 'Posts', 'Blogs'];
-
-// Helper function to identify post type
-const getPostType = (post) => {
-  // Check if it's a blog post
-  if (post?.feedType === 'blog') return 'Blog';
-  if (post?.isBlog === true) return 'Blog';
-  if (post?.title && (post?.coverImage || post?.summary)) return 'Blog';
-  if (post?.content?.body || post?.content?.type === 'blog') return 'Blog';
-  
-  // Check if it's a regular post
-  if (post?.feedType === 'post') return 'Post';
-  if (post?.content && typeof post?.content === 'string' && !post?.title) return 'Post';
-  
-  // Default based on available fields
-  if (post?.title) return 'Blog';
-  return 'Post';
-};
+const feedTabs = ['Posts', 'Articles', 'Discussions'];
 
 export default function Home() {
   const dispatch = useDispatch();
   const token = useSelector((s) => s.auth.token);
-  const { isLoading, isError, posts, hasMore, isLoadingMore, feedCursor, message } = useSelector(
+  const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message } = useSelector(
     (s) => s.posts,
   );
-  const [activeTab, setActiveTab] = useState('For You');
+  const [activeTab, setActiveTab] = useState('Posts');
   const sentinelRef = useRef(null);
 
+  // Reset and fetch when tab changes
   useEffect(() => {
     if (!token) return;
-    dispatch(getFeed({ cursor: null, append: false }));
-  }, [dispatch, token]);
+    const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
+    dispatch(getFeed({ feedType, page: 1, append: false }));
+  }, [dispatch, token, activeTab]);
+
+  // Load liked posts from feed data
+  useEffect(() => {
+    if (posts && posts.length > 0) {
+      const likedPostIds = posts
+        .filter(post => post.isLiked)
+        .map(post => post._id || post.id);
+      
+      if (likedPostIds.length > 0) {
+        dispatch(setLikedPosts(likedPostIds));
+      }
+    }
+  }, [posts, dispatch]);
 
   const loadMore = useCallback(() => {
-    if (!token || !hasMore || isLoadingMore || isLoading || !feedCursor) return;
-    if (activeTab !== 'For You') return;
-    dispatch(getFeed({ cursor: feedCursor, append: true }));
-  }, [dispatch, token, hasMore, isLoadingMore, isLoading, feedCursor, activeTab]);
+    if (!token || !hasMore || isLoadingMore || isLoading) return;
+    const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
+    dispatch(getFeed({ feedType, page: currentPage + 1, append: true }));
+  }, [dispatch, token, hasMore, isLoadingMore, isLoading, currentPage, activeTab]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -56,33 +55,7 @@ export default function Home() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [loadMore, token, activeTab]);
-
-  // Fixed filtering logic
-  const filteredPosts = useMemo(() => {
-    if (!posts?.length) return [];
-    
-    if (activeTab === 'For You') return posts;
-    
-    if (activeTab === 'Posts') {
-      return posts.filter((post) => getPostType(post) === 'Post');
-    }
-    
-    if (activeTab === 'Blogs') {
-      return posts.filter((post) => getPostType(post) === 'Blog');
-    }
-    
-    return posts;
-  }, [activeTab, posts]);
-
-  // Debug logging (remove in production)
-  useEffect(() => {
-    if (posts?.length > 0) {
-      const postCount = posts.filter(p => getPostType(p) === 'Post').length;
-      const blogCount = posts.filter(p => getPostType(p) === 'Blog').length;
-      console.log(`Feed: ${posts.length} total | ${postCount} Posts | ${blogCount} Blogs`);
-    }
-  }, [posts]);
+  }, [loadMore, token]);
 
   if (!token) return <Navigate to="/login" replace />;
 
@@ -110,19 +83,6 @@ export default function Home() {
             }`}
           >
             {tab}
-            {tab === 'For You' && posts?.length > 0 && (
-              <span className="ml-1 text-xs text-gray-400">({posts.length})</span>
-            )}
-            {tab === 'Posts' && (
-              <span className="ml-1 text-xs text-gray-400">
-                ({posts?.filter(p => getPostType(p) === 'Post').length || 0})
-              </span>
-            )}
-            {tab === 'Blogs' && (
-              <span className="ml-1 text-xs text-gray-400">
-                ({posts?.filter(p => getPostType(p) === 'Blog').length || 0})
-              </span>
-            )}
           </button>
         ))}
       </div>
@@ -136,32 +96,32 @@ export default function Home() {
       )}
 
       {/* Empty State */}
-      {!isLoading && (!filteredPosts || filteredPosts.length === 0) && !isError && (
+      {!isLoading && (!posts || posts.length === 0) && !isError && (
         <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-5 py-12 text-center">
           <p className="text-gray-500 text-sm">
-            {activeTab === 'For You' && 'No posts in your feed'}
-            {activeTab === 'Posts' && 'No short posts found'}
-            {activeTab === 'Blogs' && 'No blog articles found'}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {activeTab === 'For You' && 'Follow people or create something new'}
-            {activeTab === 'Posts' && 'Create a short post to share your thoughts'}
-            {activeTab === 'Blogs' && 'Write a blog article to share your knowledge'}
+            {activeTab === 'Posts' && 'No posts found'}
+            {activeTab === 'Articles' && 'No articles found'}
+            {activeTab === 'Discussions' && 'No discussions found'}
           </p>
         </div>
       )}
 
       {/* Posts Feed */}
-      {!isLoading && filteredPosts?.length > 0 && (
+      {!isLoading && posts?.length > 0 && (
         <div className="space-y-4">
-          {filteredPosts.map((post) => (
-            <PostCard key={post._id || post.id} post={post} />
-          ))}
+          {posts.map((post) => {
+            const isBlog = activeTab === 'Articles' || post.feedType === 'blog';
+            return isBlog ? (
+              <BlogCard key={post._id || post.id} post={post} />
+            ) : (
+              <SimplePostCard key={post._id || post.id} post={post} />
+            );
+          })}
         </div>
       )}
 
       {/* Load More Sentinel */}
-      {activeTab === 'For You' && hasMore && filteredPosts?.length > 0 && (
+      {hasMore && posts?.length > 0 && (
         <div ref={sentinelRef} className="flex justify-center py-4">
           {isLoadingMore ? (
             <span className="text-xs text-gray-400">Loading more...</span>

@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { X, Image as ImageIcon} from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { updatePost } from '../features/post/postSlice';
 
 export default function EditPost() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const post = location.state?.post;
+  const { isLoading } = useSelector((state) => state.posts);
+  
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -51,28 +56,28 @@ export default function EditPost() {
       return;
     }
 
+    if (!post?._id && !post?.id) {
+      alert('Post ID not found');
+      return;
+    }
+
     setSaving(true);
     
     const formData = new FormData();
     formData.append('content', content);
     
-    // Append existing images to keep
-    existingImages.forEach((img, index) => {
-      formData.append(`existingImages[${index}]`, img);
-    });
-    
-    // Append new images
+    // Append new images only (backend will replace all images)
     images.forEach(({ file }) => {
-      formData.append('images', file);
+      formData.append('media', file);
     });
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Post updated:', { content, existingImages, newImages: images });
+      const postId = post._id || post.id;
+      await dispatch(updatePost({ postId, postData: formData })).unwrap();
       navigate('/profile');
     } catch (error) {
       console.error('Failed to update post:', error);
+      alert(error || 'Failed to update post');
     } finally {
       setSaving(false);
     }
@@ -95,10 +100,10 @@ export default function EditPost() {
           <h1 className="text-sm font-semibold text-slate-900">Edit Post</h1>
           <button
             onClick={handleSubmit}
-            disabled={saving || (!content.trim() && totalImages === 0)}
+            disabled={isLoading || saving || (!content.trim() && totalImages === 0)}
             className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {isLoading || saving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>

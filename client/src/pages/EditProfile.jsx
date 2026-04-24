@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, MapPin, User, Info, Sparkles } from 'lucide-react';
+import { ArrowLeft, Camera, MapPin, User, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import API from '../api/axios';
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const {user}= useSelector((state)=> state.auth)
+  const { user } = useSelector((state) => state.auth);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -20,11 +20,11 @@ export default function EditProfile() {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
-        bio: user.bio || '',
-        address: user.address || '',
+        name: user.profile?.fullName || user.name || user.username || '',
+        bio: user.profile?.bio || user.bio || '',
+        address: user.profile?.location || user.address || '',
       });
-      setPreview(user?.profileImage?.url?.trim() || '');
+      setPreview(user.profile?.avatar?.url || user?.profileImage?.url || '');
     }
   }, [user]);
 
@@ -46,22 +46,16 @@ export default function EditProfile() {
     setSaving(true);
     
     const data = new FormData();
-    data.append('name', formData.name);
-    data.append('bio', formData.bio);
-    data.append('address', formData.address);
+    data.append('fullName', formData.name.trim());
+    data.append('bio', formData.bio.trim());
+    data.append('location', formData.address.trim());
     if (selectedFile) data.append('profileImage', selectedFile);
-    console.log(data)
+    
     try {
-      const response = await API.put("/user/update-profile",data)
-      console.log(response)
-      if(response.status === 200){
-      navigate('/profile');
+      const response = await API.put('/user/update-profile', data);
+      if (response.status === 200) {
+        navigate('/profile');
       }
-
-      else{
-        alert("failed to update post")
-      }
-      
     } catch (err) {
       console.error('Save failed:', err);
     } finally {
@@ -69,129 +63,106 @@ export default function EditProfile() {
     }
   };
 
+  const getAvatarUrl = () => {
+    if (preview) return preview;
+    const name = formData.name || user?.username || 'User';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3b82f6&color=ffffff&size=80`;
+  };
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-white">
-      
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-slate-100">
+      <div className="border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition"
+            className="p-1 hover:bg-gray-100 rounded"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-sm font-semibold text-slate-900">Edit Profile</h1>
+          <h1 className="font-medium">Edit Profile</h1>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium mb-4">
-          <Sparkles className="w-3.5 h-3.5" />
-          Make it yours
-        </div>
-        <h2 className="text-2xl font-bold text-slate-900">Tell your story</h2>
-        <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
-          Update your profile to help others connect with you better. 
-          A great profile opens doors.
-        </p>
-      </div>
-
-      {/* Form Card */}
-      <div className="max-w-2xl mx-auto px-4 pb-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-100 p-5 space-y-5">
+      {/* Form */}
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           
           {/* Profile Image */}
-          <div className="flex flex-col items-center gap-3 pb-4 border-b border-slate-100">
-            <div className="relative group">
+          <div className="flex items-center gap-4">
+            <div className="relative">
               <img
-                src={preview || 'https://ui-avatars.com/api/?name=User&size=128'}
-                alt="Profile preview"
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-100"
+                src={getAvatarUrl()}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover"
               />
-              <label className="absolute bottom-1 right-1 p-2 bg-indigo-600 text-white rounded-xl cursor-pointer hover:bg-indigo-700 transition shadow-lg">
-                <Camera className="w-4 h-4" />
+              <label className="absolute bottom-0 right-0 p-1 bg-blue-600 text-white rounded-full cursor-pointer hover:bg-blue-700">
+                <Camera className="w-3 h-3" />
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </label>
             </div>
-            <p className="text-xs text-slate-500">
-              {selectedFile ? selectedFile.name : 'Click to upload a new photo'}
-            </p>
+            <div>
+              <p className="text-sm font-medium">Profile Photo</p>
+              <p className="text-xs text-gray-500">Click camera to change</p>
+            </div>
           </div>
 
           {/* Name */}
           <div>
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mb-2">
-              <User className="w-4 h-4" /> Your Name
+            <label className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+              <User className="w-4 h-4" />
+              Name
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="How should we call you?"
-              className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Bio */}
           <div>
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mb-2">
-              <Info className="w-4 h-4" /> Bio
+            <label className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+              <Info className="w-4 h-4" />
+              Bio
             </label>
             <textarea
               name="bio"
               value={formData.bio}
               onChange={handleChange}
-              rows={4}
-              placeholder="Share a bit about yourself... (max 160 chars)"
+              rows={3}
               maxLength={160}
-              className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
             />
-            <p className="text-[10px] text-slate-400 mt-1 text-right">
-              {formData.bio.length}/160
-            </p>
+            <p className="text-xs text-gray-400 text-right mt-1">{formData.bio.length}/160</p>
           </div>
 
           {/* Location */}
           <div>
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mb-2">
-              <MapPin className="w-4 h-4" /> Location
+            <label className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+              <MapPin className="w-4 h-4" />
+              Location
             </label>
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              placeholder="City, Country"
-              className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? 'Updating...' : 'Update Profile'}
+          </button>
         </form>
-
-        {/* Helper Text */}
-        <p className="text-center text-xs text-slate-400 mt-6">
-          Your profile is public. Be thoughtful about what you share.
-        </p>
       </div>
     </div>
   );

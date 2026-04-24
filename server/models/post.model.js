@@ -18,11 +18,7 @@ const postSchema = mongoose.Schema(
       }
     ],
     
-    sharedFrom: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
-      default: null,
-    },
+    
     tags: [{ type: String }],
     isPublic: {
       type: Boolean,

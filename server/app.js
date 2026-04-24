@@ -54,6 +54,11 @@ const apiLimiter = rateLimit({
 });
 app.use(apiLimiter);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.use('/auth', authRoute);
 app.use('/feed', feedRoute);
 app.use('/post', postRoute);
@@ -80,7 +85,7 @@ socketHandler(io);
 
 const PORT_NO = process.env.PORT || 5000;
 server.listen(PORT_NO, () => {
-  // eslint-disable-next-line no-console
+  
   console.log(`server running successfully on port: ${PORT_NO}`);
 });
 

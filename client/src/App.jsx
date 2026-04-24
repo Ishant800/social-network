@@ -12,6 +12,7 @@ import SignUp from './pages/SignUp';
 import { useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { getMe } from './features/auth/authSlice';
+import { fetchBookmarkIds } from './features/bookmarks/bookmarkSlice';
 import EditProfile from './pages/EditProfile';
 import EditPost from './pages/EditPost';
 import UserSuggestions from './pages/UserSuggestions';
@@ -23,17 +24,17 @@ import CreatePostPage from './components/posts/CreatePost';
 import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Messagebox';
-export default function App() {
 
+export default function App() {
   const dispatch = useDispatch();
   const token = localStorage.getItem("token")
 
   useEffect(()=>{
     if(token){
       dispatch(getMe());
+      dispatch(fetchBookmarkIds());
     }
   },[dispatch,token]);  
-
 
   return (
     <Router>
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/friendsexplore" element={<UserSuggestions />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/discussionroom/:blogId" element={<DiscussionRoom />} />
           <Route path="/profile/edit" element={<EditProfile/>} />
           <Route path="/post/create" element={<CreatePostPage/>} />

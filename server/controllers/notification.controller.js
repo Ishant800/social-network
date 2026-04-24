@@ -4,18 +4,19 @@ const Notification = require('../models/notification.model');
 const sseClients = {};
 
 // Called by other controllers to push a notification
-async function pushNotification({ recipient, actor, type, post, blog, comment }) {
-  // Don't notify yourself
-  if (String(recipient) === String(actor)) return;
+async function pushNotification({ recipient, actor, type, post, blog, comment, message }) {
+  // Don't notify yourself for user actions (but allow system notifications)
+  if (type !== 'profile_incomplete' && String(recipient) === String(actor)) return;
 
   try {
     const notif = await Notification.create({
       recipient,
-      actor,
+      actor: actor || recipient, // For system notifications, actor can be the user themselves
       type,
       post:    post    || null,
       blog:    blog    || null,
       comment: comment || null,
+      message: message || null,
     });
 
     const populated = await notif.populate('actor', 'username profile.avatar profile.fullName');

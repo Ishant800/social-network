@@ -6,7 +6,7 @@ const NotificationSchema = new mongoose.Schema(
     actor:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     type:      {
       type: String,
-      enum: ['like', 'comment', 'follow'],
+      enum: ['like', 'comment', 'follow', 'profile_incomplete'],
       required: true,
     },
     // Optional references
@@ -14,6 +14,8 @@ const NotificationSchema = new mongoose.Schema(
     blog:      { type: mongoose.Schema.Types.ObjectId, ref: 'Blog',    default: null },
     comment:   { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
     read:      { type: Boolean, default: false },
+    // For system notifications
+    message:   { type: String, default: null },
   },
   { timestamps: true }
 );

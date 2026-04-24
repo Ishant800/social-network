@@ -16,21 +16,6 @@ import {
 } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
 
-// ─── Nav data ───────────────────────────────────────────────────────────────────
-const mainNav = [
-  { icon: Home,          label: 'Home',         path: '/',              end: true },
-  { icon: Compass,       label: 'Explore',       path: '/explore'                  },
-  { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
-  { icon: MessageCircle, label: 'Messages',      path: '/chats'                    },
-  { icon: Bell,          label: 'Notifications', path: '/notifications', badge: 3  },
-  { icon: Bookmark,      label: 'Saved',         path: '/bookmarks'                },
-];
-
-const createNav = [
-  { icon: PenSquare, label: 'Write a Post',     path: '/post/create' },
-  { icon: FileText,  label: 'Write an Article', path: '/blog/create' },
-];
-
 // ─── NavItem ────────────────────────────────────────────────────────────────────
 function NavItem({ icon: Icon, label, path, end = false, badge }) {
   return (
@@ -40,7 +25,7 @@ function NavItem({ icon: Icon, label, path, end = false, badge }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
           isActive
-            ? 'bg-teal-50 text-teal-700 shadow-[inset_3px_0_0_#0d9488]'
+            ? 'bg-teal-50 text-teal-700 '
             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
         }`
       }
@@ -55,9 +40,9 @@ function NavItem({ icon: Icon, label, path, end = false, badge }) {
             }`}
           />
           <span className="flex-1 leading-none truncate">{label}</span>
-          {badge ? (
+          {badge && badge > 0 ? (
             <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
-              {badge}
+              {badge > 99 ? '99+' : badge}
             </span>
           ) : null}
         </>
@@ -80,12 +65,30 @@ export default function Sidebar() {
   const dispatch = useDispatch();
   const navigate  = useNavigate();
   const { user }  = useSelector((s) => s.auth);
+  const { unreadCount } = useSelector((s) => s.notifications);
+  const { items: bookmarks } = useSelector((s) => s.bookmarks);
+  const { unreadCount: messageCount } = useSelector((s) => s.messages);
 
   const displayName = user?.profile?.fullName || user?.username || 'You';
   const handle      = user?.username ? `@${user.username}` : '';
   const avatarUrl   =
     user?.profile?.avatar?.url ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=ffffff`;
+
+  // ─── Nav data with dynamic counts ───────────────────────────────────────────────────────────────────
+  const mainNav = [
+    { icon: Home,          label: 'Home',         path: '/',              end: true },
+    { icon: Compass,       label: 'Explore',       path: '/explore'                  },
+    { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
+    { icon: MessageCircle, label: 'Messages',      path: '/chats',         badge: messageCount },
+    { icon: Bell,          label: 'Notifications', path: '/notifications', badge: unreadCount  },
+    { icon: Bookmark,      label: 'Saved',         path: '/bookmarks',     badge: bookmarks?.length || 0 },
+  ];
+
+  const createNav = [
+    { icon: PenSquare, label: 'Write a Post',     path: '/post/create' },
+    { icon: FileText,  label: 'Write an Article', path: '/blog/create' },
+  ];
 
   const handleLogout = () => {
     dispatch(logout());
@@ -146,17 +149,8 @@ export default function Sidebar() {
             </button>
           </div>
 
-          {/* View profile link */}
-          <NavLink
-            to="/profile"
-            className="mt-2.5 flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-100 text-[11px] font-medium text-slate-500 hover:border-teal-200 hover:text-teal-700 hover:bg-teal-50 transition-all"
-          >
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-teal-500" />
-              View my profile
-            </span>
-            <ChevronRight className="w-3.5 h-3.5 opacity-40" />
-          </NavLink>
+          
+          
         </div>
       </div>
 

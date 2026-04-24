@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/user.model');
+const Notification = require('../models/notification.model');
 const { cloudinary } = require('../config/cloudinary.config');
-const blogsModel = require('../models/blogs.model');
 const postModel = require('../models/post.model');
 const { pushNotification } = require('./notification.controller');
 
@@ -70,13 +70,26 @@ const updateProfile = async (req, res) => {
  async function getMe (req,res){
   try {
     const userid = req.user.id;
-    const getme = await User.findById(userid).select('-password');
+    const getme = await User.findById(userid)
+      .select('-password')
+      .populate('followers', '_id username profile.fullName profile.avatar')
+      .populate('following', '_id username profile.fullName profile.avatar');
+      
     if(!getme){
       return res.status(400).json({
         sucess:false,
         message:"user not found"
       })
     }
+
+    // Check if profile is incomplete
+    const isProfileIncomplete = checkProfileCompleteness(getme);
+    
+    // If profile is incomplete, send notification (only once per day)
+    if (isProfileIncomplete) {
+      await sendProfileIncompleteNotification(userid);
+    }
+
     const post = await postModel
       .find({ user: userid })
       .sort({ createdAt: -1 })
@@ -92,6 +105,45 @@ const updateProfile = async (req, res) => {
       success:false,
       error:error.message
     })
+  }
+}
+
+// Helper function to check if profile is incomplete
+function checkProfileCompleteness(user) {
+  const profile = user.profile || {};
+  
+  // Only check essential fields - fullName and avatar
+  const hasFullName = profile.fullName && profile.fullName.trim() !== '';
+  const hasAvatar = profile.avatar && profile.avatar.url;
+  
+  // Profile is incomplete if missing either essential field
+  return !hasFullName || !hasAvatar;
+}
+
+// Helper function to send profile incomplete notification
+async function sendProfileIncompleteNotification(userId) {
+  try {
+    // Check if we already sent this notification today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const existingNotification = await Notification.findOne({
+      recipient: userId,
+      type: 'profile_incomplete',
+      createdAt: { $gte: today }
+    });
+    
+    // Only send if we haven't sent one today
+    if (!existingNotification) {
+      await pushNotification({
+        recipient: userId,
+        actor: userId,
+        type: 'profile_incomplete',
+        message: 'Complete your profile! Add your full name and profile picture to get started.'
+      });
+    }
+  } catch (error) {
+    console.error('Error sending profile incomplete notification:', error);
   }
 }
 
@@ -173,8 +225,6 @@ async function followUser(req,res){
     if (!alreadyFollowing) {
      owner.following.push(userId);
      target.followers.push(ownerId);
-     owner.stats.following += 1;
-     target.stats.followers += 1;
 
      await owner.save();
      await target.save();
@@ -184,7 +234,8 @@ async function followUser(req,res){
     }
 
    return res.status(200).json({
-    message:"following user"
+    success: true,
+    message: "Following user"
    })
 
   } catch (error) {
@@ -225,15 +276,13 @@ async function unfollowuser (req,res){
       owner.following.pull(userId);
       target.followers.pull(ownerId);
 
-      if (owner.stats.following > 0) owner.stats.following -= 1;
-      if (target.stats.followers > 0) target.stats.followers -= 1;
-
       await owner.save();
       await target.save();
     }
 
     res.json({
-      message:"unfollowed users "
+      success: true,
+      message: "Unfollowed user"
     })
   } catch (error) {
      return res.status(500).json({
@@ -241,4 +290,127 @@ async function unfollowuser (req,res){
     })
   }
 }
-module.exports = { updateProfile ,getMe,getSuggestions,followUser,unfollowuser};
+
+// Get user's followers list
+async function getFollowers(req, res) {
+  try {
+    const userId = req.params.userId || req.user.id;
+    
+    if (req.params.userId && !mongoose.Types.ObjectId.isValid(req.params.userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user id'
+      });
+    }
+    
+    const user = await User.findById(userId)
+      .populate('followers', '_id username profile.fullName profile.avatar profile.bio')
+      .select('followers');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      followers: user.followers || []
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+// Get user's following list
+async function getFollowing(req, res) {
+  try {
+    const userId = req.params.userId || req.user.id;
+    
+    if (req.params.userId && !mongoose.Types.ObjectId.isValid(req.params.userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user id'
+      });
+    }
+    
+    const user = await User.findById(userId)
+      .populate('following', '_id username profile.fullName profile.avatar profile.bio')
+      .select('following');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      following: user.following || []
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+// Get any user's profile by ID
+async function getUserProfile(req, res) {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user.id;
+    
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user id'
+      });
+    }
+    
+    const user = await User.findById(userId)
+      .select('-password')
+      .populate('followers', '_id username profile.fullName profile.avatar')
+      .populate('following', '_id username profile.fullName profile.avatar');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Get user's posts
+    const posts = await postModel
+      .find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(40)
+      .select('content media createdAt likesCount commentsCount isPublic tags title coverImage')
+      .lean();
+    
+    // Check if current user is following this user
+    const isFollowing = user.followers.some(
+      follower => String(follower._id) === String(currentUserId)
+    );
+    
+    res.json({
+      success: true,
+      user,
+      posts,
+      isFollowing
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+module.exports = { updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile };

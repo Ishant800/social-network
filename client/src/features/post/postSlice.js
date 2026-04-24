@@ -3,7 +3,7 @@ import postService from './postService';
 
 const initialState = {
   posts: [],
-  feedCursor: null,
+  currentPage: 1,
   hasMore: true,
   isLoadingMore: false,
   likedPostIds: [],
@@ -26,9 +26,9 @@ export const createpost = createAsyncThunk('post/create', async (userData, thunk
 
 export const getFeed = createAsyncThunk(
   'post/feed',
-  async ({ cursor, append }, thunkAPI) => {
+  async ({ feedType = 'posts', page = 1, append = false }, thunkAPI) => {
     try {
-      const data = await postService.fetchFeed({ cursor });
+      const data = await postService.fetchFeed({ feedType, page });
       return { ...data, append: Boolean(append) };
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -40,8 +40,7 @@ export const getFeed = createAsyncThunk(
 
 export const likePost = createAsyncThunk('post/like', async (postId, thunkAPI) => {
   try {
-    await postService.likePost(postId);
-    return postId;
+    return await postService.likePost(postId);
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
   }
@@ -49,8 +48,23 @@ export const likePost = createAsyncThunk('post/like', async (postId, thunkAPI) =
 
 export const unlikePost = createAsyncThunk('post/unlike', async (postId, thunkAPI) => {
   try {
-    await postService.unlikePost(postId);
-    return postId;
+    return await postService.unlikePost(postId);
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+  }
+});
+
+export const likeBlog = createAsyncThunk('post/likeBlog', async (blogId, thunkAPI) => {
+  try {
+    return await postService.likeBlog(blogId);
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+  }
+});
+
+export const unlikeBlog = createAsyncThunk('post/unlikeBlog', async (blogId, thunkAPI) => {
+  try {
+    return await postService.unlikeBlog(blogId);
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
   }
@@ -74,6 +88,14 @@ export const getBlogDetails = createAsyncThunk('blog/details', async (blogId, th
   }
 });
 
+export const updatePost = createAsyncThunk('post/update', async ({ postId, postData }, thunkAPI) => {
+  try {
+    return await postService.updatePost(postId, postData);
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+  }
+});
+
 const postSlice = createSlice({
   name: 'posts',
   initialState,
@@ -91,9 +113,12 @@ const postSlice = createSlice({
     },
     resetFeed: (state) => {
       state.posts = [];
-      state.feedCursor = null;
+      state.currentPage = 1;
       state.hasMore = true;
       state.isLoadingMore = false;
+    },
+    setLikedPosts: (state, action) => {
+      state.likedPostIds = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -111,13 +136,13 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isLoadingMore = false;
         state.isSuccess = true;
-        const { items, nextCursor, hasMore, append } = action.payload;
+        const { items, page, hasMore, append } = action.payload;
         if (append) {
           state.posts = [...state.posts, ...items];
         } else {
           state.posts = items;
         }
-        state.feedCursor = nextCursor || null;
+        state.currentPage = page || 1;
         state.hasMore = Boolean(hasMore);
       })
       .addCase(getFeed.rejected, (state, action) => {
@@ -142,14 +167,36 @@ const postSlice = createSlice({
       })
 
       .addCase(likePost.fulfilled, (state, action) => {
-        state.isSuccess = true;
-        const postId = action.payload;
-        if (!state.likedPostIds.includes(postId)) {
+        const { postId, likesCount, isLiked } = action.payload;
+        
+        // Update liked posts array
+        if (isLiked && !state.likedPostIds.includes(postId)) {
           state.likedPostIds.push(postId);
         }
+        
+        // Update post in feed
         const target = state.posts.find((p) => (p._id || p.id) === postId);
         if (target) {
-          target.likesCount = (target.likesCount || 0) + 1;
+          target.likesCount = likesCount;
+          if (target.stats) {
+            target.stats.likes = likesCount;
+          }
+        }
+        
+        // Update post details if loaded
+        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+          state.postDetails.likesCount = likesCount;
+          if (state.postDetails.stats) {
+            state.postDetails.stats.likes = likesCount;
+          }
+        }
+        
+        // Update blog details if loaded
+        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+          state.blogDetails.likesCount = likesCount;
+          if (state.blogDetails.stats) {
+            state.blogDetails.stats.likes = likesCount;
+          }
         }
       })
       .addCase(likePost.rejected, (state, action) => {
@@ -157,15 +204,92 @@ const postSlice = createSlice({
       })
 
       .addCase(unlikePost.fulfilled, (state, action) => {
-        state.isSuccess = true;
-        const postId = action.payload;
-        state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+        const { postId, likesCount, isLiked } = action.payload;
+        
+        // Update liked posts array
+        if (!isLiked) {
+          state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+        }
+        
+        // Update post in feed
         const target = state.posts.find((p) => (p._id || p.id) === postId);
         if (target) {
-          target.likesCount = Math.max(0, (target.likesCount || 0) - 1);
+          target.likesCount = likesCount;
+          if (target.stats) {
+            target.stats.likes = likesCount;
+          }
+        }
+        
+        // Update post details if loaded
+        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+          state.postDetails.likesCount = likesCount;
+          if (state.postDetails.stats) {
+            state.postDetails.stats.likes = likesCount;
+          }
+        }
+        
+        // Update blog details if loaded
+        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+          state.blogDetails.likesCount = likesCount;
+          if (state.blogDetails.stats) {
+            state.blogDetails.stats.likes = likesCount;
+          }
         }
       })
       .addCase(unlikePost.rejected, (state, action) => {
+        state.message = action.payload;
+      })
+
+      // Blog likes
+      .addCase(likeBlog.fulfilled, (state, action) => {
+        const { postId, likesCount, isLiked } = action.payload;
+        
+        if (isLiked && !state.likedPostIds.includes(postId)) {
+          state.likedPostIds.push(postId);
+        }
+        
+        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        if (target) {
+          target.likesCount = likesCount;
+          if (target.stats) {
+            target.stats.likes = likesCount;
+          }
+        }
+        
+        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+          state.blogDetails.likesCount = likesCount;
+          if (state.blogDetails.stats) {
+            state.blogDetails.stats.likes = likesCount;
+          }
+        }
+      })
+      .addCase(likeBlog.rejected, (state, action) => {
+        state.message = action.payload;
+      })
+
+      .addCase(unlikeBlog.fulfilled, (state, action) => {
+        const { postId, likesCount, isLiked } = action.payload;
+        
+        if (!isLiked) {
+          state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+        }
+        
+        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        if (target) {
+          target.likesCount = likesCount;
+          if (target.stats) {
+            target.stats.likes = likesCount;
+          }
+        }
+        
+        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+          state.blogDetails.likesCount = likesCount;
+          if (state.blogDetails.stats) {
+            state.blogDetails.stats.likes = likesCount;
+          }
+        }
+      })
+      .addCase(unlikeBlog.rejected, (state, action) => {
         state.message = action.payload;
       })
 
@@ -194,9 +318,34 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      .addCase(updatePost.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updatePost.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        const updatedPost = action.payload;
+        const postId = updatedPost._id || updatedPost.id;
+        
+        // Update in posts array
+        const index = state.posts.findIndex(p => (p._id || p.id) === postId);
+        if (index !== -1) {
+          state.posts[index] = updatedPost;
+        }
+        
+        // Update postDetails if it's the same post
+        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+          state.postDetails = updatedPost;
+        }
+      })
+      .addCase(updatePost.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });
 
-export const { toggleBookmark, resetFeed } = postSlice.actions;
+export const { toggleBookmark, resetFeed, setLikedPosts } = postSlice.actions;
 export default postSlice.reducer;

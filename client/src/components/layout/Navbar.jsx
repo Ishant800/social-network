@@ -9,6 +9,8 @@ export default function Navbar() {
   const [showSearchMobile, setShowSearchMobile] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
+  const { unreadCount } = useSelector((state) => state.notifications);
+  const { unreadCount: messageCount } = useSelector((state) => state.messages);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -83,10 +85,15 @@ export default function Navbar() {
             {/* Messages */}
             <Link
               to="/chats"
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+              className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
               aria-label="Messages"
             >
               <MessageCircle className="w-5 h-5" />
+              {messageCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                  {messageCount > 99 ? '99+' : messageCount}
+                </span>
+              )}
             </Link>
 
             {/* Notifications */}
@@ -96,7 +103,11 @@ export default function Navbar() {
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
 
           </div>

@@ -42,7 +42,7 @@ const UserSchema = new mongoose.Schema({
     notifications: {
       email: { type: Boolean, default: true },
       push: { type: Boolean, default: true }
-    }
+    }  
   },
   chatList:[{
     type:mongoose.Schema.Types.ObjectId,ref:"User"

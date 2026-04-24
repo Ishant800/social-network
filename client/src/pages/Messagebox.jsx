@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import io from 'socket.io-client';
 import {
@@ -11,9 +11,10 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import { setChatList, decrementUnreadCount } from '../features/messages/messageSlice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost';
 
 const getAvatar = (u) =>
   u?.profile?.avatar?.url ||
@@ -46,7 +47,7 @@ function EmptyChat() {
 }
 
 // ─── Conversation row ─────────────────────────────────────────────────────────────
-function ConversationRow({ chat, isActive, onClick }) {
+function ConversationRow({ chat, isActive, onClick, isOnline }) {
   const u    = chat.user;
   const name = getName(u);
   const avatar = getAvatar(u);
@@ -62,6 +63,9 @@ function ConversationRow({ chat, isActive, onClick }) {
     >
       <div className="relative shrink-0">
         <img src={avatar} alt={name} className="w-11 h-11 rounded-full object-cover" />
+        {isOnline && (
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-0.5">
@@ -135,6 +139,7 @@ function TypingIndicator() {
 // ─── Main page ────────────────────────────────────────────────────────────────────
 export default function MessageSystem() {
   const { user }   = useSelector((s) => s.auth);
+  const dispatch   = useDispatch();
   const navigate   = useNavigate();
   const location   = useLocation();
 
@@ -150,6 +155,7 @@ export default function MessageSystem() {
   const [draft,         setDraft]         = useState('');
   const [isTyping,      setIsTyping]      = useState(false);
   const [search,        setSearch]        = useState('');
+  const [onlineUsers,   setOnlineUsers]   = useState({});
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -176,7 +182,19 @@ export default function MessageSystem() {
     socket.emit('register_private_user', { userId: user._id });
     socket.emit('get_chat_list', { userId: user._id });
 
-    socket.on('chat_list_data', setChatList);
+    socket.on('chat_list_data', (data) => {
+      setChatList(data);
+      // Update Redux store with chat list and unread count
+      dispatch(setChatList(data));
+      // Update online status from chat list
+      const onlineMap = {};
+      data.forEach(chat => {
+        if (chat.isOnline) {
+          onlineMap[chat.user._id] = true;
+        }
+      });
+      setOnlineUsers(onlineMap);
+    });
 
     socket.on('receive_private_message', (msg) => {
       // If the message is from the currently open conversation, append it
@@ -227,6 +245,18 @@ export default function MessageSystem() {
       });
     });
 
+    socket.on('user_status_changed', ({ userId, isOnline }) => {
+      setOnlineUsers((prev) => {
+        if (isOnline) {
+          return { ...prev, [userId]: true };
+        } else {
+          const updated = { ...prev };
+          delete updated[userId];
+          return updated;
+        }
+      });
+    });
+
     return () => {
       socket.off('chat_list_data');
       socket.off('receive_private_message');
@@ -235,6 +265,7 @@ export default function MessageSystem() {
       socket.off('message_delivered');
       socket.off('messages_read');
       socket.off('user_typing');
+      socket.off('user_status_changed');
     };
   }, [connected, user, scrollToBottom]);
 
@@ -281,11 +312,19 @@ export default function MessageSystem() {
   const selectConversation = (chat) => {
     setSelectedChat(chat);
     setMessages([]);
+    
+    // Update local chat list to mark as read
+    const unreadCount = chat.unreadCount || 0;
     setChatList((prev) =>
       prev.map((c) =>
         c.user._id === chat.user._id ? { ...c, unreadCount: 0 } : c
       )
     );
+    
+    // Decrement Redux unread count
+    if (unreadCount > 0) {
+      dispatch(decrementUnreadCount(unreadCount));
+    }
   };
 
   const sendMessage = (e) => {
@@ -327,7 +366,7 @@ export default function MessageSystem() {
     <div className="flex h-[calc(100dvh-4rem)] bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
 
       {/* ── Left panel: conversation list ───────────────────────────────────── */}
-      <div className={`flex flex-col border-r border-gray-100 w-full lg:w-80 shrink-0 ${
+      <div className={`flex flex-col border-r border-gray-100 w-full lg:w-96 shrink-0 ${
         selectedChat ? 'hidden lg:flex' : 'flex'
       }`}>
         {/* Header */}
@@ -375,6 +414,7 @@ export default function MessageSystem() {
                 chat={chat}
                 isActive={selectedChat?.user._id === chat.user._id}
                 onClick={() => selectConversation(chat)}
+                isOnline={onlineUsers[chat.user._id]}
               />
             ))
           )}
@@ -397,11 +437,16 @@ export default function MessageSystem() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
-              <img
-                src={recipientAvatar}
-                alt={recipientName}
-                className="w-9 h-9 rounded-full object-cover shrink-0"
-              />
+              <div className="relative shrink-0">
+                <img
+                  src={recipientAvatar}
+                  alt={recipientName}
+                  className="w-9 h-9 rounded-full object-cover"
+                />
+                {onlineUsers[selectedChat.user._id] && (
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                )}
+              </div>
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
@@ -410,10 +455,10 @@ export default function MessageSystem() {
                 <p className="text-[11px] text-gray-400 leading-tight mt-0.5">
                   {isTyping ? (
                     <span className="text-gray-700 font-medium animate-pulse">typing…</span>
-                  ) : connected ? (
-                    'Online'
+                  ) : onlineUsers[selectedChat.user._id] ? (
+                    <span className="text-green-600 font-medium">Online</span>
                   ) : (
-                    'Connecting…'
+                    'Offline'
                   )}
                 </p>
               </div>

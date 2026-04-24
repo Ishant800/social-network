@@ -132,38 +132,38 @@ export default function CommentSection({ postId, compact = false, targetType = '
   };
 
   return (
-    <section className={compact ? 'space-y-5' : 'space-y-6'}>
+    <section className={compact ? 'space-y-4' : 'space-y-6'}>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">Comments</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Comments</h3>
       </div>
 
-      <form className="rounded-xl p-1" onSubmit={handleSubmit}>
+      <form className="mb-6" onSubmit={handleSubmit}>
         <div className="relative">
           <input
             value={commentText}
             onChange={(event) => setCommentText(event.target.value)}
             placeholder="Write a comment..."
-            className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-3 pr-11 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            className="h-10 w-full rounded-lg border border-gray-200 pl-3 pr-11 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-blue-500"
           />
           <button
             type="submit"
             disabled={!commentText.trim() || submitting}
-            className="absolute flex items-center gap-2 border px-2 py-2 rounded-sm right-2 top-1/2 -translate-y-1/2 text-slate-700 transition bg-blue-600 hover:text-[#4e44d4] disabled:opacity-50"
-          > Send
+            className="absolute flex items-center gap-2 right-2 top-1/2 -translate-y-1/2 text-gray-600 disabled:opacity-50"
+          >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
       </form>
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Loading comments...</span>
         </div>
       )}
 
       {!loading && error && (
-        <p className="text-sm text-rose-500">Could not load comments right now. Please try again.</p>
+        <p className="text-sm text-gray-500">Could not load comments right now. Please try again.</p>
       )}
 
       <div className="space-y-4">
@@ -176,24 +176,24 @@ export default function CommentSection({ postId, compact = false, targetType = '
             `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}`;
 
           return (
-            <article key={commentId} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div key={commentId} className="border-b border-gray-200 pb-4">
               <div className="flex items-start gap-3">
                 <img src={avatar} alt={comment.user?.name || 'User'} className="h-10 w-10 rounded-full object-cover" />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h4 className="text-sm font-semibold text-slate-900">{comment.user?.name || 'User'}</h4>
-                      <p className="text-xs text-slate-400">{formatCommentTime(comment.createdAt)}</p>
+                      <h4 className="text-sm font-semibold text-gray-900">{comment.user?.name || 'User'}</h4>
+                      <p className="text-xs text-gray-400">{formatCommentTime(comment.createdAt)}</p>
                     </div>
 
                     {isOwner && (
-                      <div className="flex items-center gap-2 text-slate-400">
+                      <div className="flex items-center gap-2 text-gray-400">
                         {isEditing ? (
                           <button
                             type="button"
                             onClick={cancelEditing}
-                            className="transition hover:text-slate-700"
+                            className="transition"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -202,14 +202,14 @@ export default function CommentSection({ postId, compact = false, targetType = '
                             <button
                               type="button"
                               onClick={() => startEditing(comment)}
-                              className="transition hover:text-slate-700"
+                              className="transition"
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDelete(commentId)}
-                              className="transition hover:text-rose-600"
+                              className="transition"
                               disabled={actionLoadingId === commentId}
                             >
                               {actionLoadingId === commentId ? (
@@ -229,13 +229,13 @@ export default function CommentSection({ postId, compact = false, targetType = '
                       <textarea
                         value={editingText}
                         onChange={(event) => setEditingText(event.target.value)}
-                        className="min-h-[72px] w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none"
+                        className="min-h-[72px] w-full resize-none rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
                       />
                       <div className="mt-3 flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={cancelEditing}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600"
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600"
                         >
                           Cancel
                         </button>
@@ -243,18 +243,18 @@ export default function CommentSection({ postId, compact = false, targetType = '
                           type="button"
                           onClick={() => handleUpdate(commentId)}
                           disabled={!editingText.trim() || actionLoadingId === commentId}
-                          className="rounded-lg bg-[#4e44d4] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
                         >
                           {actionLoadingId === commentId ? 'Saving...' : 'Save'}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm leading-7 text-slate-700">{comment.text}</p>
+                    <p className="mt-3 text-sm leading-6 text-gray-700">{comment.text}</p>
                   )}
                 </div>
               </div>
-            </article>
+            </div>
           );
         })}
       </div>

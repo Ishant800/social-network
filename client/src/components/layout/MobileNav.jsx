@@ -1,5 +1,6 @@
 import { Bell, Home, Plus, User, Search, MessageCircle, Compass } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 function TabLink({ to, end, icon, label, badge }) {
   const Icon = icon;
@@ -40,9 +41,9 @@ export default function MobileNav() {
   const location = useLocation();
   const isCreatePage = location.pathname === '/post/create' || location.pathname === '/blog/create';
   
-  // Example badge counts (connect to your real data)
-  const notificationCount = 3;
-  const messageCount = 2;
+  // Get dynamic counts from Redux store
+  const { unreadCount } = useSelector((state) => state.notifications);
+  const { unreadCount: messageCount } = useSelector((state) => state.messages);
 
   if (isCreatePage) return null;
 
@@ -77,7 +78,7 @@ export default function MobileNav() {
           <TabLink to="/chats" icon={MessageCircle} label="Messages" badge={messageCount} />
 
           {/* Notifications */}
-          <TabLink to="/notifications" icon={Bell} label="Alerts" badge={notificationCount} />
+          <TabLink to="/notifications" icon={Bell} label="Alerts" badge={unreadCount} />
 
           {/* Profile */}
           <TabLink to="/profile" icon={User} label="Profile" />
