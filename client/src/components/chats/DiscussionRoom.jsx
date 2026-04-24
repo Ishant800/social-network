@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import API from '../../api/axios';
 
-const socket = io('http://localhost:5000', { autoConnect: false });
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const socket = io(SOCKET_URL, { autoConnect: false });
 
 const DiscussionRoom = () => {
   const { blogId } = useParams();
