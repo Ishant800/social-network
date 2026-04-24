@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL ;
+const baseURL = import.meta.env.VITE_API_URL || 'https://social-network-backend-9gdm.onrender.com';
 
 const API = axios.create({
   baseURL,
