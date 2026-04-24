@@ -3,8 +3,9 @@ const http = require('http');
 const dotenv = require('dotenv');
 
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// dotenv.config({ path: path.resolve(__dirname, '.env') });
+// dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -25,7 +26,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-const clientOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+const clientOrigins = ("https://social-network-fronted.onrender.com" )
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
