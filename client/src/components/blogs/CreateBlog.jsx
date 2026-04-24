@@ -268,7 +268,7 @@ export default function CreateBlog() {
         <div className="mb-4 flex items-center gap-2 px-1">
           <BookOpen className="h-4 w-4 text-blue-600" />
           <p className="text-sm text-gray-600">
-            Use **bold**, *italic*, `code`, # headings, - lists, and > quotes to format your article
+            {"Use **bold**, *italic*, `code`, # headings, - lists, and > quotes"}
           </p>
         </div>
 
