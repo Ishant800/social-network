@@ -1,54 +1,65 @@
-import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { likePost, unlikePost } from '../../features/post/postSlice';
 import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
+import API from '../../api/axios';
 
 export default function SimplePostCard({ post }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { likedPostIds } = useSelector((state) => state.posts);
   const { ids: bookmarkIds } = useSelector((state) => state.bookmarks);
+  const { user: currentUser } = useSelector((state) => state.auth);
 
   const postId = post._id || post.id;
   const [localLiked, setLocalLiked] = useState(post.isLiked || likedPostIds.includes(postId));
   const [localLikes, setLocalLikes] = useState(post.likesCount || 0);
   const [isLiking, setIsLiking] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const menuRef = useRef(null);
 
   const isBookmarked = bookmarkIds.includes(postId);
   const authorName = post.author?.fullName || post.author?.username || 'Unknown';
   const authorAvatar = post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=ffffff`;
-  
-  // Format date: "Jan 15, 2024 at 3:45 PM"
+
+  // Check if current user owns this post
+  const isOwner = currentUser && (
+    post.author?.userId === currentUser._id ||
+    post.user === currentUser._id ||
+    post.user?._id === currentUser._id
+  );
+
+  // Format date
   const createdDate = new Date(post.createdAt);
-  const formattedDate = createdDate.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
-  const formattedTime = createdDate.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  });
+  const formattedDate = createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const formattedTime = createdDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleLike = async (e) => {
     e.stopPropagation();
     if (isLiking) return;
-
     const wasLiked = localLiked;
     setLocalLiked(!wasLiked);
     setLocalLikes(wasLiked ? localLikes - 1 : localLikes + 1);
     setIsLiking(true);
-
     try {
       if (wasLiked) {
         await dispatch(unlikePost(postId)).unwrap();
       } else {
         await dispatch(likePost(postId)).unwrap();
       }
-    } catch (error) {
+    } catch {
       setLocalLiked(wasLiked);
       setLocalLikes(wasLiked ? localLikes : localLikes - 1);
     } finally {
@@ -61,18 +72,68 @@ export default function SimplePostCard({ post }) {
     dispatch(toggleBookmark({ itemId: postId, type: 'post' }));
   };
 
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    navigate('/post/edit', { state: { post } });
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await API.delete(`/post/${postId}`);
+      setDeleted(true);
+    } catch (err) {
+      alert('Failed to delete post');
+    }
+  };
+
+  if (deleted) return null;
+
   return (
-    <article 
+    <article
       onClick={() => navigate(`/post/${postId}`)}
       className="bg-white rounded-lg border border-gray-200 p-4 cursor-pointer"
     >
       {/* Author Info */}
       <div className="flex items-center gap-3 mb-3">
         <img src={authorAvatar} alt={authorName} className="w-10 h-10 rounded-full" />
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-gray-900">{authorName}</h3>
           <p className="text-xs text-gray-500">{formattedDate} at {formattedTime}</p>
         </div>
+
+        {/* Three dots menu - only for post owner */}
+        {isOwner && (
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}
