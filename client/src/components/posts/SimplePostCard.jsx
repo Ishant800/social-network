@@ -96,10 +96,21 @@ export default function SimplePostCard({ post }) {
         }`}>
           {post.media.slice(0, 4).map((img, idx) => (
             post.media.length === 1 ? (
-              <img key={idx} src={img.url} alt="" className="w-full h-auto rounded-lg" />
+              <img
+                key={idx}
+                src={img.url}
+                alt=""
+                onClick={(e) => { e.stopPropagation(); window.open(img.url, '_blank'); }}
+                className="w-full max-h-[500px] object-contain bg-gray-50 rounded-lg cursor-zoom-in"
+              />
             ) : (
-              <div key={idx} className="h-40 bg-gray-100">
-                <img src={img.url} alt="" className="w-full h-full object-cover" />
+              <div key={idx} className="h-[240px] bg-gray-100 overflow-hidden">
+                <img
+                  src={img.url}
+                  alt=""
+                  onClick={(e) => { e.stopPropagation(); window.open(img.url, '_blank'); }}
+                  className="w-full h-full object-cover cursor-zoom-in hover:opacity-95 transition"
+                />
               </div>
             )
           ))}
