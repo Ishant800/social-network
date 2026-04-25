@@ -18,7 +18,7 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'meroroom',
     allowed_formats: ['jpeg', 'jpg', 'png', 'webp', 'avif'],
-    transformation: [{ height: 1600, width: 1600, crop: 'limit' }],
+    transformation: [{ height: 1000, width: 1000, crop: 'limit' }],
   },
 });
 
