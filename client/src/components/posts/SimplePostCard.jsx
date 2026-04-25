@@ -95,9 +95,13 @@ export default function SimplePostCard({ post }) {
           post.media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
         }`}>
           {post.media.slice(0, 4).map((img, idx) => (
-            <div key={idx} className={`bg-gray-100 ${post.media.length === 1 ? 'max-h-80' : 'h-32'}`}>
-              <img src={img.url} alt="" className="w-full h-full object-cover" />
-            </div>
+            post.media.length === 1 ? (
+              <img key={idx} src={img.url} alt="" className="w-full h-auto rounded-lg" />
+            ) : (
+              <div key={idx} className="h-40 bg-gray-100">
+                <img src={img.url} alt="" className="w-full h-full object-cover" />
+              </div>
+            )
           ))}
         </div>
       )}
