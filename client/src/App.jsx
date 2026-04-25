@@ -1,7 +1,7 @@
-// App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
+
 import { getMe } from './features/auth/authSlice';
 import { fetchBookmarkIds } from './features/bookmarks/bookmarkSlice';
 
@@ -25,8 +25,7 @@ import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Messagebox';
 
-import { Navigate } from "react-router-dom";
-
+// ✅ Protected Route
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
 
@@ -39,54 +38,78 @@ const ProtectedRoute = ({ children }) => {
 
 export default function App() {
   const dispatch = useDispatch();
-   const [loading,setLoading] = useState(true)
-  const [token , setToken] = useState(()=> localStorage.getItem("token"))
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
+  // 🔍 Debug route change
   useEffect(() => {
+    console.log("📍 Route:", location.pathname);
+  }, [location]);
+
+  // 🔥 Auth + initial data load
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    console.log("🔥 App mounted");
+    console.log("TOKEN:", token);
+
     if (token) {
+      console.log("➡️ Fetching user...");
+
       dispatch(getMe())
-      .catch(err => {
-        console.error('GetMe failed:', err);
-      })
-      .finally(()=> setLoading(false));
-      dispatch(fetchBookmarkIds()).catch(err => {
-        console.error('Fetch bookmarks failed:', err);
+        .then(() => console.log("✅ getMe success"))
+        .catch((err) => {
+          console.error("❌ getMe failed:", err);
+          localStorage.removeItem("token"); // cleanup invalid token
+        })
+        .finally(() => {
+          console.log("⏹️ Loading false");
+          setLoading(false);
+        });
+
+      dispatch(fetchBookmarkIds()).catch((err) => {
+        console.error("❌ bookmarks failed:", err);
       });
-    } else{
-      setLoading(false)
+
+    } else {
+      console.log("🚫 No token");
+      setLoading(false);
     }
-  }, [dispatch, token]);
+  }, [dispatch]); // ✅ FIXED
 
-  if(loading) return <div>Loading....</div>
+  // ⏳ Loading state
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <Router>
-      <Layout> 
-        <Routes>
-          <Route path="/login" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+    <Layout>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
 
-          <Route path="/" element={
-            <ProtectedRoute>
-             <Home />
-             </ProtectedRoute>} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/friendsexplore" element={<UserSuggestions />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/:userId" element={<Profile />} />
-          <Route path="/discussionroom/:blogId" element={<DiscussionRoom />} />
-          <Route path="/profile/edit" element={<EditProfile/>} />
-          <Route path="/post/create" element={<CreatePostPage/>} />
-          <Route path="/blog/create" element={<CreateBlog/>} />
-          <Route path="/post/edit" element={<EditPost/>} />
-          <Route path="/post/:postId" element={<PostDetails/>} />
-          <Route path="/blog/:postId" element={<BlogDetails/>} />
-          <Route path="/bookmarks" element={<Bookmarks/>} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/chats" element={<MessageSystem />} />
-          
-        </Routes>
-      </Layout>
-    </Router>
+        {/* Protected Routes */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/friendsexplore" element={<ProtectedRoute><UserSuggestions /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/discussionroom/:blogId" element={<ProtectedRoute><DiscussionRoom /></ProtectedRoute>} />
+        <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+        <Route path="/post/create" element={<ProtectedRoute><CreatePostPage /></ProtectedRoute>} />
+        <Route path="/blog/create" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
+        <Route path="/post/edit" element={<ProtectedRoute><EditPost /></ProtectedRoute>} />
+        <Route path="/post/:postId" element={<ProtectedRoute><PostDetails /></ProtectedRoute>} />
+        <Route path="/blog/:postId" element={<ProtectedRoute><BlogDetails /></ProtectedRoute>} />
+        <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
+      </Routes>
+    </Layout>
   );
 }

@@ -13,12 +13,7 @@ function Signin() {
 
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (token && window.location.pathname === "/login") {
-  //     navigate("/");
-  //   }
-  // }, [navigate]);
+
 
   useEffect(() => {
     if (isSuccess) {
