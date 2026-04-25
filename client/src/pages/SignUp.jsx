@@ -16,11 +16,7 @@ function Signup() {
   const dispatch = useDispatch();
 
   const token = localStorage.getItem("token");
-  useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
-  }, [token, navigate]);
+
 
   useEffect(() => {
     if (isSuccess) {

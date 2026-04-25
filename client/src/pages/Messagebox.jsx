@@ -291,7 +291,7 @@ export default function MessageSystem() {
     navigate('/chats', { replace: true, state: {} });
   }, [location.state, user, navigate]);
 
-  // ── Load history when conversation selected ──────────────────────────────────
+  
   useEffect(() => {
     const socket = socketRef.current;
     if (!selectedChat || !socket || !user?._id || !connected) return;
