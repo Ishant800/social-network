@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   followUser,
   getUserSuggestions,
@@ -116,12 +116,15 @@ function UserCard({ user, isFollowing, onFollow, onUnfollow, onMessage }) {
       <div className="p-5 flex flex-col flex-1">
         {/* Avatar + name */}
         <div className="flex items-start gap-3.5 mb-3">
+          <Link  to={`/profile/${user._id}`}>
           <img
             src={avatar}
             alt={displayName}
             onError={() => setImgErr(true)}
             className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 shrink-0"
           />
+          </Link>
+          
           <div className="flex-1 min-w-0 pt-0.5">
             <h3 className="text-sm font-semibold text-gray-900 truncate leading-tight">{displayName}</h3>
             <p className="text-xs text-gray-400 truncate mt-0.5">{handle}</p>
