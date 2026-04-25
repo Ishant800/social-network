@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 
@@ -33,8 +33,7 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// App Content (needs to be inside Router for useLocation)
-function AppContent() {
+export default function App() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const location = useLocation();
@@ -110,13 +109,5 @@ function AppContent() {
         <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
       </Routes>
     </Layout>
-  );
-}
-
-export default function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
   );
 }
