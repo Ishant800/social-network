@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 
@@ -10,7 +10,6 @@ import Layout from './components/layout/Layout';
 import Explore from './pages/Explore';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
-import Messages from './pages/Messages';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import EditProfile from './pages/EditProfile';
@@ -25,60 +24,65 @@ import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Messagebox';
 
-// ✅ Protected Route
+// Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-
   return children;
 };
 
-export default function App() {
+// App Content (needs to be inside Router for useLocation)
+function AppContent() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
-  // 🔍 Debug route change
   useEffect(() => {
-    console.log("📍 Route:", location.pathname);
+    console.log("Route:", location.pathname);
   }, [location]);
 
-  // 🔥 Auth + initial data load
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
-    console.log("🔥 App mounted");
-    console.log("TOKEN:", token);
+    console.log("App mounted, token:", !!token);
 
-    if (token) {
-      console.log("➡️ Fetching user...");
-
+    if (token && !isAuthPage) {
+      console.log("Fetching user data...");
+      
       dispatch(getMe())
-        .then(() => console.log("✅ getMe success"))
-        .catch((err) => {
-          console.error("❌ getMe failed:", err);
-          localStorage.removeItem("token"); // cleanup invalid token
+        .unwrap()
+        .then(() => {
+          console.log("User data loaded");
+          setLoading(false);
         })
-        .finally(() => {
-          console.log("⏹️ Loading false");
+        .catch((err) => {
+          console.error("GetMe failed:", err);
+          localStorage.removeItem("token");
           setLoading(false);
         });
 
       dispatch(fetchBookmarkIds()).catch((err) => {
-        console.error("❌ bookmarks failed:", err);
+        console.error("Bookmarks failed:", err);
       });
-
     } else {
-      console.log("🚫 No token");
       setLoading(false);
     }
-  }, [dispatch]); // ✅ FIXED
+  }, [dispatch, location.pathname]);
 
-  // ⏳ Loading state
-  if (loading) return <div>Loading...</div>;
+  // Show loading spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Layout>
@@ -88,12 +92,7 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
 
         {/* Protected Routes */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        } />
-
+        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/friendsexplore" element={<ProtectedRoute><UserSuggestions /></ProtectedRoute>} />
@@ -111,5 +110,13 @@ export default function App() {
         <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
       </Routes>
     </Layout>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }

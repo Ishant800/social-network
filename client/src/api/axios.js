@@ -23,8 +23,12 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on auth pages
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/signup') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(error);
