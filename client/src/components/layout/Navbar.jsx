@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Search, Bell, MessageCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/logo.png';
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchMobile, setShowSearchMobile] = useState(false);
+  const navigate = useNavigate();
 
   const { user } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.notifications);
@@ -15,7 +16,8 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSearchMobile(false);
     }
   };
 

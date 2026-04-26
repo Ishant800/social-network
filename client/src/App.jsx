@@ -23,6 +23,7 @@ import CreatePostPage from './components/posts/CreatePost';
 import CreateBlog from './components/blogs/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Messagebox';
+import SearchPage from './pages/Search';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -107,6 +108,7 @@ export default function App() {
         <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
       </Routes>
     </Layout>
   );
