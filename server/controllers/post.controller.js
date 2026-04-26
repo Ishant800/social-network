@@ -263,9 +263,43 @@ const updatePost = async (req, res) => {
 };
 
 
+const deletePost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.postId;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    if (post.user.toString() !== userId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to delete this post' });
+    }
+
+    // Delete media from cloudinary
+    if (post.media && post.media.length > 0) {
+      for (const mediaItem of post.media) {
+        if (mediaItem.public_id) {
+          await cloudinary.uploader.destroy(mediaItem.public_id);
+        }
+      }
+    }
+
+    await Post.findByIdAndDelete(postId);
+    await User.findByIdAndUpdate(userId, { $inc: { 'stats.posts': -1 } });
+
+    return res.status(200).json({ success: true, message: 'Post deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
+  deletePost,
 };

@@ -22,6 +22,7 @@ const likeRoute = require('./routes/like.routes');
 const feedRoute = require('./routes/feed.routes');
 const bookmarkRoute = require('./routes/bookmark.routes');
 const notificationRoute = require('./routes/notification.routes');
+const searchRoute = require('./routes/search.routes');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -69,6 +70,7 @@ app.use('/comment', commentRoute);
 app.use('/likes', likeRoute);
 app.use('/bookmark', bookmarkRoute);
 app.use('/notifications', notificationRoute);
+app.use('/search', searchRoute);
 
 connectDb();
 
