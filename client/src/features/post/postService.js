@@ -74,7 +74,7 @@ const getBlogDetails = async (blogId) => {
 };
 
 const updatePost = async (postId, postData) => {
-  const response = await API.put(`/post/${postId}`, postData);
+  const response = await API.put(`/post/update/${postId}`, postData);
   return normalizePost(response.data.post);
 };
 

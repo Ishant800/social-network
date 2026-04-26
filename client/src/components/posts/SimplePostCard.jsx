@@ -83,7 +83,7 @@ export default function SimplePostCard({ post }) {
     setShowMenu(false);
     if (!window.confirm('Delete this post?')) return;
     try {
-      await API.delete(`/post/${postId}`);
+      await API.delete(`/post/delete/${postId}`);
       setDeleted(true);
     } catch (err) {
       alert('Failed to delete post');
