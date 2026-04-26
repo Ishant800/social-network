@@ -127,7 +127,7 @@ export default function EditPost() {
               {/* Existing Images */}
               {existingImages.map((img, index) => (
                 <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100">
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img src={img?.url || img} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index, true)}
