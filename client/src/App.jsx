@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { getMe } from './features/auth/authSlice';
 import { fetchBookmarkIds } from './features/bookmarks/bookmarkSlice';
+import { fetchNotifications } from './features/notifications/notificationSlice';
 
 import Home from './pages/Home';
 import Layout from './components/layout/Layout';
@@ -49,12 +50,14 @@ export default function App() {
         .then(() => {
           setLoading(false);
         })
-        .catch((err) => {
+        .catch(() => {
           localStorage.removeItem("token");
           setLoading(false);
         });
 
-      dispatch(fetchBookmarkIds())
+      // Fetch initial data for authenticated users
+      dispatch(fetchBookmarkIds());
+      dispatch(fetchNotifications(1));
     } else {
       setLoading(false);
     }

@@ -33,7 +33,17 @@ async function pushNotification({ recipient, actor, type, post, blog, comment, m
 
 // GET /notifications/stream  — SSE stream (read-only, server → client)
 const streamNotifications = (req, res) => {
-  const userId = String(req.user.id);
+  // Token can come from either Authorization header or query param (for EventSource)
+  let userId;
+  
+  if (req.user && req.user.id) {
+    // Token was validated by middleware
+    userId = String(req.user.id);
+  } else {
+    // For EventSource which can't send headers, we allow token in query
+    // This is already handled by the verifyToken middleware if configured properly
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
 
   res.setHeader('Content-Type',  'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');

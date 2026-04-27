@@ -71,7 +71,7 @@ export default function NotificationToast({ notification, onClose, onNavigate })
 
   return (
     <div
-      className={`fixed top-20 right-4 z-50 max-w-sm w-full transform transition-all duration-300 ${
+      className={`w-full max-w-sm transform transition-all duration-300 ${
         isVisible && !isExiting
           ? 'translate-x-0 opacity-100'
           : 'translate-x-full opacity-0'
