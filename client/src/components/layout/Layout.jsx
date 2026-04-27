@@ -37,7 +37,7 @@ export default function Layout({ children }) {
         <div className={`flex flex-1 ${NAVBAR_PT} h-dvh`}>
           {/* Sidebar */}
           <aside className="hidden lg:flex w-64 shrink-0 border-r border-gray-100">
-            <div className="w-full overflow-y-auto">
+            <div className="w-full fixed overflow-y-auto">
               <Sidebar />
             </div>
           </aside>
@@ -75,7 +75,7 @@ export default function Layout({ children }) {
 
           {/* Left sidebar */}
           <aside className="hidden lg:block">
-            <div className="sticky top-20 h-[calc(100dvh-5.5rem)] overflow-y-auto">
+            <div className="fixed top-20 h-[calc(100dvh-5.5rem)] overflow-y-auto">
               <Sidebar />
             </div>
           </aside>
@@ -94,7 +94,7 @@ export default function Layout({ children }) {
           {/* Right sidebar - feed only */}
           {isFeedPage && (
             <aside className="hidden xl:block">
-              <div className="sticky top-20 h-[calc(100dvh-5.5rem)] overflow-y-auto">
+              <div className="fixed top-20 h-[calc(100dvh-5.5rem)] overflow-y-auto">
                 <RightSidebar />
               </div>
             </aside>
