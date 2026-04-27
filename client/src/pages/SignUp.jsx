@@ -10,12 +10,16 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [googleMsg, setGoogleMsg] = useState(false);
 
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const token = localStorage.getItem("token");
+  const handleGoogleClick = () => {
+    setGoogleMsg(true);
+    setTimeout(() => setGoogleMsg(false), 2000);
+  };
 
 
   useEffect(() => {
@@ -184,6 +188,7 @@ function Signup() {
             {/* Google Button */}
             <button
               type="button"
+              onClick={handleGoogleClick}
               className="w-full border border-gray-300 py-2 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
             >
               <img
@@ -193,6 +198,12 @@ function Signup() {
               />
               Continue with Google
             </button>
+
+            {googleMsg && (
+              <p className="text-center text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                Google sign-in not available. Please use your credentials.
+              </p>
+            )}
 
             {/* Sign In Link */}
             <p className="text-center text-xs text-gray-600 mt-4">

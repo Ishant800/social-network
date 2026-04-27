@@ -8,10 +8,16 @@ function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [googleMsg, setGoogleMsg] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
+
+  const handleGoogleClick = () => {
+    setGoogleMsg(true);
+    setTimeout(() => setGoogleMsg(false), 2000);
+  };
 
 
 
@@ -150,10 +156,17 @@ function Signin() {
             {/* Google Button */}
             <button
               type="button"
+              onClick={handleGoogleClick}
               className="w-full border border-gray-300 py-2 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
             >
               Continue with Google
             </button>
+
+            {googleMsg && (
+              <p className="text-center text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                Google sign-in not available. Please use your credentials.
+              </p>
+            )}
 
             {/* Sign Up Link */}
             <p className="text-center text-xs text-gray-600 mt-4">
