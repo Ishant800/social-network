@@ -90,3 +90,12 @@ textarea {
   border-radius: 9999px;
   background: rgba(13, 148, 136, 0.35);
 }
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
