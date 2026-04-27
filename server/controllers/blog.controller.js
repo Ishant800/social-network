@@ -45,8 +45,6 @@ const createBlog = async (req, res) => {
     const userId = req.user.id;
     const { title, body, summary, categoryName, tags, status, isFeatured } = req.body;
 
-    console.log('Received data:', { title, summary, categoryName, tags, status }); // Debug log
-
     if (!title?.trim() || !body?.trim()) {
       return res.status(400).json({ success: false, message: 'Title and content are required' });
     }
@@ -69,8 +67,6 @@ const createBlog = async (req, res) => {
       isFeatured: isFeatured === true || isFeatured === 'true',
       publishedAt: normalizedStatus === 'published' ? new Date() : null
     };
-
-    console.log('Blog data to save:', blogData); // Debug log
 
     const blog = await Blog.create(blogData);
 
