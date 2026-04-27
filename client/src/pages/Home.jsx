@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getFeed, resetFeed, setLikedPosts } from '../features/post/postSlice';
+import { getFeed, resetFeed } from '../features/post/postSlice';
 
 const feedTabs = ['Posts', 'Articles', 'Discussions'];
 

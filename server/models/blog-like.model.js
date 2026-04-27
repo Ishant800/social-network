@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Blog likes are simple - no reaction types, just like/unlike
 const BlogLikeSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 

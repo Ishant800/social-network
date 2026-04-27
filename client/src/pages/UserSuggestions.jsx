@@ -304,7 +304,7 @@ export default function UserSuggestions() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-6">
 
         {/* Header */}
         <div className="mb-6">

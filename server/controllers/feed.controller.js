@@ -19,20 +19,23 @@ const getPostsFeed = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Get user's liked posts if authenticated
-    let likedPostIds = [];
+    // Get user's liked posts and reaction types if authenticated
+    let userReactions = {};
     if (userId) {
       const likes = await PostLike.find({ 
         userId, 
         postId: { $in: posts.map(p => p._id) } 
-      }).select('postId').lean();
+      }).select('postId reactionType').lean();
       
-      likedPostIds = likes.map(like => String(like.postId));
+      likes.forEach(like => {
+        userReactions[String(like.postId)] = like.reactionType;
+      });
     }
 
     // Format posts with clean author data
     const postsWithLikes = posts.map(post => {
       const { user, ...postData } = post;
+      const userReaction = userReactions[String(postData._id)] || null;
       
       return {
         _id: postData._id,
@@ -40,9 +43,11 @@ const getPostsFeed = async (req, res) => {
         media: postData.media,
         tags: postData.tags,
         likesCount: postData.likesCount || 0,
+        reactions: postData.reactions || {},
         commentsCount: postData.commentsCount || 0,
         createdAt: postData.createdAt,
-        isLiked: likedPostIds.includes(String(postData._id)),
+        isLiked: !!userReaction,
+        userReaction,
         author: {
           userId: user?._id,
           username: user?.username,

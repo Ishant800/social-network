@@ -4,84 +4,84 @@ const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
 const { pushNotification } = require('./notification.controller');
 
-// Like a post
-const likePost = async (req, res) => {
+// Helper: recalculate and save reaction counts on a post
+async function syncReactions(postId) {
+  const counts = await PostLike.aggregate([
+    { $match: { postId: require('mongoose').Types.ObjectId.createFromHexString(postId.toString()) } },
+    { $group: { _id: '$reactionType', count: { $sum: 1 } } }
+  ]);
+
+  const reactions = { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 };
+  counts.forEach(({ _id, count }) => { reactions[_id] = count; });
+  const likesCount = Object.values(reactions).reduce((a, b) => a + b, 0);
+
+  await Post.findByIdAndUpdate(postId, { reactions, likesCount });
+  return { reactions, likesCount };
+}
+
+// React to a post (like, love, haha, wow, sad, angry)
+const reactToPost = async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
+    const { reactionType = 'like' } = req.body;
 
-    // Check if post exists
     const post = await Post.findById(postId).populate('user', '_id');
-    if (!post) {
-      return res.status(404).json({ success: false, error: 'Post not found' });
+    if (!post) return res.status(404).json({ success: false, error: 'Post not found' });
+
+    const existing = await PostLike.findOne({ userId, postId });
+
+    if (existing) {
+      if (existing.reactionType === reactionType) {
+        // Same reaction → remove it (toggle off)
+        await PostLike.findOneAndDelete({ userId, postId });
+        const { reactions, likesCount } = await syncReactions(postId);
+        return res.json({ success: true, postId, likesCount, reactions, userReaction: null });
+      } else {
+        // Different reaction → update it
+        existing.reactionType = reactionType;
+        await existing.save();
+      }
+    } else {
+      // New reaction
+      await PostLike.create({ userId, postId, reactionType });
+
+      // Notify post owner
+      if (String(post.user._id) !== String(userId)) {
+        await pushNotification({ recipient: post.user._id, actor: userId, type: 'like', post: postId });
+      }
     }
 
-    // Check if already liked
-    const existingLike = await PostLike.findOne({ userId, postId });
-    if (existingLike) {
-      return res.status(400).json({ success: false, error: 'Post already liked' });
-    }
-
-    // Create like
-    await PostLike.create({ userId, postId });
-
-    // Update post likes count
-    const likesCount = await PostLike.countDocuments({ postId });
-    await Post.findByIdAndUpdate(postId, { likesCount });
-
-    // Send notification to post owner (if not liking own post)
-    if (String(post.user._id) !== String(userId)) {
-      await pushNotification({
-        recipient: post.user._id,
-        actor: userId,
-        type: 'like',
-        post: postId
-      });
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Post liked',
-      postId,
-      likesCount,
-      isLiked: true
-    });
+    const { reactions, likesCount } = await syncReactions(postId);
+    return res.json({ success: true, postId, likesCount, reactions, userReaction: reactionType });
   } catch (error) {
-    console.error('Like post error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// Unlike a post
-const unlikePost = async (req, res) => {
+// Remove reaction from a post
+const removeReaction = async (req, res) => {
   try {
     const userId = req.user.id;
     const { postId } = req.params;
 
-    // Check if like exists
-    const like = await PostLike.findOne({ userId, postId });
-    if (!like) {
-      return res.status(404).json({ success: false, error: 'Like not found' });
-    }
-
-    // Delete like
     await PostLike.findOneAndDelete({ userId, postId });
-    
-    // Update post likes count
-    const likesCount = await PostLike.countDocuments({ postId });
-    await Post.findByIdAndUpdate(postId, { likesCount });
+    const { reactions, likesCount } = await syncReactions(postId);
 
-    res.status(200).json({
-      success: true,
-      message: 'Post unliked',
-      postId,
-      likesCount,
-      isLiked: false
-    });
+    res.json({ success: true, postId, likesCount, reactions, userReaction: null });
   } catch (error) {
-    console.error('Unlike post error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    res.status(500).json({ success: false, error: error.message });
   }
+};
+
+// Keep old like/unlike for backward compat (blogs still use these)
+const likePost = async (req, res) => {
+  req.body.reactionType = 'like';
+  return reactToPost(req, res);
+};
+
+const unlikePost = async (req, res) => {
+  return removeReaction(req, res);
 };
 
 // Like a blog
@@ -168,5 +168,7 @@ module.exports = {
   likePost,
   unlikePost,
   likeBlog,
-  unlikeBlog
+  unlikeBlog,
+  reactToPost,
+  removeReaction
 };

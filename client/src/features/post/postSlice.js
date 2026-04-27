@@ -75,6 +75,14 @@ export const unlikePost = createAsyncThunk('post/unlike', async (postId, thunkAP
   }
 });
 
+export const reactToPost = createAsyncThunk('post/react', async ({ postId, reactionType }, thunkAPI) => {
+  try {
+    return await postService.reactToPost(postId, reactionType);
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+  }
+});
+
 export const likeBlog = createAsyncThunk('post/likeBlog', async (blogId, thunkAPI) => {
   try {
     return await postService.likeBlog(blogId);
@@ -164,12 +172,21 @@ const postSlice = createSlice({
           state.posts = [...state.posts, ...items];
         } else {
           state.posts = items;
-          // Store fetch timestamp and active tab
           state.lastFetched[feedType] = Date.now();
           state.activeFeedType = feedType;
         }
         state.currentPage = page || 1;
         state.hasMore = Boolean(hasMore);
+
+        // Sync likedPostIds from feed data (includes userReaction)
+        const likedIds = items
+          .filter(p => p.userReaction || p.isLiked)
+          .map(p => p._id || p.id);
+        if (likedIds.length > 0) {
+          const existing = new Set(state.likedPostIds);
+          likedIds.forEach(id => existing.add(id));
+          state.likedPostIds = Array.from(existing);
+        }
       })
       .addCase(getFeed.rejected, (state, action) => {
         // CACHE_HIT is not an error - silently skip
@@ -270,6 +287,29 @@ const postSlice = createSlice({
       })
       .addCase(unlikePost.rejected, (state, action) => {
         state.message = action.payload;
+      })
+
+      // Reactions
+      .addCase(reactToPost.fulfilled, (state, action) => {
+        const { postId, likesCount, reactions, userReaction } = action.payload;
+
+        const updatePost = (p) => {
+          if ((p._id || p.id) === postId) {
+            p.likesCount = likesCount;
+            p.reactions = reactions;
+            p.userReaction = userReaction;
+          }
+        };
+
+        state.posts.forEach(updatePost);
+        if (state.postDetails) updatePost(state.postDetails);
+
+        // Update likedPostIds
+        if (userReaction) {
+          if (!state.likedPostIds.includes(postId)) state.likedPostIds.push(postId);
+        } else {
+          state.likedPostIds = state.likedPostIds.filter(id => id !== postId);
+        }
       })
 
       // Blog likes

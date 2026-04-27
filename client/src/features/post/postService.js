@@ -32,19 +32,18 @@ const createPost = async (postData) => {
 };
 
 const likePost = async (postId) => {
-  const response = await API.post(`/likes/post/${postId}/like`);
-  return {
-    postId,
-    ...response.data
-  };
+  const response = await API.post(`/likes/post/${postId}/react`, { reactionType: 'like' });
+  return { postId, ...response.data };
 };
 
 const unlikePost = async (postId) => {
-  const response = await API.delete(`/likes/post/${postId}/unlike`);
-  return {
-    postId,
-    ...response.data
-  };
+  const response = await API.delete(`/likes/post/${postId}/react`);
+  return { postId, ...response.data };
+};
+
+const reactToPost = async (postId, reactionType) => {
+  const response = await API.post(`/likes/post/${postId}/react`, { reactionType });
+  return { postId, ...response.data };
 };
 
 const likeBlog = async (blogId) => {
@@ -96,6 +95,7 @@ export default {
   updatePost,
   likePost,
   unlikePost,
+  reactToPost,
   likeBlog,
   unlikeBlog,
   getPostDetails,
