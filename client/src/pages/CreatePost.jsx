@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ArrowLeft, Image, X, Globe, Lock, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createpost } from '../../features/post/postSlice';
+import { createpost } from '../features/post/postSlice';
 
 export default function CreatePostPage() {
   const dispatch = useDispatch();

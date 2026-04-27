@@ -19,10 +19,10 @@ import PostDetails from './pages/PostDetails';
 import BlogDetails from './pages/BlogDetails';
 import Bookmarks from './pages/Bookmarks';
 import Notifications from './pages/Notifications';
-import CreatePostPage from './components/posts/CreatePost';
-import CreateBlog from './components/blogs/CreateBlog';
+import CreatePostPage from './pages/CreatePost';
+import CreateBlog from './pages/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
-import MessageSystem from './pages/Messagebox';
+import MessageSystem from './pages/Chat';
 import SearchPage from './pages/Search';
 
 // Protected Route Component
@@ -40,33 +40,21 @@ export default function App() {
   const location = useLocation();
 
   useEffect(() => {
-    console.log("Route:", location.pathname);
-  }, [location]);
-
-  useEffect(() => {
     const token = localStorage.getItem("token");
     const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-
-    console.log("App mounted, token:", !!token);
-
     if (token && !isAuthPage) {
-      console.log("Fetching user data...");
-      
+   
       dispatch(getMe())
         .unwrap()
         .then(() => {
-          console.log("User data loaded");
           setLoading(false);
         })
         .catch((err) => {
-          console.error("GetMe failed:", err);
           localStorage.removeItem("token");
           setLoading(false);
         });
 
-      dispatch(fetchBookmarkIds()).catch((err) => {
-        console.error("Bookmarks failed:", err);
-      });
+      dispatch(fetchBookmarkIds())
     } else {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ import postReducer from "../features/post/postSlice"
 import userReducer from "../features/users/userSlice"
 import bookmarkReducer from "../features/bookmarks/bookmarkSlice"
 import notificationReducer from "../features/notifications/notificationSlice"
-import commentReducer from "../features/comment/commentSlice"
+import commentReducer from "../features/comments/commentSlice"
 import messageReducer from "../features/messages/messageSlice"
 
 export const store = configureStore({

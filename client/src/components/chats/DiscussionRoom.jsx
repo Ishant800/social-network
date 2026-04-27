@@ -187,7 +187,7 @@ const DiscussionRoom = () => {
   // Loading state
   if (loadingBlog || !blog) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white">
+      <div className="h-full flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-sm text-gray-500">Loading...</p>
@@ -198,14 +198,14 @@ const DiscussionRoom = () => {
 
   if (!blogId || !user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white">
+      <div className="h-full flex items-center justify-center bg-white">
         <p className="text-sm text-gray-500">Unable to load discussion room</p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-4 py-2 flex items-center justify-between shrink-0">
         <div className="flex-1 min-w-0">

@@ -136,7 +136,7 @@ function TypingIndicator() {
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────────
+
 export default function MessageSystem() {
   const { user }   = useSelector((s) => s.auth);
   const dispatch   = useDispatch();
@@ -362,8 +362,7 @@ export default function MessageSystem() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    /* Full height minus the navbar (h-16 = 4rem → top-16/pt-16 in layout) */
-    <div className="flex h-[calc(100dvh-4rem)] bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+    <div className="flex h-full bg-white border-l border-gray-100">
 
       {/* ── Left panel: conversation list ───────────────────────────────────── */}
       <div className={`flex flex-col border-r border-gray-100 w-full lg:w-96 shrink-0 ${

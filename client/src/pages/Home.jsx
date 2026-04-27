@@ -4,53 +4,58 @@ import { Navigate } from 'react-router-dom';
 import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getFeed, setLikedPosts } from '../features/post/postSlice';
+import { getFeed, resetFeed, setLikedPosts } from '../features/post/postSlice';
 
 const feedTabs = ['Posts', 'Articles', 'Discussions'];
 
 export default function Home() {
   const dispatch = useDispatch();
   const token = useSelector((s) => s.auth.token);
-  const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message } = useSelector(
+  const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message, activeFeedType } = useSelector(
     (s) => s.posts,
   );
   const [activeTab, setActiveTab] = useState('Posts');
   const sentinelRef = useRef(null);
+  const isFirstMount = useRef(true);
 
-  // Reset and fetch when tab changes
+  const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
+
   useEffect(() => {
     if (!token) return;
-    const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
-    dispatch(getFeed({ feedType, page: 1, append: false }));
-  }, [dispatch, token, activeTab]);
+
+    if (isFirstMount.current) {
+      // On first mount - use cache if available, otherwise fetch
+      isFirstMount.current = false;
+      dispatch(getFeed({ feedType, page: 1, append: false, force: false }));
+    }
+  }, [token]);
+
+  // When tab changes - force fresh fetch for new tab
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    const newFeedType = tab === 'Articles' ? 'articles' : 'posts';
+    dispatch(getFeed({ feedType: newFeedType, page: 1, append: false, force: false }));
+  };
 
   // Load liked posts from feed data
   useEffect(() => {
     if (posts && posts.length > 0) {
-      const likedPostIds = posts
-        .filter(post => post.isLiked)
-        .map(post => post._id || post.id);
-      
-      if (likedPostIds.length > 0) {
-        dispatch(setLikedPosts(likedPostIds));
-      }
+      const likedIds = posts.filter(p => p.isLiked).map(p => p._id || p.id);
+      if (likedIds.length > 0) dispatch(setLikedPosts(likedIds));
     }
   }, [posts, dispatch]);
 
   const loadMore = useCallback(() => {
     if (!token || !hasMore || isLoadingMore || isLoading) return;
-    const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
     dispatch(getFeed({ feedType, page: currentPage + 1, append: true }));
-  }, [dispatch, token, hasMore, isLoadingMore, isLoading, currentPage, activeTab]);
+  }, [dispatch, token, hasMore, isLoadingMore, isLoading, currentPage, feedType]);
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !token) return;
-
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
-      },
+      (entries) => { if (entries[0]?.isIntersecting) loadMore(); },
       { root: null, rootMargin: '120px', threshold: 0 },
     );
     observer.observe(el);
@@ -75,7 +80,7 @@ export default function Home() {
         {feedTabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             className={`px-4 py-2 text-sm font-medium transition-all ${
               activeTab === tab
                 ? 'text-blue-600 border-b-2 border-blue-600'

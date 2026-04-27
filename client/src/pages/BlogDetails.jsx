@@ -17,7 +17,7 @@ import PostSkeleton from '../components/skeletons/PostSkeleton';
 import CommentSection from '../components/comments/CommentSection';
 import { getBlogDetails, likeBlog, unlikeBlog } from '../features/post/postSlice';
 import { toggleBookmark } from '../features/bookmarks/bookmarkSlice';
-import { getcomments } from '../features/comment/commentSlice';
+import { getcomments } from '../features/comments/commentSlice';
 
 const formatDate = (value) => {
   if (!value) return '';

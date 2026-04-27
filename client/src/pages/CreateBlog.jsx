@@ -18,8 +18,8 @@ import {
   Info
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../../api/axios';
-import { getMe } from '../../features/auth/authSlice';
+import API from '../api/axios';
+import { getMe } from '../features/auth/authSlice';
 
 export default function CreateBlog() {
   const dispatch = useDispatch();

@@ -14,6 +14,12 @@ const initialState = {
   isError: false,
   isSuccess: false,
   message: '',
+  // Cache timestamps per tab - null means never fetched
+  lastFetched: {
+    posts: null,
+    articles: null,
+  },
+  activeFeedType: 'posts',
 };
 
 export const createpost = createAsyncThunk('post/create', async (userData, thunkAPI) => {
@@ -26,10 +32,25 @@ export const createpost = createAsyncThunk('post/create', async (userData, thunk
 
 export const getFeed = createAsyncThunk(
   'post/feed',
-  async ({ feedType = 'posts', page = 1, append = false }, thunkAPI) => {
+  async ({ feedType = 'posts', page = 1, append = false, force = false }, thunkAPI) => {
     try {
+      const state = thunkAPI.getState().posts;
+      const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+      
+      if (!force && !append && page === 1) {
+        const lastFetched = state.lastFetched[feedType];
+        const isSameTab = state.activeFeedType === feedType;
+        const isFresh = lastFetched && (Date.now() - lastFetched) < CACHE_TTL;
+        const hasPosts = state.posts.length > 0;
+
+        if (isSameTab && isFresh && hasPosts) {
+          return thunkAPI.rejectWithValue('CACHE_HIT');
+        }
+      }
+
       const data = await postService.fetchFeed({ feedType, page });
-      return { ...data, append: Boolean(append) };
+      return { ...data, append: Boolean(append), feedType };
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.response?.data?.error || error.message,
@@ -116,6 +137,8 @@ const postSlice = createSlice({
       state.currentPage = 1;
       state.hasMore = true;
       state.isLoadingMore = false;
+      // Clear cache so next fetch is forced
+      state.lastFetched = { posts: null, articles: null };
     },
     setLikedPosts: (state, action) => {
       state.likedPostIds = action.payload;
@@ -136,16 +159,25 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isLoadingMore = false;
         state.isSuccess = true;
-        const { items, page, hasMore, append } = action.payload;
+        const { items, page, hasMore, append, feedType } = action.payload;
         if (append) {
           state.posts = [...state.posts, ...items];
         } else {
           state.posts = items;
+          // Store fetch timestamp and active tab
+          state.lastFetched[feedType] = Date.now();
+          state.activeFeedType = feedType;
         }
         state.currentPage = page || 1;
         state.hasMore = Boolean(hasMore);
       })
       .addCase(getFeed.rejected, (state, action) => {
+        // CACHE_HIT is not an error - silently skip
+        if (action.payload === 'CACHE_HIT') {
+          state.isLoading = false;
+          state.isLoadingMore = false;
+          return;
+        }
         state.isLoading = false;
         state.isLoadingMore = false;
         state.isError = true;
