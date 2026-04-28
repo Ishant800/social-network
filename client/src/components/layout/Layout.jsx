@@ -12,7 +12,8 @@ export default function Layout({ children }) {
   const isFeedPage = pathname === '/';
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
-                     pathname.startsWith('/post/') || pathname.startsWith('/blog/');
+                     pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
+                     pathname === '/friendsexplore';
 
   // Auth pages - bare, no chrome
   if (isAuthPage) return <>{children}</>;
