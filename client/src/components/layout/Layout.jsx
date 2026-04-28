@@ -31,9 +31,9 @@ export default function Layout({ children }) {
         <Sidebar />
       </aside>
 
-      {/* Fixed Right Sidebar - feed only */}
+      {/* Fixed Right Sidebar - feed only, shows on large screens */}
       {isFeedPage && (
-        <aside className="hidden xl:block fixed top-16 right-0 w-80 h-[calc(100dvh-4rem)] border-l border-gray-100 overflow-y-auto scrollbar-none z-40">
+        <aside className="hidden lg:block fixed top-16 right-0 w-72 h-[calc(100dvh-4rem)] border-l border-gray-100 overflow-y-auto scrollbar-none z-40">
           <RightSidebar />
         </aside>
       )}
@@ -42,7 +42,7 @@ export default function Layout({ children }) {
       <main className={`
         flex-1 pt-16
         ${isFullPage ? 'lg:ml-64' : 'lg:ml-64'}
-        ${isFeedPage ? 'xl:mr-80' : ''}
+        ${isFeedPage ? 'lg:mr-72' : ''}
       `}>
         {isFullPage ? (
           // Chat / DiscussionRoom: full height, zero padding
