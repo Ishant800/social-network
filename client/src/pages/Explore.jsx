@@ -7,6 +7,7 @@ function BlogCard({ blog }) {
   const id = blog._id || blog.id;
   const cover = blog.coverImage?.url?.trim();
   const author = blog.author?.fullName || blog.author?.username || 'Anonymous';
+  const authorId = blog.author?._id || blog.author?.userId;
   const authorAvatar = blog.author?.avatar?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=3b82f6&color=ffffff`;
   const date = blog.publishedAt || blog.createdAt;
   
@@ -25,12 +26,20 @@ function BlogCard({ blog }) {
         <div className="flex-1 min-w-0">
           {/* Author Row - Avatar + Name */}
           <div className="flex items-center gap-2 mb-2">
-            <img 
-              src={authorAvatar} 
-              alt={author}
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <span className="text-sm font-medium text-gray-900">{author}</span>
+            <Link to={`/profile/${authorId}`} onClick={(e) => e.stopPropagation()}>
+              <img 
+                src={authorAvatar} 
+                alt={author}
+                className="w-6 h-6 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+              />
+            </Link>
+            <Link 
+              to={`/profile/${authorId}`} 
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm font-medium text-gray-900 hover:text-blue-600 transition"
+            >
+              {author}
+            </Link>
           </div>
 
           {/* Title - Bold, Multi-line */}

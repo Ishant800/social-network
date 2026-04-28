@@ -171,19 +171,40 @@ export default function CommentSection({ postId, compact = false, targetType = '
           const commentId = comment._id || comment.id;
           const isOwner = user?._id === comment.user?._id || user?.id === comment.user?._id;
           const isEditing = editingId === commentId;
-          const avatar =
+          
+          // Get avatar with proper fallback chain
+          const avatar = 
+            comment.user?.profile?.avatar?.url ||
             comment.user?.profileImage?.url ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}`;
+            comment.user?.avatar?.url ||
+            'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+          
+          const userName = comment.user?.profile?.fullName || comment.user?.name || comment.user?.username || 'User';
+          const userId = comment.user?._id || comment.user?.id;
 
           return (
             <div key={commentId} className="border-b border-gray-200 pb-4">
               <div className="flex items-start gap-3">
-                <img src={avatar} alt={comment.user?.name || 'User'} className="h-10 w-10 rounded-full object-cover" />
+                <img 
+                  src={avatar} 
+                  alt={userName} 
+                  className="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+                  onClick={() => userId && window.location.href = `/profile/${userId}`}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+                  }}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-900">{comment.user?.name || 'User'}</h4>
+                      <h4 
+                        className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition"
+                        onClick={() => userId && window.location.href = `/profile/${userId}`}
+                      >
+                        {userName}
+                      </h4>
                       <p className="text-xs text-gray-400">{formatCommentTime(comment.createdAt)}</p>
                     </div>
 

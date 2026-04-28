@@ -63,7 +63,7 @@ function NotificationItem({ notification, onMarkRead, onNavigate }) {
     }
     
     if (notification.type === 'profile_incomplete') {
-      onNavigate('/edit-profile');
+      onNavigate('/profile/edit');
     } else if (notification.post) {
       onNavigate(`/post/${notification.post}`);
     } else if (notification.blog) {

@@ -65,8 +65,24 @@ export default function BlogCard({ post }) {
         <div className="flex-1 min-w-0">
           {/* Author Info */}
           <div className="flex items-center gap-2 mb-2">
-            <img src={authorAvatar} alt={authorName} className="w-6 h-6 rounded-full" />
-            <span className="text-sm font-medium text-gray-900">{authorName}</span>
+            <img 
+              src={authorAvatar} 
+              alt={authorName} 
+              className="w-6 h-6 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${post.author?.userId || post.author?._id}`);
+              }}
+            />
+            <span 
+              className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${post.author?.userId || post.author?._id}`);
+              }}
+            >
+              {authorName}
+            </span>
             <span className="text-xs text-gray-400">·</span>
             <span className="text-xs text-gray-400">{formattedDate}</span>
           </div>

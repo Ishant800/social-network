@@ -56,7 +56,9 @@ export default function NotificationToast({ notification, onClose, onNavigate })
   };
 
   const handleClick = () => {
-    if (notification.post) {
+    if (notification.type === 'profile_incomplete') {
+      onNavigate('/profile/edit');
+    } else if (notification.post) {
       onNavigate(`/post/${notification.post}`);
     } else if (notification.blog) {
       onNavigate(`/blog/${notification.blog}`);

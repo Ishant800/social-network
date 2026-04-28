@@ -145,13 +145,24 @@ export default function SimplePostCard({ post }) {
     <article className="bg-white rounded-lg border border-gray-200 p-4">
 
       {/* Author Info */}
-      <div
-        className="flex items-center gap-3 mb-3 cursor-pointer"
-        onClick={() => navigate(`/post/${postId}`)}
-      >
-        <img src={authorAvatar} alt={authorName} className="w-10 h-10 rounded-full" />
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900">{authorName}</h3>
+      <div className="flex items-center gap-3 mb-3">
+        <img 
+          src={authorAvatar} 
+          alt={authorName} 
+          className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/profile/${post.author?.userId || post.user?._id || post.user}`);
+          }}
+        />
+        <div 
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/profile/${post.author?.userId || post.user?._id || post.user}`);
+          }}
+        >
+          <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition">{authorName}</h3>
           <p className="text-xs text-gray-500">{formattedDate} at {formattedTime}</p>
         </div>
 
