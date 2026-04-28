@@ -40,7 +40,7 @@ export default function SimplePostCard({ post }) {
   const isBookmarked = bookmarkIds.includes(postId);
   const authorName   = post.author?.fullName || post.author?.username || 'Unknown';
   const authorAvatar = post.author?.avatar ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=ffffff`;
+    `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
 
   const isOwner = currentUser && (
     post.author?.userId === currentUser._id ||
