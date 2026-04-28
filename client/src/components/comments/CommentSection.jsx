@@ -1,6 +1,7 @@
 import { Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import API from '../../api/axios';
 
 function formatCommentTime(value) {
@@ -185,26 +186,28 @@ export default function CommentSection({ postId, compact = false, targetType = '
           return (
             <div key={commentId} className="border-b border-gray-200 pb-4">
               <div className="flex items-start gap-3">
-                <img 
-                  src={avatar} 
-                  alt={userName} 
-                  className="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
-                  onClick={() => userId && window.location.href = `/profile/${userId}`}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
-                  }}
-                />
+                <Link to={`/profile/${userId}`} onClick={(e) => e.stopPropagation()}>
+                  <img 
+                    src={avatar} 
+                    alt={userName} 
+                    className="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+                    }}
+                  />
+                </Link>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h4 
-                        className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition"
-                        onClick={() => userId && window.location.href = `/profile/${userId}`}
+                      <Link 
+                        to={`/profile/${userId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition"
                       >
                         {userName}
-                      </h4>
+                      </Link>
                       <p className="text-xs text-gray-400">{formatCommentTime(comment.createdAt)}</p>
                     </div>
 
