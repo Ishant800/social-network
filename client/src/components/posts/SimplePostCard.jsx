@@ -235,7 +235,7 @@ export default function SimplePostCard({ post }) {
         <div className="flex items-center gap-1 mb-2 px-1">
           <div className="flex -space-x-0.5">
             {topReactions.map((emoji, i) => (
-              <span key={i} className="text-sm">{emoji}</span>
+              <span key={i} className="text-l">{emoji}</span>
             ))}
           </div>
           <span className="text-xs text-gray-400 ml-1">{localLikes}</span>
@@ -294,7 +294,7 @@ export default function SimplePostCard({ post }) {
           onClick={() => navigate(`/post/${postId}`)}
           className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition"
         >
-          <MessageCircle className="h-3.5 w-3.5" />
+          <MessageCircle className="h-7 w-7" />
           {post.commentsCount || 0}
         </button>
 
@@ -306,7 +306,7 @@ export default function SimplePostCard({ post }) {
           }}
           className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition"
         >
-          <Share2 className="h-3.5 w-3.5" />
+          <Share2 className="h-7 w-7" />
         </button>
 
         {/* Bookmark */}
@@ -314,7 +314,7 @@ export default function SimplePostCard({ post }) {
           onClick={handleBookmark}
           className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
         >
-          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
+          <Bookmark className={`h-7 w-7 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
         </button>
       </div>
     </article>

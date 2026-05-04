@@ -69,7 +69,7 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-6" />
-                  
+              <div className='h-20 w-20 b-2 '></div>    
               
         </div>
       </div>
