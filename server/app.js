@@ -3,9 +3,9 @@ const http = require('http');
 const dotenv = require('dotenv');
 
 
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
-// dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config();
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -27,7 +27,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-const clientOrigins = ("https://social-network-fronted.onrender.com" || "http://localhost:5173" )
+const clientOrigins = ("http://localhost:5173" )
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
@@ -85,9 +85,9 @@ const io = new Server(server, {
 
 const socketHandler = require('./socket/socketcontroller');
 socketHandler(io);
-
+    
 const PORT_NO = process.env.PORT || 5000;
-server.listen(PORT_NO, () => {
+server.listen(PORT_NO, () => {   
   
   console.log(`server running successfully on port: ${PORT_NO}`);
 });

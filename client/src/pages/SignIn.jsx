@@ -63,7 +63,7 @@ function Signin() {
       {/* Left Section - Logo & Minimal Content */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-8 bg-gray-50 border-r border-gray-200">
         <div className="text-center max-w-md">
-          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-6" />
+          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-2" />
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome Back</h1>
           <p className="text-gray-600 text-sm">
             Continue your journey and stay connected with your network.

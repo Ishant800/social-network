@@ -81,7 +81,9 @@ const register = async (req, res) => {
 
 //  LOGIN
 const login = async (req, res) => {
+  console.log(req.body)
   try {
+ 
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -114,10 +116,12 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error)
     res.status(500).json({
-      error: 'Failed to login'
-    });
-  }
+      error: 'Failed to login',
+      
+    }); 
+  } 
 };
 
 module.exports = { register, login };
