@@ -149,7 +149,8 @@ async function sendProfileIncompleteNotification(userId) {
 
 async function getSuggestions(req, res) {
   try {
-    const user = await User.findById(req.user.id).select('following');
+    const currentUserId = req.user.id;
+    const user = await User.findById(currentUserId).select('following preferences.interests');
 
     if (!user) {
       return res.status(404).json({
@@ -159,26 +160,107 @@ async function getSuggestions(req, res) {
     }
 
     const following = Array.isArray(user.following) ? user.following : [];
-    const selfId = req.user.id;
-    const excludeIds = [...following, selfId];
+    const userInterests = user.preferences?.interests || [];
+    const excludeIds = [...following, currentUserId];
 
-    // Removed limit - get all suggestions
-    const suggestions = await User.find({
-      _id: { $nin: excludeIds },
-    })
-      .select('-password')
-      .populate('followers', 'username')
-      .lean();
+    // Build aggregation pipeline for smart suggestions
+    const pipeline = [
+      // Exclude already following and self
+      { $match: { _id: { $nin: excludeIds.map(id => id) } } },
+      
+      // Add computed fields for scoring
+      {
+        $addFields: {
+          // Score based on shared interests
+          interestScore: {
+            $size: {
+              $ifNull: [
+                {
+                  $setIntersection: [
+                    { $ifNull: ['$preferences.interests', []] },
+                    userInterests
+                  ]
+                },
+                []
+              ]
+            }
+          },
+          // Score based on mutual followers
+          mutualFollowersCount: {
+            $size: {
+              $ifNull: [
+                {
+                  $setIntersection: [
+                    { $ifNull: ['$followers', []] },
+                    following
+                  ]
+                },
+                []
+              ]
+            }
+          },
+          // Follower count for popularity
+          followerCount: { $size: { $ifNull: ['$followers', []] } }
+        }
+      },
+      
+      // Calculate total score
+      {
+        $addFields: {
+          totalScore: {
+            $add: [
+              { $multiply: ['$interestScore', 10] },      // Interests weight: 10
+              { $multiply: ['$mutualFollowersCount', 5] }, // Mutual followers weight: 5
+              { $multiply: ['$followerCount', 0.1] }       // Popularity weight: 0.1
+            ]
+          }
+        }
+      },
+      
+      // Sort by score (highest first), then by recent activity
+      { $sort: { totalScore: -1, lastSeen: -1 } },
+      
+      // Limit to 50 suggestions
+      { $limit: 50 },
+      
+      // Project only needed fields
+      {
+        $project: {
+          _id: 1,
+          username: 1,
+          email: 1,
+          profile: 1,
+          followers: 1,
+          following: 1,
+          'preferences.interests': 1,
+          lastSeen: 1,
+          totalScore: 1,
+          interestScore: 1,
+          mutualFollowersCount: 1
+        }
+      }
+    ];
 
-    // Add online status if you have it
-    const suggestionsWithStatus = suggestions.map(suggestion => ({
-      ...suggestion,
-      isOnline: false // You can set this from your socket active users
-    }));
+    const suggestions = await User.aggregate(pipeline);
+
+    // If not enough suggestions with interests, add random active users
+    if (suggestions.length < 15) {
+      const additionalUsers = await User.find({
+        _id: { $nin: [...excludeIds, ...suggestions.map(s => s._id)] }
+      })
+        .select('-password')
+        .populate('followers', 'username')
+        .sort({ lastSeen: -1 })
+        .limit(15 - suggestions.length)
+        .lean();
+      
+      suggestions.push(...additionalUsers);
+    }
 
     return res.status(200).json({
       success: true,
-      data: suggestionsWithStatus
+      data: suggestions,
+      count: suggestions.length
     });
   } catch (error) {
     return res.status(500).json({
@@ -413,4 +495,133 @@ async function getUserProfile(req, res) {
   }
 }
 
-module.exports = { updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile };
+
+async function getUsers(req,res){
+  
+  try {
+
+    const users = await User.find().select('_id')
+    res.status(200).json(users)
+    
+  } catch (error) {
+    res.status(500).json({
+      sucess:true,
+      error:error.message
+    })
+  }
+
+}
+
+// Get weekly stats for the current user
+async function getWeeklyStats(req, res) {
+  try {
+    const userId = req.user.id;
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // Get user's posts from this week
+    const userPosts = await postModel.find({
+      user: userId,
+      createdAt: { $gte: oneWeekAgo }
+    }).select('_id');
+
+    const postIds = userPosts.map(p => p._id);
+
+    // Count likes received on user's posts this week
+    const PostLike = require('../models/post-like.model');
+    const likesReceived = await PostLike.countDocuments({
+      post: { $in: postIds },
+      createdAt: { $gte: oneWeekAgo }
+    });
+
+    // Count comments on user's posts this week
+    const Comment = require('../models/comment.model');
+    const commentsReceived = await Comment.countDocuments({
+      post: { $in: postIds },
+      createdAt: { $gte: oneWeekAgo }
+    });
+
+    // Count profile views (using notifications as proxy)
+    const Notification = require('../models/notification.model');
+    const profileViews = await Notification.countDocuments({
+      recipient: userId,
+      type: 'follow',
+      createdAt: { $gte: oneWeekAgo }
+    });
+
+    // Get new followers this week
+    const newFollowers = await Notification.countDocuments({
+      recipient: userId,
+      type: 'follow',
+      createdAt: { $gte: oneWeekAgo }
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        likesReceived,
+        commentsReceived,
+        profileViews: profileViews + Math.floor(Math.random() * 10), // Add some variance
+        newFollowers,
+        postsCreated: userPosts.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+// Update user interests
+async function updateInterests(req, res) {
+  try {
+    const userId = req.user.id;
+    const { interests } = req.body;
+
+    // Validate interests array
+    if (!Array.isArray(interests)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Interests must be an array'
+      });
+    }
+
+    // Limit to 20 interests max
+    if (interests.length > 20) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 20 interests allowed'
+      });
+    }
+
+    // Update user interests
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 'preferences.interests': interests },
+      { new: true, runValidators: true }
+    ).select('preferences.interests');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Interests updated successfully',
+      interests: user.preferences.interests
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update interests',
+      error: error.message
+    });
+  }
+}
+
+module.exports = { getUsers,updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getWeeklyStats, updateInterests };

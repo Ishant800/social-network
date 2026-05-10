@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Newspaper, Search, ChevronDown, Eye, MessageCircle, Heart, Bookmark, MoreHorizontal, User } from 'lucide-react';
+import { Loader2, Newspaper, ChevronDown, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import postService from '../features/post/postService';
 
@@ -8,66 +8,66 @@ function BlogCard({ blog }) {
   const cover = blog.coverImage?.url?.trim();
   const author = blog.author?.fullName || blog.author?.username || 'Anonymous';
   const authorId = blog.author?._id || blog.author?.userId;
-  const authorAvatar = blog.author?.avatar?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=3b82f6&color=ffffff`;
+  const authorAvatar = blog.author?.avatar?.url || `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
   const date = blog.publishedAt || blog.createdAt;
   
   const formatDate = (value) => {
     if (!value) return '';
     return new Date(value).toLocaleDateString(undefined, { 
       month: 'short', 
-      day: 'numeric'
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
+  const readTime = blog.readTime || Math.ceil((blog.content?.length || 0) / 1000) || 5;
+
   return (
-    <div className="group py-6 border-b border-gray-100 hover:bg-gray-50/30 -mx-4 px-4 transition-all duration-200">
-      <div className="flex gap-5">
+    <article className="py-5 border-b border-gray-200 last:border-0">
+      <div className="flex gap-8">
         {/* Left Content Section */}
         <div className="flex-1 min-w-0">
-          {/* Author Row - Avatar + Name */}
+          {/* Author Row */}
           <div className="flex items-center gap-2 mb-2">
             <Link to={`/profile/${authorId}`} onClick={(e) => e.stopPropagation()}>
               <img 
                 src={authorAvatar} 
                 alt={author}
-                className="w-6 h-6 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+                className="w-6 h-6 rounded-full object-cover cursor-pointer hover:opacity-80 transition"
               />
             </Link>
             <Link 
               to={`/profile/${authorId}`} 
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-gray-900 hover:text-blue-600 transition"
+              className="text-sm font-medium text-gray-900 hover:text-gray-700 transition"
             >
               {author}
             </Link>
           </div>
 
-          {/* Title - Bold, Multi-line */}
+          {/* Title */}
           <Link to={`/blog/${id}`}>
-            <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 leading-tight mb-2 line-clamp-2">
+            <h2 className="text-xl font-bold text-gray-900 hover:text-gray-700 leading-tight mb-2 line-clamp-2 cursor-pointer">
               {blog.title}
             </h2>
           </Link>
 
-          {/* Description - Muted preview text */}
-         {/* Description - Muted preview text */}
-<p className="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">
-  {blog.summary || (typeof blog.content === 'string' ? blog.content.substring(0, 140) : '') || ''}
-</p>
+          {/* Description */}
+          <Link to={`/blog/${id}`}>
+            <p className="text-sm text-gray-600 leading-relaxed mb-3 line-clamp-2 cursor-pointer">
+              {blog.summary || (typeof blog.content === 'string' ? blog.content.substring(0, 160) : '') || 'Read this article...'}
+            </p>
+          </Link>
+
           {/* Bottom Metadata Row */}
-          <div className="flex items-center gap-4 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-gray-500">
             <span>{formatDate(date)}</span>
+            <span>·</span>
+            <span>{readTime} min read</span>
+            <span>·</span>
             <span className="flex items-center gap-1">
               <Heart className="h-3.5 w-3.5" />
-              {blog.likes?.length || 0}
-            </span>
-            <span className="flex items-center gap-1">
-              <MessageCircle className="h-3.5 w-3.5" />
-              {blog.comments?.length || 0}
-            </span>
-            <span className="flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5" />
-              {blog.views || 0}
+              {blog.likes?.length || blog.likesCount || 0}
             </span>
           </div>
         </div>
@@ -75,17 +75,17 @@ function BlogCard({ blog }) {
         {/* Right Section - Thumbnail */}
         {cover && (
           <Link to={`/blog/${id}`} className="shrink-0">
-            <div className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100">
+            <div className="w-32 h-32 rounded overflow-hidden bg-gray-100">
               <img 
                 src={cover} 
                 alt={blog.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               />
             </div>
           </Link>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -93,8 +93,6 @@ export default function Explore() {
   const [blogs, setBlogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [skip, setSkip] = useState(0);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
@@ -109,11 +107,6 @@ export default function Explore() {
     { value: 'trending', label: 'Trending' },
   ];
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const load = useCallback(async (offset, append) => {
     try {
       if (append) setLoadingMore(true);
@@ -121,7 +114,7 @@ export default function Explore() {
       setError('');
       
       const data = await postService.exploreBlogs({
-        search: debouncedSearch,
+        search: '',
         skip: offset,
         limit,
         sort: filter,
@@ -143,43 +136,28 @@ export default function Explore() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedSearch, filter, limit]);
+  }, [filter, limit]);
 
   useEffect(() => {
     setSkip(0);
     load(0, false);
-  }, [debouncedSearch, filter, load]);
+  }, [filter, load]);
 
   const hasMore = useMemo(() => skip < total && blogs.length > 0, [skip, total, blogs.length]);
 
   const currentFilterLabel = filterOptions.find(f => f.value === filter)?.label;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-2">
-      {/* Header - Minimal with proper margin */}
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold text-gray-900">Explore</h1>
-      </div>
-
-      {/* Search & Filter Row */}
-      <div className="flex items-center gap-3 mb-8">
-        {/* Search Input */}
-        <div className="flex-1 max-w-md relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search articles..."
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:bg-white text-sm transition-all"
-          />
-        </div>
-
+    <div className="max-w-3xl mx-auto px-6 py-4">
+      {/* Header with Filter */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Explore</h1>
+        
         {/* Filter Dropdown */}
         <div className="relative">
           <button
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50 transition-all"
           >
             {currentFilterLabel}
             <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`} />
@@ -209,13 +187,6 @@ export default function Explore() {
         </div>
       </div>
 
-      {/* Results count */}
-      {!loading && blogs.length > 0 && (
-        <div className="text-xs text-gray-400 mb-4">
-          {total} {total === 1 ? 'article' : 'articles'}
-        </div>
-      )}
-
       {/* Error */}
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-md px-4 py-3">
@@ -241,7 +212,7 @@ export default function Explore() {
       {/* Blog List */}
       {!loading && blogs.length > 0 && (
         <>
-          <div className="-mx-4">
+          <div>
             {blogs.map((blog) => (
               <BlogCard key={blog._id || blog.id} blog={blog} />
             ))}
@@ -249,13 +220,13 @@ export default function Explore() {
 
           {/* Load More */}
           {hasMore && (
-            <div className="flex justify-center mt-10">
+            <div className="flex justify-center mt-8 mb-4">
               <button
                 onClick={() => load(skip, true)}
                 disabled={loadingMore}
-                className="text-sm text-gray-500 hover:text-gray-700 py-2 px-4 transition-colors"
+                className="px-6 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Load more'}
+                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Load more articles'}
               </button>
             </div>
           )}

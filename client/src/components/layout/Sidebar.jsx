@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronRight,
   Sparkles,
+  User,
 } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
 
@@ -82,7 +83,10 @@ export default function Sidebar() {
     { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
     { icon: MessageCircle, label: 'Messages',      path: '/chats',         badge: messageCount },
     { icon: Bell,          label: 'Notifications', path: '/notifications', badge: unreadCount  },
-    { icon: Bookmark,      label: 'Saved',         path: '/bookmarks',     badge: bookmarks?.length || 0 },
+  ];
+
+  const profileNav = [
+    { icon: User, label: 'My Profile', path: '/profile' },
   ];
 
   const createNav = [
@@ -106,6 +110,14 @@ export default function Sidebar() {
         {mainNav.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
+
+        {/* Section: Profile */}
+        <div className="mt-5">
+          <SectionLabel>Profile</SectionLabel>
+          {profileNav.map((item) => (
+            <NavItem key={item.path} {...item} />
+          ))}
+        </div>
 
         {/* Section: Create */}
         <div className="mt-5">

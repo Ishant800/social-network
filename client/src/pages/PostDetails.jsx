@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import CommentSection from '../components/comments/CommentSection';
@@ -18,11 +18,25 @@ export default function PostDetails() {
     (item) => item?.feedType !== 'blog' && (item._id || item.id) === postId
   );
   const post = postFromList || ((postDetails?._id || postDetails?.id) === postId ? postDetails : null);
+  
+  // Local state to track comment count
+  const [commentCount, setCommentCount] = useState(post?.commentsCount || 0);
 
   useEffect(() => {
     if (!postId || postFromList) return;
     dispatch(getPostDetails(postId));
   }, [dispatch, postId, postFromList]);
+
+  // Update comment count when post changes
+  useEffect(() => {
+    if (post?.commentsCount !== undefined) {
+      setCommentCount(post.commentsCount);
+    }
+  }, [post?.commentsCount]);
+
+  const handleCommentCountChange = (newCount) => {
+    setCommentCount(newCount);
+  };
 
   if (isLoading && !post) {
     return (
@@ -52,6 +66,12 @@ export default function PostDetails() {
     );
   }
 
+  // Create a post object with updated comment count
+  const postWithUpdatedCount = {
+    ...post,
+    commentsCount: commentCount
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-4 py-4">
@@ -65,11 +85,14 @@ export default function PostDetails() {
         </button>
 
         {/* Post Card */}
-        <SimplePostCard post={post} />
+        <SimplePostCard post={postWithUpdatedCount} />
 
         {/* Comments Section - Integrated */}
         <div className="mt-8 border-t border-gray-200 pt-8">
-          <CommentSection postId={postId} />
+          <CommentSection 
+            postId={postId} 
+            onCommentCountChange={handleCommentCountChange}
+          />
         </div>
       </div>
     </div>

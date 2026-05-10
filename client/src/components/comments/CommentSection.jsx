@@ -1,5 +1,5 @@
-import { Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Loader2, Pencil, Send, Trash2, X, MoreHorizontal } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import API from '../../api/axios';
@@ -20,7 +20,7 @@ function formatCommentTime(value) {
   return `${diffDays}d ago`;
 }
 
-export default function CommentSection({ postId, compact = false, targetType = 'Post' }) {
+export default function CommentSection({ postId, compact = false, targetType = 'Post', onCommentCountChange }) {
   const { user } = useSelector((state) => state.auth);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -30,6 +30,8 @@ export default function CommentSection({ postId, compact = false, targetType = '
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRefs = useRef({});
 
   useEffect(() => {
     let isMounted = true;
@@ -40,7 +42,12 @@ export default function CommentSection({ postId, compact = false, targetType = '
         setError(null);
           const response = await API.get(`/comment/getComment/${postId}?type=${targetType}`);
         if (isMounted) {
-          setComments(response.data?.comments || []);
+          const fetchedComments = response.data?.comments || [];
+          setComments(fetchedComments);
+          // Notify parent of comment count
+          if (onCommentCountChange) {
+            onCommentCountChange(fetchedComments.length);
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -60,7 +67,21 @@ export default function CommentSection({ postId, compact = false, targetType = '
     return () => {
       isMounted = false;
     };
-  }, [postId, targetType]);
+  }, [postId, targetType, onCommentCountChange]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openMenuId && menuRefs.current[openMenuId]) {
+        if (!menuRefs.current[openMenuId].contains(event.target)) {
+          setOpenMenuId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenuId]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -73,8 +94,13 @@ export default function CommentSection({ postId, compact = false, targetType = '
         text: commentText.trim(),
         targetType,
       });
-      setComments((prev) => [response.data.comment, ...prev]);
+      const newComments = [response.data.comment, ...comments];
+      setComments(newComments);
       setCommentText('');
+      // Notify parent of new count
+      if (onCommentCountChange) {
+        onCommentCountChange(newComments.length);
+      }
     } catch (err) {
       setError(err);
     } finally {
@@ -85,6 +111,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
   const startEditing = (comment) => {
     setEditingId(comment._id || comment.id);
     setEditingText(comment.text || '');
+    setOpenMenuId(null);
   };
 
   const cancelEditing = () => {
@@ -115,21 +142,31 @@ export default function CommentSection({ postId, compact = false, targetType = '
   };
 
   const handleDelete = async (commentId) => {
+    setOpenMenuId(null);
     if (!window.confirm('Delete this comment?')) return;
 
     try {
       setActionLoadingId(commentId);
       setError(null);
       await API.delete(`/comment/delete/${commentId}`);
-      setComments((prev) => prev.filter((comment) => (comment._id || comment.id) !== commentId));
+      const newComments = comments.filter((comment) => (comment._id || comment.id) !== commentId);
+      setComments(newComments);
       if (editingId === commentId) {
         cancelEditing();
+      }
+      // Notify parent of new count
+      if (onCommentCountChange) {
+        onCommentCountChange(newComments.length);
       }
     } catch (err) {
       setError(err);
     } finally {
       setActionLoadingId(null);
     }
+  };
+
+  const toggleMenu = (commentId) => {
+    setOpenMenuId(openMenuId === commentId ? null : commentId);
   };
 
   return (
@@ -199,7 +236,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
                 </Link>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
                       <Link 
                         to={`/profile/${userId}`}
@@ -211,38 +248,40 @@ export default function CommentSection({ postId, compact = false, targetType = '
                       <p className="text-xs text-gray-400">{formatCommentTime(comment.createdAt)}</p>
                     </div>
 
-                    {isOwner && (
-                      <div className="flex items-center gap-2 text-gray-400">
-                        {isEditing ? (
-                          <button
-                            type="button"
-                            onClick={cancelEditing}
-                            className="transition"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <>
+                    {isOwner && !isEditing && (
+                      <div className="relative" ref={(el) => (menuRefs.current[commentId] = el)}>
+                        <button
+                          type="button"
+                          onClick={() => toggleMenu(commentId)}
+                          className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                          disabled={actionLoadingId === commentId}
+                        >
+                          {actionLoadingId === commentId ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </button>
+
+                        {openMenuId === commentId && (
+                          <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
                             <button
                               type="button"
                               onClick={() => startEditing(comment)}
-                              className="transition"
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDelete(commentId)}
-                              className="transition"
-                              disabled={actionLoadingId === commentId}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
                             >
-                              {actionLoadingId === commentId ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
@@ -259,7 +298,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
                         <button
                           type="button"
                           onClick={cancelEditing}
-                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600"
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
                         >
                           Cancel
                         </button>
@@ -267,7 +306,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
                           type="button"
                           onClick={() => handleUpdate(commentId)}
                           disabled={!editingText.trim() || actionLoadingId === commentId}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                         >
                           {actionLoadingId === commentId ? 'Saving...' : 'Save'}
                         </button>

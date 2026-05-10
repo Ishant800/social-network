@@ -296,10 +296,24 @@ const deletePost = async (req, res) => {
 };
 
 
+   const bulkpostinsert = async(req,res)=>{
+    try {
+      const postdatas = req.body
+      
+       const posts = await Post.insertMany(postdatas)
+       return res.status(200).json({
+        sucess:true,
+        message:"bulk insert sucessfully"
+       })
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+   }
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
   deletePost,
+  bulkpostinsert
 };

@@ -14,6 +14,9 @@ export default function Layout({ children }) {
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
                      pathname === '/friendsexplore';
+  
+  // Show right sidebar on home, explore, and profile pages
+  const showRightSidebar = isFeedPage || pathname === '/explore' || pathname.startsWith('/profile/');
 
   // Auth pages - bare, no chrome
   if (isAuthPage) return <>{children}</>;
@@ -31,8 +34,8 @@ export default function Layout({ children }) {
         <Sidebar />
       </aside>
 
-      {/* Fixed Right Sidebar - feed only, shows on large screens */}
-      {isFeedPage && (
+      {/* Fixed Right Sidebar - shows on home, explore, and profile pages */}
+      {showRightSidebar && (
         <aside className="hidden lg:block fixed top-16 right-0 w-72 h-[calc(100dvh-4rem)] border-l border-gray-100 overflow-y-auto scrollbar-none z-40">
           <RightSidebar />
         </aside>
@@ -42,7 +45,7 @@ export default function Layout({ children }) {
       <main className={`
         flex-1 pt-16
         ${isFullPage ? 'lg:ml-64' : 'lg:ml-64'}
-        ${isFeedPage ? 'lg:mr-72' : ''}
+        ${showRightSidebar ? 'lg:mr-72' : ''}
       `}>
         {isFullPage ? (
           // Chat / DiscussionRoom: full height, zero padding

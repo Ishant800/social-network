@@ -1,40 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
 import { getFeed, resetFeed, setLikedPosts } from '../features/post/postSlice';
+import { Sparkles } from 'lucide-react';
 
-const feedTabs = ['Posts', 'Articles', 'Discussions'];
+const feedTabs = ['Posts', 'Blogs', 'Discussions'];
 
 export default function Home() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const token = useSelector((s) => s.auth.token);
+  const { user } = useSelector((s) => s.auth);
   const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message, activeFeedType } = useSelector(
     (s) => s.posts,
   );
   const [activeTab, setActiveTab] = useState('Posts');
+  const [showInterestBanner, setShowInterestBanner] = useState(false);
   const sentinelRef = useRef(null);
   const isFirstMount = useRef(true);
 
-  const feedType = activeTab === 'Articles' ? 'articles' : 'posts';
+  const feedType = activeTab === 'Blogs' ? 'blogs' : 'posts';
+
+  // Check if user has interests
+  const hasInterests = user?.preferences?.interests && user.preferences.interests.length > 0;
 
   useEffect(() => {
     if (!token) return;
 
     if (isFirstMount.current) {
-      // On first mount - use cache if available, otherwise fetch
+      // On first mount - always fetch fresh data for variety
       isFirstMount.current = false;
-      dispatch(getFeed({ feedType, page: 1, append: false, force: false }));
+      dispatch(getFeed({ feedType, page: 1, append: false, force: true }));
     }
-  }, [token]);
+
+    // Show interest banner if user has no interests
+    if (!hasInterests && posts && posts.length > 0) {
+      setShowInterestBanner(true);
+    }
+  }, [token, hasInterests, posts, feedType, dispatch]);
 
   // When tab changes - force fresh fetch for new tab
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-    const newFeedType = tab === 'Articles' ? 'articles' : 'posts';
+    const newFeedType = tab === 'Blogs' ? 'blogs' : 'posts';
     dispatch(getFeed({ feedType: newFeedType, page: 1, append: false, force: false }));
   };
 
@@ -75,6 +87,35 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Interest Banner for users without interests */}
+      {showInterestBanner && !hasInterests && (
+        <div className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                Personalize your feed
+              </h3>
+              <p className="text-xs text-gray-600 mb-3">
+                Select your interests to see posts tailored to your preferences. We'll show you the most relevant and trending content based on what you love.
+              </p>
+              <button
+                onClick={() => navigate('/settings')}
+                className="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition"
+              >
+                Select Interests
+              </button>
+            </div>
+            <button
+              onClick={() => setShowInterestBanner(false)}
+              className="text-gray-400 hover:text-gray-600 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Filter Tabs */}
       <div className="flex gap-1 border-b border-gray-100 mb-4">
         {feedTabs.map((tab) => (
@@ -105,7 +146,7 @@ export default function Home() {
         <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-5 py-12 text-center">
           <p className="text-gray-500 text-sm">
             {activeTab === 'Posts' && 'No posts found'}
-            {activeTab === 'Articles' && 'No articles found'}
+            {activeTab === 'Blogs' && 'No blogs found'}
             {activeTab === 'Discussions' && 'No discussions found'}
           </p>
         </div>
@@ -115,7 +156,7 @@ export default function Home() {
       {!isLoading && posts?.length > 0 && (
         <div className="space-y-4">
           {posts.map((post) => {
-            const isBlog = activeTab === 'Articles' || post.feedType === 'blog';
+            const isBlog = activeTab === 'Blogs' || post.feedType === 'blog';
             return isBlog ? (
               <BlogCard key={post._id || post.id} post={post} />
             ) : (

@@ -7,15 +7,18 @@ import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
 import API from '../../api/axios';
 
 const REACTIONS = [
-  { type: 'like',  emoji: '👍', label: 'Like'  },
-  { type: 'love',  emoji: '❤️', label: 'Love'  },
-  { type: 'haha',  emoji: '😂', label: 'Haha'  },
-  { type: 'wow',   emoji: '😮', label: 'Wow'   },
-  { type: 'sad',   emoji: '😢', label: 'Sad'   },
-  { type: 'angry', emoji: '😡', label: 'Angry' },
+  { type: 'like',  emoji: '👍', label: 'Like',  bg: 'bg-blue-50 hover:bg-blue-100' },
+  { type: 'love',  emoji: '❤️', label: 'Love',  bg: 'bg-red-50 hover:bg-red-100' },
+  { type: 'haha',  emoji: '😂', label: 'Haha',  bg: 'bg-yellow-50 hover:bg-yellow-100' },
+  { type: 'wow',   emoji: '😮', label: 'Wow',   bg: 'bg-purple-50 hover:bg-purple-100' },
+  { type: 'sad',   emoji: '😢', label: 'Sad',   bg: 'bg-gray-50 hover:bg-gray-100' },
+  { type: 'angry', emoji: '😡', label: 'Angry', bg: 'bg-orange-50 hover:bg-orange-100' },
 ];
 
-const getReactionEmoji = (type) => REACTIONS.find(r => r.type === type)?.emoji || '👍';
+const getReactionEmoji = (type) => {
+  const reaction = REACTIONS.find(r => r.type === type);
+  return reaction?.emoji || '👍';
+};
 
 export default function SimplePostCard({ post }) {
   const dispatch = useDispatch();
@@ -232,13 +235,13 @@ export default function SimplePostCard({ post }) {
 
       {/* Reaction summary */}
       {localLikes > 0 && (
-        <div className="flex items-center gap-1 mb-2 px-1">
-          <div className="flex -space-x-0.5">
+        <div className="flex items-center gap-1.5 mb-2 px-1">
+          <div className="flex -space-x-1">
             {topReactions.map((emoji, i) => (
-              <span key={i} className="text-lg">{emoji}</span>
+              <span key={i} className="text-lg leading-none">{emoji}</span>
             ))}
           </div>
-          <span className="text-xs text-gray-400 ml-1">{localLikes}</span>
+          <span className="text-xs text-gray-500 ml-1">{localLikes}</span>
         </div>
       )}
 
@@ -256,7 +259,7 @@ export default function SimplePostCard({ post }) {
               userReaction ? 'text-blue-600 font-medium' : 'text-gray-500'
             }`}
           >
-            <span className="text-base leading-none">
+            <span className="text-lg leading-none">
               {userReaction ? getReactionEmoji(userReaction) : '👍'}
             </span>
             <span className="text-xs">
@@ -269,20 +272,24 @@ export default function SimplePostCard({ post }) {
           {/* Reaction picker popup */}
           {showPicker && (
             <div
-              className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-white border border-gray-200 rounded-full shadow-lg px-2 py-1.5 z-30"
+              className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-white rounded-full shadow-xl border border-gray-200 p-2 z-30"
               onMouseEnter={() => clearTimeout(hoverTimer.current)}
               onMouseLeave={() => setShowPicker(false)}
             >
-              {REACTIONS.map(({ type, emoji, label }) => (
+              {REACTIONS.map(({ type, emoji, label, bg }) => (
                 <button
                   key={type}
                   onClick={(e) => handleReact(e, type)}
                   title={label}
-                  className={`text-xl hover:scale-125 transition-transform duration-150 px-0.5 ${
-                    userReaction === type ? 'scale-125' : ''
+                  className={`relative group flex items-center justify-center w-12 h-12 rounded-full ${bg} hover:scale-125 transition-all duration-200 ${
+                    userReaction === type ? 'scale-125 ring-2 ring-blue-400' : ''
                   }`}
                 >
-                  {emoji}
+                  <span className="text-2xl leading-none">{emoji}</span>
+                  {/* Tooltip */}
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    {label}
+                  </span>
                 </button>
               ))}
             </div>

@@ -10,13 +10,23 @@ const serializeComment = (comment) => {
   const user = commentObject.user || {};
 
   return {
-    ...commentObject,
+    _id: commentObject._id,
     id: commentObject._id,
     text: commentObject.content,
+    content: commentObject.content,
+    createdAt: commentObject.createdAt,
+    updatedAt: commentObject.updatedAt,
     user: {
-      ...user,
-      name: user.username || user.name,
-      profileImage: user.avatar ? { url: user.avatar } : undefined,
+      _id: user._id,
+      id: user._id,
+      username: user.username,
+      name: user.username,
+      profile: {
+        fullName: user.username,
+        avatar: user.avatar ? { url: user.avatar } : null,
+      },
+      profileImage: user.avatar ? { url: user.avatar } : null,
+      avatar: user.avatar ? { url: user.avatar } : null,
     },
   };
 };
@@ -32,7 +42,7 @@ const createComment = async (req, res) => {
     const cleaned = sanitizePlainText(text, 4000);
     if (!cleaned.trim()) {
       return res.status(400).json({
-        sucess: false,
+        success: false,
         message: 'comment text is required',
       });
     }
@@ -77,13 +87,13 @@ const createComment = async (req, res) => {
     }
 
     return res.status(201).json({
-      sucess: true,
-      message: 'comment created sucessfully',
+      success: true,
+      message: 'comment created successfully',
       comment: serializeComment(comment),
     });
   } catch (error) {
     return res.status(500).json({
-      sucess: false,
+      success: false,
       message: error.message,
     });
   }
@@ -107,7 +117,7 @@ const getPostComments = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      sucess: false,
+      success: false,
       message: error.message,
     });
   }
@@ -194,11 +204,11 @@ const deleteComment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Comment deleted sucessfully',
+      message: 'Comment deleted successfully',
     });
   } catch (error) {
     return res.status(500).json({
-      sucess: false,
+      success: false,
       message: error.message,
     });
   }

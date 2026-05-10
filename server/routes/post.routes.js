@@ -5,6 +5,7 @@ const {
   getPostDetails,
   updatePost,
   deletePost,
+  bulkpostinsert,
 } = require('../controllers/post.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { validateObjectId } = require('../middleware/validateObjectId.middleware');
@@ -17,5 +18,5 @@ router.get('/myPost', verifyToken, getMyPost);
 router.get('/post-details/:postId', verifyToken, validateObjectId('postId'), getPostDetails);
 router.put('/update/:postId', verifyToken, validateObjectId('postId'), upload.array('media', 5), updatePost);
 router.delete('/delete/:postId', verifyToken, validateObjectId('postId'), deletePost);
-
+router.post("/bulkposts",bulkpostinsert)
 module.exports = router;

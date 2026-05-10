@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ArrowLeft, Image, X, Globe, Lock, Sparkles } from 'lucide-react';
+import { ArrowLeft, Image, X, Globe, Lock, Sparkles, Tag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createpost } from '../features/post/postSlice';
+import CATEGORIES from '../constants/categories';
 
 export default function CreatePostPage() {
   const dispatch = useDispatch();
@@ -27,7 +28,8 @@ export default function CreatePostPage() {
       </div>
     );
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [media, setMedia] = useState([]);
   const [isPublic, setIsPublic] = useState(true);
 
@@ -44,6 +46,16 @@ export default function CreatePostPage() {
   const [greeting] = useState(
     greetings[Math.floor(Math.random() * greetings.length)]
   );
+
+  const toggleCategory = (category) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : prev.length < 3
+        ? [...prev, category]
+        : prev
+    );
+  };
 
   // MEDIA HANDLER
   const handleMediaChange = (e) => {
@@ -72,7 +84,7 @@ export default function CreatePostPage() {
   // DISCARD
   const handleDiscard = () => {
     setContent('');
-    setTags('');
+    setSelectedCategories([]);
     setMedia([]);
     navigate('/');
   };
@@ -90,7 +102,7 @@ export default function CreatePostPage() {
     const formData = new FormData();
 
     formData.append('content', content);
-    formData.append('tags', tags);
+    formData.append('tags', selectedCategories.join(','));
     formData.append('isPublic', isPublic);
 
     media.forEach(({ file }) => {
@@ -160,14 +172,70 @@ export default function CreatePostPage() {
             className="w-full resize-none rounded-sm border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#4e44d4]"
           />
 
-          {/* TAGS */}
+          {/* CATEGORIES */}
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowCategoryPicker(!showCategoryPicker)}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#4e44d4] hover:text-[#4e44d4]"
+            >
+              <Tag className="w-4 h-4" />
+              Add Categories {selectedCategories.length > 0 && `(${selectedCategories.length}/3)`}
+            </button>
 
-          <input
-            value={tags}
-            onChange={(e)=>setTags(e.target.value)}
-            placeholder="tags: tech, coding"
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#4e44d4]"
-          />
+            {/* Selected Categories */}
+            {selectedCategories.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedCategories.map(category => (
+                  <span
+                    key={category}
+                    className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700"
+                  >
+                    {category}
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className="hover:text-blue-900"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Category Picker */}
+            {showCategoryPicker && (
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs text-slate-500 mb-3">
+                  Select up to 3 categories (helps users discover your post)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map(category => {
+                    const isSelected = selectedCategories.includes(category);
+                    const isDisabled = !isSelected && selectedCategories.length >= 3;
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => !isDisabled && toggleCategory(category)}
+                        disabled={isDisabled}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                          isSelected
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : isDisabled
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* MEDIA PREVIEW */}
 

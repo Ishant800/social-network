@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Bookmark, Heart, MessageCircle, Eye } from 'lucide-react';
+import { Bookmark, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { likeBlog, unlikeBlog } from '../../features/post/postSlice';
 import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
 
@@ -13,20 +13,22 @@ export default function BlogCard({ post }) {
 
   const postId = post._id || post.id;
   const [localLiked, setLocalLiked] = useState(post.isLiked || likedPostIds.includes(postId));
-  const [localLikes, setLocalLikes] = useState(post.likesCount || 0);
+  const [localLikes, setLocalLikes] = useState(post.likesCount || post.likes?.length || 0);
   const [isLiking, setIsLiking] = useState(false);
 
   const isBookmarked = bookmarkIds.includes(postId);
   const authorName = post.author?.fullName || post.author?.username || 'Unknown';
-  const authorAvatar = post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=3b82f6&color=ffffff`;
+  const authorId = post.author?.userId || post.author?._id;
+  const authorAvatar = post.author?.avatar || `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
 
-  // Format date: "Jan 15, 2024"
   const createdDate = new Date(post.publishedAt || post.createdAt);
   const formattedDate = createdDate.toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric',
     year: 'numeric'
   });
+
+  const readTime = post.readTime || Math.ceil((post.content?.length || 0) / 1000) || 5;
 
   const handleLike = async (e) => {
     e.stopPropagation();
@@ -57,88 +59,82 @@ export default function BlogCard({ post }) {
   };
 
   return (
-    <article 
-      onClick={() => navigate(`/blog/${postId}`)}
-      className="bg-white rounded-lg border border-gray-200 cursor-pointer"
-    >
-      <div className="flex gap-4 p-4">
+    <article className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex gap-6">
+        {/* Left Content Section */}
         <div className="flex-1 min-w-0">
-          {/* Author Info */}
+          {/* Author Row */}
           <div className="flex items-center gap-2 mb-2">
-            <img 
-              src={authorAvatar} 
-              alt={authorName} 
-              className="w-6 h-6 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${post.author?.userId || post.author?._id}`);
-              }}
-            />
-            <span 
-              className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${post.author?.userId || post.author?._id}`);
-              }}
+            <Link to={`/profile/${authorId}`} onClick={(e) => e.stopPropagation()}>
+              <img 
+                src={authorAvatar} 
+                alt={authorName} 
+                className="w-6 h-6 rounded-full object-cover cursor-pointer hover:opacity-80 transition"
+              />
+            </Link>
+            <Link 
+              to={`/profile/${authorId}`} 
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm font-medium text-gray-900 hover:text-gray-700 transition"
             >
               {authorName}
-            </span>
-            <span className="text-xs text-gray-400">·</span>
-            <span className="text-xs text-gray-400">{formattedDate}</span>
+            </Link>
           </div>
 
           {/* Title */}
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-            {post.title}
-          </h2>
+          <div onClick={() => navigate(`/blog/${postId}`)} className="cursor-pointer">
+            <h2 className="text-xl font-bold text-gray-900 hover:text-gray-700 leading-tight mb-2 line-clamp-2">
+              {post.title}
+            </h2>
+          </div>
 
           {/* Summary */}
           {post.summary && (
-            <p className="text-sm text-gray-600 line-clamp-2 mb-2">{post.summary}</p>
+            <div onClick={() => navigate(`/blog/${postId}`)} className="cursor-pointer">
+              <p className="text-sm text-gray-600 line-clamp-2 mb-3">{post.summary}</p>
+            </div>
           )}
 
-          <button className="text-sm text-gray-900 mb-3 font-medium">
-            Read more
-          </button>
+          {/* Bottom Metadata Row */}
+          <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+            <span>{formattedDate}</span>
+            <span>·</span>
+            <span>{readTime} min read</span>
+          </div>
 
           {/* Actions */}
-          <div className="grid grid-cols-4 gap-1 mt-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleLike}
               disabled={isLiking}
-              className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
+              className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition"
             >
-              <Heart className={`h-3.5 w-3.5 ${localLiked ? 'fill-black text-black' : 'text-gray-500'}`} />
-              <span className="text-gray-500">{localLikes}</span>
-            </button>
-
-            <button className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition">
-              <MessageCircle className="h-3.5 w-3.5" />
-              {post.commentsCount || 0}
-            </button>
-
-            <button className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition">
-              <Eye className="h-3.5 w-3.5" />
-              {post.views || 0}
+              <Heart className={`h-4 w-4 ${localLiked ? 'fill-red-500 text-red-500' : ''}`} />
+              <span className="text-xs">{localLikes}</span>
             </button>
 
             <button
               onClick={handleBookmark}
-              className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
+              className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition"
             >
-              <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
+              <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-blue-600 text-blue-600' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Cover Image */}
         {post.coverImage?.url && (
-          <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
-            <img
-              src={post.coverImage.url}
-              alt={post.title}
-              className="w-full h-full object-cover"
-            />
+          <div 
+            onClick={() => navigate(`/blog/${postId}`)} 
+            className="shrink-0 cursor-pointer"
+          >
+            <div className="w-32 h-32 rounded overflow-hidden bg-gray-100">
+              <img
+                src={post.coverImage.url}
+                alt={post.title}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
           </div>
         )}
       </div>

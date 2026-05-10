@@ -5,7 +5,7 @@ import API from '../api/axios';
 import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 
-const TABS = ['Users', 'Posts', 'Articles'];
+const TABS = ['Users', 'Posts', 'Blogs'];
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -31,7 +31,7 @@ export default function SearchPage() {
   const tabCounts = {
     Users: results.users.length,
     Posts: results.posts.length,
-    Articles: results.blogs.length,
+    Blogs: results.blogs.length,
   };
 
   return (
@@ -111,11 +111,11 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* Articles Tab */}
-          {activeTab === 'Articles' && (
+          {/* Blogs Tab */}
+          {activeTab === 'Blogs' && (
             <div className="space-y-4">
               {results.blogs.length === 0 ? (
-                <Empty icon={BookOpen} text={`No articles found in category "${searched}"`} />
+                <Empty icon={BookOpen} text={`No blogs found in category "${searched}"`} />
               ) : (
                 results.blogs.map(blog => (
                   <BlogCard key={blog._id} post={blog} />

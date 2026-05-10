@@ -17,7 +17,7 @@ const initialState = {
   // Cache timestamps per tab - null means never fetched
   lastFetched: {
     posts: null,
-    articles: null,
+    blogs: null,
   },
   activeFeedType: 'posts',
 };
@@ -146,7 +146,7 @@ const postSlice = createSlice({
       state.hasMore = true;
       state.isLoadingMore = false;
       // Clear cache so next fetch is forced
-      state.lastFetched = { posts: null, articles: null };
+      state.lastFetched = { posts: null, blogs: null };
     },
     setLikedPosts: (state, action) => {
       state.likedPostIds = action.payload;

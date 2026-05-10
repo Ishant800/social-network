@@ -27,7 +27,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-const clientOrigins = ("http://localhost:5173" )
+const clientOrigins = ("https://social-network-fronted.onrender.com" )
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);

@@ -11,10 +11,10 @@ const fetchFeed = async ({ feedType = 'posts', page = 1, limit = 15 } = {}) => {
     limit: String(limit) 
   });
   
-  const endpoint = feedType === 'articles' ? '/feed/blogs' : '/feed/posts';
+  const endpoint = feedType === 'blogs' ? '/feed/blogs' : '/feed/posts';
   const { data } = await API.get(`${endpoint}?${params.toString()}`);
   
-  const items = feedType === 'articles' 
+  const items = feedType === 'blogs' 
     ? (data.blogs || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'blog' }))
     : (data.posts || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'post' }));
   
