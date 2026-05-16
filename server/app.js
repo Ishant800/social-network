@@ -4,8 +4,9 @@ const dotenv = require('dotenv');
 
 
 
+// Root .env (repo root), then server/.env — latter overrides for local dev.
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-// dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -27,7 +28,10 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-const clientOrigins = ("https://social-network-fronted.onrender.com" )
+const clientOrigins = (
+  process.env.CLIENT_ORIGINS ||
+  'https://social-network-fronted.onrender.com,http://localhost:5173,http://127.0.0.1:5173'
+)
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
@@ -37,7 +41,9 @@ app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
-    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
+    // Always use an array: a single string origin would be sent for every browser,
+    // ignoring the actual request Origin (breaks local Vite when env has one URL).
+    origin: clientOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -77,7 +83,7 @@ connectDb();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
+    origin: clientOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },

@@ -20,4 +20,21 @@ const getMe = async () => {
   return response.data;
 };
 
-export default { signup, login, logout, getMe };
+const sendVerificationCode = async ({ email }) => {
+  const response = await API.post('/auth/send-verification-code', { email });
+  return response.data;
+};
+
+const verifyEmailCode = async ({ email, code }) => {
+  const response = await API.post('/auth/verify-email-code', { email, code });
+  return response.data;
+};
+
+export default {
+  signup,
+  login,
+  logout,
+  getMe,
+  sendVerificationCode,
+  verifyEmailCode,
+};

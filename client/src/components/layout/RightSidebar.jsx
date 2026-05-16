@@ -84,34 +84,42 @@ export default function RightSidebar() {
   };
 
   return (
-    <div className="space-y-6 sticky top-20 p-4">
-      {/* Quick Stats */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Activity</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.posts}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Posts</div>
+    <div className="space-y-5 p-4 pb-10">
+      <div className="surface-card rounded-2xl p-4">
+        <h2 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">Your activity</h2>
+        <div className="grid grid-cols-3 gap-2">
+          <Link
+            to="/profile"
+            className="rounded-xl bg-teal-50/60 px-2 py-3 text-center transition hover:bg-teal-100/80"
+          >
+            <div className="font-display text-xl font-bold text-slate-900">{userStats.posts}</div>
+            <div className="mt-0.5 text-[11px] font-medium text-slate-500">Posts</div>
           </Link>
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.followers}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Followers</div>
+          <Link
+            to="/profile"
+            className="rounded-xl bg-slate-50 px-2 py-3 text-center transition hover:bg-slate-100"
+          >
+            <div className="font-display text-xl font-bold text-slate-900">{userStats.followers}</div>
+            <div className="mt-0.5 text-[11px] font-medium text-slate-500">Followers</div>
           </Link>
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.following}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Following</div>
+          <Link
+            to="/profile"
+            className="rounded-xl bg-slate-50 px-2 py-3 text-center transition hover:bg-slate-100"
+          >
+            <div className="font-display text-xl font-bold text-slate-900">{userStats.following}</div>
+            <div className="mt-0.5 text-[11px] font-medium text-slate-500">Following</div>
           </Link>
         </div>
       </div>
 
-      <div className="border-t border-gray-100" />
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
       {/* Who to Follow */}
       {visibleSuggestions.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Who to follow</h2>
-            <Link to="/friendsexplore" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/friendsexplore" className="text-xs font-semibold text-teal-600 hover:text-teal-700">
               See all
             </Link>
           </div>
@@ -153,8 +161,9 @@ export default function RightSidebar() {
                         <span className="text-xs text-gray-500">Following</span>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => handleFollow(id)}
-                          className="text-xs font-medium text-blue-600 hover:text-blue-700 transition"
+                          className="text-xs font-semibold text-teal-600 transition hover:text-teal-800"
                         >
                           Follow
                         </button>
@@ -174,11 +183,10 @@ export default function RightSidebar() {
         </div>
       )}
 
-      <div className="border-t border-gray-100" />
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-      {/* This Week Stats */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">This Week</h2>
+      <div className="surface-card rounded-2xl p-4">
+        <h2 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">This week</h2>
         {loadingStats ? (
           <div className="space-y-2.5">
             {[1, 2, 3, 4].map((i) => (
@@ -199,7 +207,7 @@ export default function RightSidebar() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <MessageCircle className="w-3.5 h-3.5 text-blue-500" />
+                <MessageCircle className="w-3.5 h-3.5 text-teal-500" />
                 <span className="text-gray-600">Comments</span>
               </div>
               <span className="font-semibold text-gray-900">{weeklyStats.commentsReceived}</span>
@@ -222,19 +230,18 @@ export default function RightSidebar() {
         )}
       </div>
 
-      <div className="border-t border-gray-100" />
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-      {/* Quick Access */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Access</h2>
+      <div className="surface-card rounded-2xl p-4">
+        <h2 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick access</h2>
         <div className="space-y-1">
           <Link 
             to="/bookmarks" 
             className="flex items-center justify-between py-2 hover:opacity-70 transition group"
           >
             <div className="flex items-center gap-2.5">
-              <Bookmark className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Saved Items</span>
+              <Bookmark className="h-4 w-4 text-teal-500/80" />
+              <span className="text-sm font-medium text-slate-700">Saved items</span>
             </div>
             <div className="flex items-center gap-2">
               {bookmarks?.length > 0 && (
@@ -251,8 +258,8 @@ export default function RightSidebar() {
             className="flex items-center justify-between py-2 hover:opacity-70 transition group"
           >
             <div className="flex items-center gap-2.5">
-              <Bell className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Notifications</span>
+              <Bell className="h-4 w-4 text-amber-500/90" />
+              <span className="text-sm font-medium text-slate-700">Notifications</span>
             </div>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
@@ -269,51 +276,55 @@ export default function RightSidebar() {
             className="flex items-center justify-between py-2 hover:opacity-70 transition group"
           >
             <div className="flex items-center gap-2.5">
-              <MessageCircle className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Messages</span>
+              <MessageCircle className="h-4 w-4 text-teal-500/80" />
+              <span className="text-sm font-medium text-slate-700">Messages</span>
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
           </Link>
         </div>
       </div>
 
-      <div className="border-t border-gray-100" />
+      <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-      {/* Create Shortcuts */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Create</h2>
-        <div className="space-y-1">
-          <Link 
+      <div className="surface-card rounded-2xl p-4">
+        <h2 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Create</h2>
+        <div className="space-y-0.5">
+          <Link
             to="/post/create"
-            className="flex items-center gap-2.5 py-2 hover:opacity-70 transition"
+            className="flex items-center gap-2.5 rounded-lg py-2 transition hover:bg-teal-50/60"
           >
-            <Star className="w-4 h-4 text-blue-500" />
-            <span className="text-sm text-gray-700">Write a Post</span>
+            <Star className="h-4 w-4 text-teal-600" />
+            <span className="text-sm font-medium text-slate-700">Write a post</span>
           </Link>
-          <Link 
+          <Link
             to="/blog/create"
-            className="flex items-center gap-2.5 py-2 hover:opacity-70 transition"
+            className="flex items-center gap-2.5 rounded-lg py-2 transition hover:bg-teal-50/60"
           >
-            <Star className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm text-gray-700">Write an Article</span>
+            <Star className="h-4 w-4 text-teal-700" />
+            <span className="text-sm font-medium text-slate-700">Write an article</span>
           </Link>
         </div>
       </div>
 
-      <div className="border-t border-gray-100" />
-
-      {/* Footer */}
-      <div className="pt-2 pb-8">
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
-          <Link to="/terms" className="hover:text-gray-600 transition">Terms</Link>
-          <span>·</span>
-          <Link to="/privacy" className="hover:text-gray-600 transition">Privacy</Link>
-          <span>·</span>
-          <Link to="/about" className="hover:text-gray-600 transition">About</Link>
-          <span>·</span>
-          <Link to="/help" className="hover:text-gray-600 transition">Help</Link>
+      <div className="px-1 pt-2">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
+          <Link to="/terms" className="transition hover:text-teal-700">
+            Terms
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/privacy" className="transition hover:text-teal-700">
+            Privacy
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/about" className="transition hover:text-teal-700">
+            About
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/help" className="transition hover:text-teal-700">
+            Help
+          </Link>
         </div>
-        <p className="mt-2 text-xs text-gray-400">© 2024 Social Network</p>
+        <p className="mt-2 text-[11px] text-slate-400">© 2026 Sanjal</p>
       </div>
     </div>
   );

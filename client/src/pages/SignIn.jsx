@@ -58,127 +58,117 @@ function Signin() {
     dispatch(login(formData));
   };
 
+  const inputBase =
+    'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400/90';
+
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Section - Logo & Minimal Content */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-8 bg-gray-50 border-r border-gray-200">
-        <div className="text-center max-w-md">
-          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-2" />
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome Back</h1>
-          <p className="text-gray-600 text-sm">
-            Continue your journey and stay connected with your network.
+    <div className="min-h-dvh flex bg-slate-50">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-teal-700 via-teal-800 to-slate-900 p-10 text-white lg:flex">
+        <div className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-teal-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative z-10 max-w-md">
+          <img src={logo} alt="" className="h-11 w-auto opacity-95 drop-shadow-md" />
+          <h1 className="font-display mt-10 text-4xl font-extrabold leading-tight tracking-tight">
+            Welcome back
+          </h1>
+          <p className="mt-4 text-sm leading-relaxed text-teal-100/95">
+            Pick up conversations, catch up on your feed, and stay in sync with the people you care about.
           </p>
         </div>
+        <p className="relative z-10 text-xs text-teal-200/80">Secure sign-in · Built for real communities</p>
       </div>
 
-      {/* Right Section - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white">
-        <div className="w-full max-w-sm">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign In</h2>
-            <p className="text-xs text-gray-600">Welcome back to your account</p>
-          </div>
-
-          <form className="space-y-3" onSubmit={handleSubmit}>
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.email && <p className="text-xs text-red-600 mt-0.5">{errors.email}</p>}
+      <div className="flex w-full flex-1 items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-[400px]">
+          <div className="surface-card animate-fade-up rounded-2xl p-6 shadow-[var(--shadow-float)] sm:p-8">
+            <div className="mb-6">
+              <h2 className="font-display text-2xl font-bold tracking-tight text-slate-900">Sign in</h2>
+              <p className="mt-1 text-sm text-slate-500">Use the email tied to your account.</p>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.password && <p className="text-xs text-red-600 mt-0.5">{errors.password}</p>}
-            </div>
-
-            {/* Remember & Forgot */}
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="signin-email" className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Email
+                </label>
                 <input
-                  type="checkbox"
-                  id="remember"
-                  className="h-3.5 w-3.5 accent-blue-600 rounded border-gray-300"
+                  id="signin-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={`${inputBase} ${errors.email ? 'border-red-400 ring-red-200' : 'border-slate-200'}`}
                 />
-                <label htmlFor="remember" className="ml-1.5 text-gray-600 cursor-pointer">
+                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="signin-password" className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Password
+                </label>
+                <input
+                  id="signin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={`${inputBase} ${errors.password ? 'border-red-400 ring-red-200' : 'border-slate-200'}`}
+                />
+                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <label className="flex cursor-pointer items-center gap-2 text-slate-600">
+                  <input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                   Remember me
                 </label>
+                <a href="#forgot" className="font-semibold text-teal-700 hover:text-teal-800">
+                  Forgot password?
+                </a>
               </div>
-              <a href="#forgot" className="text-blue-600 hover:text-blue-700 font-medium">
-                Forgot?
-              </a>
-            </div>
 
-            {isError && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
-                {message}
-              </p>
-            )}
+              {isError && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{message}</p>
+              )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 transition disabled:opacity-60 mt-4"
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-2 my-3">
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <span className="text-xs text-gray-400">OR</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
-            </div>
-
-            {/* Google Button */}
-            <button
-              type="button"
-              onClick={handleGoogleClick}
-              className="w-full border border-gray-300 py-2 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition"
-            >
-              Continue with Google
-            </button>
-
-            {googleMsg && (
-              <p className="text-center text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                Google sign-in not available. Please use your credentials.
-              </p>
-            )}
-
-            {/* Sign Up Link */}
-            <p className="text-center text-xs text-gray-600 mt-4">
-              Don't have an account?
-              <Link
-                to="/signup"
-                className="ml-1 font-semibold text-blue-600 hover:text-blue-700"
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="mt-2 w-full rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-600/25 transition hover:bg-teal-700 disabled:opacity-60"
               >
-                Sign up
-              </Link>
-            </p>
-          </form>
+                {isLoading ? 'Signing in…' : 'Sign in'}
+              </button>
+
+              <div className="flex items-center gap-3 py-1">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">or</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleClick}
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Continue with Google
+              </button>
+
+              {googleMsg && (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+                  Google sign-in is not available yet. Please use email and password.
+                </p>
+              )}
+
+              <p className="pt-2 text-center text-xs text-slate-600">
+                No account?
+                <Link to="/signup" className="ml-1 font-semibold text-teal-700 hover:text-teal-800">
+                  Create one
+                </Link>
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </div>

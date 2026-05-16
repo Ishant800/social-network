@@ -8,7 +8,8 @@ import NotificationManager from '../notifications/NotificationManager';
 export default function Layout({ children }) {
   const { pathname } = useLocation();
 
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage =
+    pathname === '/login' || pathname === '/signup' || pathname === '/verify-email';
   const isFeedPage = pathname === '/';
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
@@ -22,21 +23,18 @@ export default function Layout({ children }) {
   if (isAuthPage) return <>{children}</>;
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="app-shell min-h-dvh flex flex-col">
 
-      {/* Fixed Navbar */}
-      <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-gray-100 bg-white/90 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-[var(--border-soft)] bg-white/80 backdrop-blur-xl shadow-[0_1px_0_rgba(15,23,42,0.04)]">
         <Navbar />
       </header>
 
-      {/* Fixed Left Sidebar */}
-      <aside className="hidden lg:block fixed top-16 left-0 w-64 h-[calc(100dvh-4rem)] border-r border-gray-100 overflow-y-auto scrollbar-none z-40">
+      <aside className="hidden lg:block fixed top-16 left-0 w-64 h-[calc(100dvh-4rem)] border-r border-[var(--border-soft)] bg-white/40 overflow-y-auto thin-scrollbar z-40">
         <Sidebar />
       </aside>
 
-      {/* Fixed Right Sidebar - shows on home, explore, and profile pages */}
       {showRightSidebar && (
-        <aside className="hidden lg:block fixed top-16 right-0 w-72 h-[calc(100dvh-4rem)] border-l border-gray-100 overflow-y-auto scrollbar-none z-40">
+        <aside className="hidden lg:block fixed top-16 right-0 w-72 h-[calc(100dvh-4rem)] border-l border-[var(--border-soft)] bg-gradient-to-b from-white/90 to-teal-50/20 overflow-y-auto thin-scrollbar z-40">
           <RightSidebar />
         </aside>
       )}
@@ -53,7 +51,7 @@ export default function Layout({ children }) {
             {children}
           </div>
         ) : isFeedPage ? (
-          <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="max-w-2xl mx-auto px-4 py-6 lg:py-8">
             {children}
           </div>
         ) : isWidePage ? (

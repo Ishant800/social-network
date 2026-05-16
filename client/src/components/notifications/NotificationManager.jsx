@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import NotificationToast from './NotificationToast';
 import { addNotificationFromSSE } from '../../features/notifications/notificationSlice';
+import { baseURL } from '../../api/axios';
 
 export default function NotificationManager() {
   const dispatch = useDispatch();
@@ -31,7 +32,6 @@ export default function NotificationManager() {
 
       try {
         // Connect to SSE endpoint for real-time notifications
-        const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         const eventSource = new EventSource(`${baseURL}/notifications/stream?token=${token}`);
         eventSourceRef.current = eventSource;
 

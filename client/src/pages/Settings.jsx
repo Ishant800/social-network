@@ -1,14 +1,21 @@
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import API from '../api/axios';
-import { setUser } from '../features/auth/authSlice';
+import { setUser, logout } from '../features/auth/authSlice';
 import CATEGORIES from '../constants/categories';
 
 export default function Settings() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((s) => s.auth);
+
+  const handleSignOut = () => {
+    dispatch(logout());
+    navigate('/login', { replace: true });
+  };
   const [discoverability, setDiscoverability] = useState(true);
   const [selectedInterests, setSelectedInterests] = useState(
     user?.preferences?.interests || []
@@ -228,6 +235,27 @@ export default function Settings() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Sign out */}
+        <div className="pt-4 border-t border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-900 mb-2">Session</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Sign out</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                You will need to sign in again to use your account on this device.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
           </div>
         </div>
 

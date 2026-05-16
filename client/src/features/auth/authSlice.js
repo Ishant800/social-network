@@ -18,6 +18,15 @@ export const login = createAsyncThunk(
         try {
             return await authService.login(userData)
         } catch (error) {
+            if (
+                !error.response &&
+                (error.code === "ERR_NETWORK" ||
+                    String(error.message || "").toLowerCase().includes("network"))
+            ) {
+                return thunkAPI.rejectWithValue(
+                    "Cannot reach the server. Run the API on port 5000 and restart Vite (npm run dev), or set VITE_API_URL in client/.env."
+                );
+            }
             const data = error.response?.data;
             const msg =
                 (typeof data?.error === "string" && data.error) ||
@@ -35,6 +44,15 @@ export const signup = createAsyncThunk(
     try {
       return await authService.signup(userData);
     } catch (error) {
+      if (
+        !error.response &&
+        (error.code === "ERR_NETWORK" ||
+          String(error.message || "").toLowerCase().includes("network"))
+      ) {
+        return thunkAPI.rejectWithValue(
+          "Cannot reach the server. Run the API on port 5000 and restart Vite (npm run dev), or set VITE_API_URL in client/.env."
+        );
+      }
       const data = error.response?.data;
       const msg =
         (typeof data?.message === "string" && data.message) ||
@@ -66,12 +84,16 @@ const authSlice = createSlice({
  name:"auth",
     initialState,
     reducers:{
-        logout:(state) =>{
+        logout: (state) => {
             state.token = null;
             state.user = null;
             state.profilePosts = [];
-            localStorage.removeItem("token");
-           
+            state.isLoading = false;
+            state.isError = false;
+            state.isSuccess = false;
+            state.message = '';
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
         },
         setUser:(state, action) => {
             state.user = action.payload;

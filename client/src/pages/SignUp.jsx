@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { signup } from "../features/auth/authSlice";
+import { signup, reset } from "../features/auth/authSlice";
 import logo from "../assets/logo.png";
 
 function Signup() {
@@ -12,7 +12,7 @@ function Signup() {
   const [errors, setErrors] = useState({});
   const [googleMsg, setGoogleMsg] = useState(false);
 
-  const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
+  const { isLoading, isError, message } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -21,12 +21,6 @@ function Signup() {
     setTimeout(() => setGoogleMsg(false), 2000);
   };
 
-
-  useEffect(() => {
-    if (isSuccess) {
-      navigate("/");
-    }
-  }, [isSuccess, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -69,153 +63,148 @@ function Signup() {
       email: email.trim().toLowerCase(),
       password,
     };
-    dispatch(signup(formData));
+    try {
+      const data = await dispatch(signup(formData)).unwrap();
+      dispatch(reset());
+      if (!data.emailVerified) {
+        localStorage.removeItem('token');
+        navigate('/verify-email', {
+          state: {
+            email: formData.email,
+            verificationEmailSent: data.verificationEmailSent !== false,
+          },
+        });
+      } else {
+        navigate('/');
+      }
+    } catch {
+      // Errors are surfaced via Redux (isError / message)
+    }
   };
 
+  const inputBase =
+    'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400/90';
+
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Section - Logo & Minimal Content */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-8 bg-gray-50 border-r border-gray-200">
-        <div className="text-center max-w-md">
-          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">Join Our Community</h1>
-          <p className="text-gray-600 text-sm">
-            Connect with creators, share your ideas, and grow your network.
+    <div className="min-h-dvh flex bg-slate-50">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-900 via-teal-900 to-teal-700 p-10 text-white lg:flex">
+        <div className="pointer-events-none absolute right-0 top-24 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl" />
+        <div className="relative z-10 max-w-md">
+          <img src={logo} alt="" className="h-11 w-auto opacity-95 drop-shadow-md" />
+          <h1 className="font-display mt-10 text-4xl font-extrabold leading-tight tracking-tight">
+            Join the network
+          </h1>
+          <p className="mt-4 text-sm leading-relaxed text-teal-100/95">
+            Share posts and long articles, join live blog discussions, and grow an audience that actually engages.
           </p>
         </div>
+        <p className="relative z-10 text-xs text-teal-200/80">Free to start · Verify your email to unlock everything</p>
       </div>
 
-      {/* Right Section - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white">
-        <div className="w-full max-w-sm">
+      <div className="flex w-full flex-1 items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-[400px]">
+          <div className="surface-card animate-fade-up rounded-2xl p-6 shadow-[var(--shadow-float)] sm:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Create Account</h2>
-            <p className="text-xs text-gray-600">Join our community today</p>
+            <h2 className="font-display text-2xl font-bold tracking-tight text-slate-900">Create account</h2>
+            <p className="mt-1 text-sm text-slate-500">A few details and you are ready to go.</p>
           </div>
 
-          <form className="space-y-3" onSubmit={handleSubmit}>
+          <form className="space-y-3.5" onSubmit={handleSubmit}>
             {/* Name */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Full name</label>
               <input
                 type="text"
-                placeholder="John Doe"
+                placeholder="Alex Rivera"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`${inputBase} ${errors.name ? 'border-red-400' : 'border-slate-200'}`}
               />
-              {errors.name && <p className="text-xs text-red-600 mt-0.5">{errors.name}</p>}
+              {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Email</label>
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`${inputBase} ${errors.email ? 'border-red-400' : 'border-slate-200'}`}
               />
-              {errors.email && <p className="text-xs text-red-600 mt-0.5">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Password</label>
               <input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`${inputBase} ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
               />
-              {errors.password && <p className="text-xs text-red-600 mt-0.5">{errors.password}</p>}
-              <p className="text-xs text-gray-500 mt-0.5">Min 8 characters</p>
+              {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+              <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Confirm Password
-              </label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Confirm password</label>
               <input
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`${inputBase} ${errors.confirmPassword ? 'border-red-400' : 'border-slate-200'}`}
               />
-              {errors.confirmPassword && <p className="text-xs text-red-600 mt-0.5">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
             </div>
 
             {isError && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
-                {message}
-              </p>
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{message}</p>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 transition disabled:opacity-60 mt-4"
+              className="mt-1 w-full rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-600/25 transition hover:bg-teal-700 disabled:opacity-60"
             >
-              {isLoading ? "Creating..." : "Sign Up"}
+              {isLoading ? 'Creating account…' : 'Sign up'}
             </button>
 
-            {/* Divider */}
-            <div className="flex items-center gap-2 my-3">
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <span className="text-xs text-gray-400">OR</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">or</span>
+              <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            {/* Google Button */}
             <button
               type="button"
               onClick={handleGoogleClick}
-              className="w-full border border-gray-300 py-2 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               <img
                 src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="google"
+                alt=""
                 className="h-3.5 w-3.5"
               />
               Continue with Google
             </button>
 
             {googleMsg && (
-              <p className="text-center text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                Google sign-in not available. Please use your credentials.
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+                Google sign-in is not available yet. Please use email and password.
               </p>
             )}
 
-            {/* Sign In Link */}
-            <p className="text-center text-xs text-gray-600 mt-4">
+            <p className="pt-2 text-center text-xs text-slate-600">
               Already have an account?
-              <Link
-                to="/login"
-                className="ml-1 font-semibold text-blue-600 hover:text-blue-700"
-              >
+              <Link to="/login" className="ml-1 font-semibold text-teal-700 hover:text-teal-800">
                 Sign in
               </Link>
             </p>
           </form>
+          </div>
         </div>
       </div>
     </div>

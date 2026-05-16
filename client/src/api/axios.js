@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'https://social-network-backend-9gdm.onrender.com';
-// const baseURL = "http://localhost:5000"
+const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+// Dev: empty baseURL = same origin as Vite; `vite.config.js` proxies /auth, /user, … to :5000 (no CORS issues).
+const baseURL =
+  envUrl ||
+  (import.meta.env.DEV
+    ? ''
+    : 'https://social-network-backend-9gdm.onrender.com');
 const API = axios.create({
   baseURL,
 });

@@ -12,9 +12,9 @@ import {
   X,
 } from 'lucide-react';
 import { setChatList, decrementUnreadCount } from '../features/messages/messageSlice';
+import { baseURL as SOCKET_URL } from '../api/axios';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
-const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 const getAvatar = (u) =>
   u?.profile?.avatar?.url ||
@@ -163,7 +163,9 @@ export default function MessageSystem() {
 
   // ── Init socket ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    const socket = io(SOCKET_URL || undefined, {
+      transports: ['websocket', 'polling'],
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => setConnected(true));

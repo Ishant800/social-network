@@ -1,6 +1,7 @@
-import { Bell, Home, Plus, User, Search, MessageCircle, Compass } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { Bell, Home, Plus, User, Search, MessageCircle, LogOut } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../features/auth/authSlice';
 
 function TabLink({ to, end, icon, label, badge }) {
   const Icon = icon;
@@ -15,8 +16,8 @@ function TabLink({ to, end, icon, label, badge }) {
         const active = navActive !== undefined ? navActive : isActive;
         return `flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[0.65rem] font-medium transition-all duration-200 ${
           active 
-            ? 'text-blue-600 bg-blue-50/50' 
-            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            ? 'text-teal-700 bg-teal-50' 
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
         }`;
       }}
     >
@@ -39,11 +40,18 @@ function TabLink({ to, end, icon, label, badge }) {
 
 export default function MobileNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const isCreatePage = location.pathname === '/post/create' || location.pathname === '/blog/create';
   
   // Get dynamic counts from Redux store
   const { unreadCount } = useSelector((state) => state.notifications);
   const { unreadCount: messageCount } = useSelector((state) => state.messages);
+
+  const handleSignOut = () => {
+    dispatch(logout());
+    navigate('/login', { replace: true });
+  };
 
   if (isCreatePage) return null;
 
@@ -53,10 +61,10 @@ export default function MobileNav() {
       <div className="h-[72px]" />
       
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-soft)] bg-white/90 backdrop-blur-xl shadow-[0_-8px_32px_rgba(15,23,42,0.06)]"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
       >
-        <div className="relative mx-auto flex items-center justify-between gap-1 px-3">
+        <div className="relative mx-auto flex items-stretch justify-between gap-0.5 px-2 overflow-x-auto">
           {/* Home */}
           <TabLink to="/" end icon={Home} label="Home" />
 
@@ -67,7 +75,7 @@ export default function MobileNav() {
           <div className="relative -top-5">
             <NavLink
               to="/post/create"
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 ring-4 ring-white transition-all active:scale-95 hover:shadow-xl"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white shadow-lg shadow-teal-600/35 ring-4 ring-white transition-all active:scale-95 hover:shadow-xl hover:from-teal-400 hover:to-teal-600"
               aria-label="Create post"
             >
               <Plus className="h-7 w-7" strokeWidth={2.5} />
@@ -82,6 +90,16 @@ export default function MobileNav() {
 
           {/* Profile */}
           <TabLink to="/profile" icon={User} label="Profile" />
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex min-h-[3.25rem] min-w-[3.25rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[0.65rem] font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-5 w-5 stroke-[2.2]" />
+            <span className="text-[0.65rem] leading-none">Logout</span>
+          </button>
         </div>
       </nav>
     </>

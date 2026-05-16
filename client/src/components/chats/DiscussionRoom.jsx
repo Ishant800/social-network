@@ -13,10 +13,9 @@ import {
   MessageCircle,
   Menu,
 } from 'lucide-react';
-import API from '../../api/axios';
+import API, { baseURL as SOCKET_URL } from '../../api/axios';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const socket = io(SOCKET_URL, { autoConnect: false });
+const socket = io(SOCKET_URL || undefined, { autoConnect: false });
 
 const DiscussionRoom = () => {
   const { blogId } = useParams();

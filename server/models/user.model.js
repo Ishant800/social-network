@@ -18,6 +18,22 @@ const UserSchema = new mongoose.Schema({
      required: true,
     select: false },
 
+  emailVerified: { type: Boolean, default: false },
+
+  emailVerification: {
+    codeHash: { type: String, select: false },
+    expiresAt: { type: Date },
+    attempts: { type: Number, default: 0 },
+    lastSentAt: { type: Date },
+  },
+
+  passwordReset: {
+    codeHash: { type: String, select: false },
+    expiresAt: { type: Date },
+    attempts: { type: Number, default: 0 },
+    lastSentAt: { type: Date },
+  },
+
   profile: {
     fullName: String,
     bio: { type: String, maxlength: 300 },

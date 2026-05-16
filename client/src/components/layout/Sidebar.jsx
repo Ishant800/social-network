@@ -96,7 +96,7 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -152,17 +152,16 @@ export default function Sidebar() {
                 {handle}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
 
-          
-          
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-xs font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign out
+          </button>
         </div>
       </div>
 

@@ -42,8 +42,9 @@ export default function SimplePostCard({ post }) {
 
   const isBookmarked = bookmarkIds.includes(postId);
   const authorName   = post.author?.fullName || post.author?.username || 'Unknown';
-  const authorAvatar = post.author?.avatar ||
-    `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
+  const authorAvatar =
+    post.author?.avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=f0fdfa&color=0f766e`;
 
   const isOwner = currentUser && (
     post.author?.userId === currentUser._id ||
@@ -145,14 +146,14 @@ export default function SimplePostCard({ post }) {
   if (deleted) return null;
 
   return (
-    <article className="bg-white rounded-lg border border-gray-200 p-4">
+    <article className="surface-card rounded-2xl p-4 sm:p-5 transition hover:shadow-[var(--shadow-float)]">
 
       {/* Author Info */}
       <div className="flex items-center gap-3 mb-3">
         <img 
           src={authorAvatar} 
           alt={authorName} 
-          className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+          className="h-10 w-10 cursor-pointer rounded-full object-cover ring-2 ring-transparent transition hover:ring-teal-400/80"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/profile/${post.author?.userId || post.user?._id || post.user}`);
@@ -165,7 +166,7 @@ export default function SimplePostCard({ post }) {
             navigate(`/profile/${post.author?.userId || post.user?._id || post.user}`);
           }}
         >
-          <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition">{authorName}</h3>
+          <h3 className="text-sm font-medium text-slate-900 transition hover:text-teal-700">{authorName}</h3>
           <p className="text-xs text-gray-500">{formattedDate} at {formattedTime}</p>
         </div>
 
@@ -199,7 +200,7 @@ export default function SimplePostCard({ post }) {
 
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+            <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700">
               #{post.tags[0]}
             </span>
           </div>
@@ -246,7 +247,7 @@ export default function SimplePostCard({ post }) {
       )}
 
       {/* Actions */}
-      <div className="grid grid-cols-4 gap-1 mt-2 border-t border-gray-100 pt-2">
+      <div className="mt-3 grid grid-cols-4 gap-1 border-t border-slate-100 pt-3">
 
         {/* Reaction button with picker */}
         <div className="relative" ref={pickerRef}>
@@ -255,8 +256,8 @@ export default function SimplePostCard({ post }) {
             onMouseEnter={handleLikeMouseEnter}
             onMouseLeave={handleLikeMouseLeave}
             disabled={isReacting}
-            className={`w-full h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50 ${
-              userReaction ? 'text-blue-600 font-medium' : 'text-gray-500'
+            className={`flex h-8 w-full items-center justify-center gap-1.5 rounded text-xs transition hover:bg-teal-50/60 ${
+              userReaction ? 'font-medium text-teal-700' : 'text-slate-500'
             }`}
           >
             <span className="text-lg leading-none">
@@ -282,7 +283,7 @@ export default function SimplePostCard({ post }) {
                   onClick={(e) => handleReact(e, type)}
                   title={label}
                   className={`relative group flex items-center justify-center w-12 h-12 rounded-full ${bg} hover:scale-125 transition-all duration-200 ${
-                    userReaction === type ? 'scale-125 ring-2 ring-blue-400' : ''
+                    userReaction === type ? 'scale-125 ring-2 ring-teal-400' : ''
                   }`}
                 >
                   <span className="text-2xl leading-none">{emoji}</span>
@@ -321,7 +322,7 @@ export default function SimplePostCard({ post }) {
           onClick={handleBookmark}
           className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
         >
-          <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
+          <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-teal-600 text-teal-600' : 'text-slate-500'}`} />
         </button>
       </div>
     </article>
