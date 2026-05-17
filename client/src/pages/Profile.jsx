@@ -12,7 +12,8 @@ import {
   Share2,
   Camera,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Lock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -39,6 +40,7 @@ export default function Profile() {
   const [profileData, setProfileData] = useState(null);
   const [profilePosts, setProfilePosts] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const isOwnProfile = !userId || userId === currentUser?._id;
@@ -48,9 +50,9 @@ export default function Profile() {
     if (!token) return;
     
     if (isOwnProfile) {
-      // Use current user data from Redux
       setProfileData(currentUser);
       setProfilePosts(currentUserPosts || []);
+      setIsPrivateProfile(Boolean(currentUser?.privacy?.isPrivate));
     } else {
       // Fetch other user's profile
       fetchUserProfile();
@@ -64,6 +66,7 @@ export default function Profile() {
       setProfileData(response.data.user);
       setProfilePosts(response.data.posts || []);
       setIsFollowing(response.data.isFollowing);
+      setIsPrivateProfile(Boolean(response.data.isPrivateProfile));
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -251,8 +254,11 @@ export default function Profile() {
     );
   };
 
+  const isPrivate = Boolean(user.privacy?.isPrivate || isPrivateProfile);
+  const showLockedContent = isPrivateProfile && !isOwnProfile;
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto pb-10">
       {/* Profile Header */}
       <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -283,13 +289,33 @@ export default function Profile() {
                     {user.profile?.fullName || user.username}
                   </h1>
                   <p className="text-sm text-gray-500">@{user.username}</p>
+                  {!isOwnProfile && isPrivate && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                      <Lock size={10} />
+                      Private account
+                    </span>
+                  )}
+                  {isOwnProfile && isPrivate && (
+                    <Link to="/settings" className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-teal-700 hover:underline">
+                      <Lock size={10} />
+                      Private · change in settings
+                    </Link>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 shrink-0">
                   {isOwnProfile ? (
-                    <div className="relative">
+                    <div className="relative flex items-center gap-2">
+                      <Link
+                        to="/profile/edit"
+                        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Edit
+                      </Link>
                       <button
+                        type="button"
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
@@ -446,7 +472,30 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {showLockedContent && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-10 mb-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-7 h-7 text-slate-400" />
+          </div>
+          <h3 className="font-display font-bold text-slate-900">This account is private</h3>
+          <p className="text-sm text-slate-500 mt-2 max-w-xs mx-auto">
+            Follow {user.profile?.fullName || user.username} to see their posts and connections.
+          </p>
+          {!isFollowing && (
+            <button
+              type="button"
+              onClick={handleFollow}
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800"
+            >
+              <UserPlus className="w-4 h-4" />
+              Follow
+            </button>
+          )}
+        </div>
+      )}
+
+      {!showLockedContent && (
+      <>
       <div className="bg-white rounded-xl border border-gray-100 mb-6">
         <nav className="flex overflow-x-auto">
           {tabs.map((tab) => {
@@ -479,8 +528,10 @@ export default function Profile() {
         </nav>
       </div>
 
-      {/* Content */}
       {renderContent()}
+      </>
+      )}
     </div>
   );
 }
+

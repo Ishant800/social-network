@@ -163,6 +163,19 @@ const getPostDetails = async (req, res) => {
     const postData = post.toObject();
 
     postData.id = postData._id;
+
+    if (postData.isAnonymous) {
+      const { stripUserFromPost } = require('../utils/anonymous.util');
+      return res.status(200).json({
+        sucess: 'ok',
+        post: stripUserFromPost(postData),
+        comments: comments.map((c) => {
+          const { stripUserFromComment } = require('../utils/anonymous.util');
+          return c.isAnonymous ? stripUserFromComment(c) : c;
+        }),
+      });
+    }
+
     if (postData.user) {
       postData.user.name = postData.user.profile?.fullName || postData.user.username;
       postData.user.profileImage = postData.user.profile?.avatar || null;
@@ -284,6 +297,10 @@ const deletePost = async (req, res) => {
           await cloudinary.uploader.destroy(mediaItem.public_id);
         }
       }
+    }
+
+    if (post.voice?.public_id) {
+      await cloudinary.uploader.destroy(post.voice.public_id, { resource_type: 'video' });
     }
 
     await Post.findByIdAndDelete(postId);

@@ -8,8 +8,19 @@ const postSchema = mongoose.Schema(
     },
     content: {
       type: String,
-      required: true,
       trim: true,
+      required: function requiredContent() {
+        return !this.voice?.url;
+      },
+    },
+    voice: {
+      url: String,
+      public_id: String,
+      duration: { type: Number, default: 0 },
+    },
+    isVoicePost: {
+      type: Boolean,
+      default: false,
     },
      media: [
       {
@@ -39,12 +50,28 @@ const postSchema = mongoose.Schema(
       wow:   { type: Number, default: 0 },
       sad:   { type: Number, default: 0 },
       angry: { type: Number, default: 0 },
-    }
+    },
+    isAnonymous: {
+      type: Boolean,
+      default: false,
+    },
+    category: {
+      type: String,
+      default: null,
+    },
+    anonymousPersona: {
+      name: String,
+      avatarColor: String,
+      animal: String,
+    },
   },
   { timestamps: true },
 );
 
 postSchema.index({ createdAt: -1, isPublic: 1 });
 postSchema.index({ user: 1, createdAt: -1 });
+postSchema.index({ isAnonymous: 1, createdAt: -1 });
+postSchema.index({ isAnonymous: 1, category: 1, createdAt: -1 });
+postSchema.index({ isAnonymous: 1, isVoicePost: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Post', postSchema);

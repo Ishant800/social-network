@@ -6,6 +6,7 @@ import bookmarkReducer from "../features/bookmarks/bookmarkSlice"
 import notificationReducer from "../features/notifications/notificationSlice"
 import commentReducer from "../features/comments/commentSlice"
 import messageReducer from "../features/messages/messageSlice"
+import confessionReducer from "../features/confession/confessionSlice"
 
 export const store = configureStore({
     reducer:{
@@ -15,6 +16,7 @@ export const store = configureStore({
         bookmarks: bookmarkReducer,
         notifications: notificationReducer,
         comments: commentReducer,
-        messages: messageReducer
+        messages: messageReducer,
+        confession: confessionReducer,
     }
 })

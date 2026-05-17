@@ -59,7 +59,7 @@ const getPostsFeed = async (req, res) => {
     const fetchLimit = hasInterests ? limit * 4 : limit * 2;
     
     // Get posts with minimal author details
-    let posts = await Post.find({ isPublic: true })
+    let posts = await Post.find({ isPublic: true, isAnonymous: { $ne: true } })
       .populate('user', '_id username profile.fullName profile.avatar')
       .sort({ createdAt: -1 })
       .limit(fetchLimit)

@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // Same-origin in dev (empty axios baseURL) → browser hits Vite, which proxies to Express.
 const DEV_API = 'http://127.0.0.1:5000'
+
+// Use trailing slash so `/confessions` (page) is NOT proxied — only `/confession/*` (API).
 const apiProxyPaths = [
   'auth',
   'feed',
@@ -15,11 +17,12 @@ const apiProxyPaths = [
   'bookmark',
   'notifications',
   'search',
+  'confession',
 ]
 
 const devProxy = Object.fromEntries(
   apiProxyPaths.map((segment) => [
-    `/${segment}`,
+    `^/${segment}/`,
     { target: DEV_API, changeOrigin: true },
   ]),
 )

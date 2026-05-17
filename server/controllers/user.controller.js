@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
+const Comment = require('../models/comment.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const postModel = require('../models/post.model');
 const { pushNotification } = require('./notification.controller');
@@ -165,8 +167,16 @@ async function getSuggestions(req, res) {
 
     // Build aggregation pipeline for smart suggestions
     const pipeline = [
-      // Exclude already following and self
-      { $match: { _id: { $nin: excludeIds.map(id => id) } } },
+      // Exclude already following and self; only discoverable profiles
+      {
+        $match: {
+          _id: { $nin: excludeIds.map((id) => id) },
+          $or: [
+            { 'privacy.discoverable': { $ne: false } },
+            { 'privacy.discoverable': { $exists: false } },
+          ],
+        },
+      },
       
       // Add computed fields for scoring
       {
@@ -443,6 +453,14 @@ async function getFollowing(req, res) {
   }
 }
 
+function sanitizeUserForClient(user) {
+  const obj = user.toObject ? user.toObject() : { ...user };
+  delete obj.password;
+  delete obj.emailVerification;
+  delete obj.passwordReset;
+  return obj;
+}
+
 // Get any user's profile by ID
 async function getUserProfile(req, res) {
   try {
@@ -467,8 +485,36 @@ async function getUserProfile(req, res) {
         message: 'User not found'
       });
     }
+
+    const isOwnProfile = String(userId) === String(currentUserId);
+    const isFollowing = user.followers.some(
+      (follower) => String(follower._id) === String(currentUserId),
+    );
+    const isPrivate = Boolean(user.privacy?.isPrivate);
+    const canViewFull = isOwnProfile || !isPrivate || isFollowing;
+
+    if (!canViewFull) {
+      return res.json({
+        success: true,
+        user: {
+          _id: user._id,
+          username: user.username,
+          profile: {
+            fullName: user.profile?.fullName,
+            bio: user.profile?.bio,
+            avatar: user.profile?.avatar,
+          },
+          privacy: { isPrivate: true },
+          followers: [],
+          following: [],
+          stats: user.stats,
+        },
+        posts: [],
+        isFollowing,
+        isPrivateProfile: true,
+      });
+    }
     
-    // Get user's posts
     const posts = await postModel
       .find({ user: userId })
       .sort({ createdAt: -1 })
@@ -476,16 +522,12 @@ async function getUserProfile(req, res) {
       .select('content media createdAt likesCount commentsCount isPublic tags title coverImage')
       .lean();
     
-    // Check if current user is following this user
-    const isFollowing = user.followers.some(
-      follower => String(follower._id) === String(currentUserId)
-    );
-    
     res.json({
       success: true,
-      user,
+      user: sanitizeUserForClient(user),
       posts,
-      isFollowing
+      isFollowing,
+      isPrivateProfile: false,
     });
   } catch (error) {
     res.status(500).json({
@@ -575,6 +617,126 @@ async function getWeeklyStats(req, res) {
 }
 
 // Update user interests
+async function updatePrivacy(req, res) {
+  try {
+    const userId = req.user.id;
+    const { isPrivate, discoverable } = req.body;
+
+    const updates = {};
+    if (typeof isPrivate === 'boolean') {
+      updates['privacy.isPrivate'] = isPrivate;
+    }
+    if (typeof discoverable === 'boolean') {
+      updates['privacy.discoverable'] = discoverable;
+    }
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({
+        success: false,
+        message: 'No privacy settings provided',
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true },
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Privacy settings updated',
+      privacy: user.privacy,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+async function deleteAccount(req, res) {
+  try {
+    const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required to delete your account',
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect password',
+      });
+    }
+
+    if (user.profile?.avatar?.public_id) {
+      try {
+        await cloudinary.uploader.destroy(user.profile.avatar.public_id);
+      } catch { /* ignore */ }
+    }
+    if (user.profile?.coverImage?.public_id) {
+      try {
+        await cloudinary.uploader.destroy(user.profile.coverImage.public_id);
+      } catch { /* ignore */ }
+    }
+
+    const posts = await postModel.find({ user: userId }).select('media voice').lean();
+    for (const post of posts) {
+      if (post.media?.length) {
+        for (const m of post.media) {
+          if (m.public_id) {
+            try { await cloudinary.uploader.destroy(m.public_id); } catch { /* ignore */ }
+          }
+        }
+      }
+      if (post.voice?.public_id) {
+        try {
+          await cloudinary.uploader.destroy(post.voice.public_id, { resource_type: 'video' });
+        } catch { /* ignore */ }
+      }
+    }
+
+    await postModel.deleteMany({ user: userId });
+    await Comment.deleteMany({ 'user._id': userId });
+    await Notification.deleteMany({
+      $or: [{ recipient: userId }, { actor: userId }],
+    });
+
+    await User.updateMany(
+      { $or: [{ followers: userId }, { following: userId }] },
+      { $pull: { followers: userId, following: userId } },
+    );
+
+    await User.findByIdAndDelete(userId);
+
+    return res.json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 async function updateInterests(req, res) {
   try {
     const userId = req.user.id;
@@ -624,4 +786,18 @@ async function updateInterests(req, res) {
   }
 }
 
-module.exports = { getUsers,updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getWeeklyStats, updateInterests };
+module.exports = {
+  getUsers,
+  updateProfile,
+  getMe,
+  getSuggestions,
+  followUser,
+  unfollowuser,
+  getFollowers,
+  getFollowing,
+  getUserProfile,
+  getWeeklyStats,
+  updateInterests,
+  updatePrivacy,
+  deleteAccount,
+};

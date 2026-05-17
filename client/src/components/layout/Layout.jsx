@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import RightSidebar from './RightSidebar';
+import ConfessionsVoiceSidebar from '../confessions/ConfessionsVoiceSidebar';
 import MobileNav from './MobileNav';
 import Navbar from './Navbar';
 import NotificationManager from '../notifications/NotificationManager';
@@ -15,9 +16,10 @@ export default function Layout({ children }) {
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
                      pathname === '/friendsexplore';
+  const isConfessionsArea = pathname === '/confessions' || pathname === '/voice-stories';
   
-  // Show right sidebar on home, explore, and profile pages
   const showRightSidebar = isFeedPage || pathname === '/explore' || pathname.startsWith('/profile/');
+  const showConfessionsSidebar = isConfessionsArea;
 
   // Auth pages - bare, no chrome
   if (isAuthPage) return <>{children}</>;
@@ -39,19 +41,25 @@ export default function Layout({ children }) {
         </aside>
       )}
 
+      {showConfessionsSidebar && (
+        <aside className="hidden lg:block fixed top-16 right-0 w-72 h-[calc(100dvh-4rem)] border-l border-slate-100 bg-[#faf9ff] overflow-y-auto thin-scrollbar z-40">
+          <ConfessionsVoiceSidebar />
+        </aside>
+      )}
+
       {/* Main content area */}
       <main className={`
         flex-1 pt-16
         ${isFullPage ? 'lg:ml-64' : 'lg:ml-64'}
-        ${showRightSidebar ? 'lg:mr-72' : ''}
+        ${showRightSidebar || showConfessionsSidebar ? 'lg:mr-72' : ''}
       `}>
         {isFullPage ? (
           // Chat / DiscussionRoom: full height, zero padding
           <div className="h-[calc(100dvh-4rem)]">
             {children}
           </div>
-        ) : isFeedPage ? (
-          <div className="max-w-2xl mx-auto px-4 py-6 lg:py-8">
+        ) : isFeedPage || isConfessionsArea ? (
+          <div className="mx-auto max-w-2xl px-4 py-6 lg:py-8">
             {children}
           </div>
         ) : isWidePage ? (

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   Bookmark,
   Compass,
+  VenetianMask,
+  Mic,
   FileText,
   Home,
   PenSquare,
@@ -18,16 +20,27 @@ import {
 import { logout } from '../../features/auth/authSlice';
 
 // ─── NavItem ────────────────────────────────────────────────────────────────────
-function NavItem({ icon: Icon, label, path, end = false, badge }) {
+function NavItem({ icon: Icon, label, path, end = false, badge, newBadge, accent = 'teal' }) {
+  const activeStyles =
+    accent === 'purple'
+      ? 'bg-[#7B61FF]/10 text-[#7B61FF]'
+      : accent === 'orange'
+        ? 'bg-orange-50 text-orange-600'
+        : 'bg-teal-50 text-teal-700';
+  const iconActive =
+    accent === 'purple'
+      ? 'text-[#7B61FF]'
+      : accent === 'orange'
+        ? 'text-orange-600'
+        : 'text-teal-600';
+
   return (
     <NavLink
       to={path}
       end={end}
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-          isActive
-            ? 'bg-teal-50 text-teal-700 '
-            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+          isActive ? activeStyles : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
         }`
       }
     >
@@ -35,13 +48,15 @@ function NavItem({ icon: Icon, label, path, end = false, badge }) {
         <>
           <Icon
             className={`w-[18px] h-[18px] shrink-0 transition-colors ${
-              isActive
-                ? 'text-teal-600'
-                : 'text-slate-400 group-hover:text-slate-600'
+              isActive ? iconActive : 'text-slate-400 group-hover:text-slate-600'
             }`}
           />
           <span className="flex-1 leading-none truncate">{label}</span>
-          {badge && badge > 0 ? (
+          {newBadge ? (
+            <span className="px-1.5 py-0.5 rounded-md bg-[#7B61FF] text-white text-[9px] font-bold uppercase">
+              New
+            </span>
+          ) : badge && badge > 0 ? (
             <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
               {badge > 99 ? '99+' : badge}
             </span>
@@ -85,6 +100,11 @@ export default function Sidebar() {
     { icon: Bell,          label: 'Notifications', path: '/notifications', badge: unreadCount  },
   ];
 
+  const discoverNav = [
+    { icon: VenetianMask, label: 'Anonymous Confessions', path: '/confessions', accent: 'purple', newBadge: true },
+    { icon: Mic, label: 'Voice Stories', path: '/voice-stories', accent: 'orange', newBadge: true },
+  ];
+
   const profileNav = [
     { icon: User, label: 'My Profile', path: '/profile' },
   ];
@@ -110,6 +130,13 @@ export default function Sidebar() {
         {mainNav.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
+
+        <div className="mt-5">
+          <SectionLabel>Discover</SectionLabel>
+          {discoverNav.map((item) => (
+            <NavItem key={item.path} {...item} />
+          ))}
+        </div>
 
         {/* Section: Profile */}
         <div className="mt-5">

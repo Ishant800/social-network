@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const dotenv = require('dotenv');
 
@@ -24,6 +25,7 @@ const feedRoute = require('./routes/feed.routes');
 const bookmarkRoute = require('./routes/bookmark.routes');
 const notificationRoute = require('./routes/notification.routes');
 const searchRoute = require('./routes/search.routes');
+const confessionRoute = require('./routes/confession.routes');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -77,6 +79,24 @@ app.use('/likes', likeRoute);
 app.use('/bookmark', bookmarkRoute);
 app.use('/notifications', notificationRoute);
 app.use('/search', searchRoute);
+app.use('/confession', confessionRoute);
+
+// Serve React app for client routes (fixes "Cannot GET /confessions" on reload)
+const clientDist = path.resolve(__dirname, '../client/dist');
+const API_PREFIXES = [
+  '/auth', '/feed', '/post', '/blog', '/user', '/comment', '/likes',
+  '/bookmark', '/notifications', '/search', '/confession', '/health', '/socket.io',
+];
+
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get('*', (req, res, next) => {
+    if (API_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
+      return next();
+    }
+    return res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 connectDb();
 

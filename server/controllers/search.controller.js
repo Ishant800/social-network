@@ -50,10 +50,20 @@ const search = async (req, res) => {
 
     // Search users by username and full name with fuzzy matching
     const allUsers = await User.find({
-      $or: [
-        { username: { $regex: queryLower, $options: 'i' } },
-        { 'profile.fullName': { $regex: queryLower, $options: 'i' } }
-      ]
+      $and: [
+        {
+          $or: [
+            { username: { $regex: queryLower, $options: 'i' } },
+            { 'profile.fullName': { $regex: queryLower, $options: 'i' } },
+          ],
+        },
+        {
+          $or: [
+            { 'privacy.discoverable': { $ne: false } },
+            { 'privacy.discoverable': { $exists: false } },
+          ],
+        },
+      ],
     })
       .select('username profile.fullName profile.avatar followers')
       .limit(50) // Fetch more for scoring

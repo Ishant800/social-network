@@ -60,6 +60,11 @@ const UserSchema = new mongoose.Schema({
       push: { type: Boolean, default: true }
     }  
   },
+
+  privacy: {
+    isPrivate: { type: Boolean, default: false },
+    discoverable: { type: Boolean, default: true },
+  },
   chatList:[{
     type:mongoose.Schema.Types.ObjectId,ref:"User"
   }],
