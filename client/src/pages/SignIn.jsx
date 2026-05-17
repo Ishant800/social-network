@@ -1,12 +1,35 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { login } from "../features/auth/authSlice";
-import logo from "../assets/logo.png";
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../features/auth/authSlice';
 
-function Signin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+function GoogleIcon() {
+  return (
+    <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+export default function Signin() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
   const [googleMsg, setGoogleMsg] = useState(false);
   const navigate = useNavigate();
@@ -14,165 +37,160 @@ function Signin() {
 
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
-  const handleGoogleClick = () => {
-    setGoogleMsg(true);
-    setTimeout(() => setGoogleMsg(false), 2000);
-  };
-
-
-
   useEffect(() => {
-    if (isSuccess) {
-      navigate("/");
-    }
+    if (isSuccess) navigate('/');
   }, [isSuccess, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = 'Please enter a valid email';
     }
-
-    if (!password) {
-      newErrors.password = "Password is required";
-    }
-
+    if (!password) newErrors.password = 'Password is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    const formData = {
-      email: email.trim().toLowerCase(),
-      password,
-    };
-    dispatch(login(formData));
+    if (!validateForm()) return;
+    dispatch(login({ email: email.trim().toLowerCase(), password }));
   };
 
-  const inputBase =
-    'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400/90';
+  const handleGoogleClick = () => {
+    setGoogleMsg(true);
+    setTimeout(() => setGoogleMsg(false), 2500);
+  };
+
+  const inputCls = (hasError) =>
+    `w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 focus:ring-[#0a0f1c]/15 focus:border-[#0a0f1c]/40 ${
+      hasError ? 'border-red-400' : 'border-slate-200'
+    }`;
 
   return (
-    <div className="min-h-dvh flex bg-slate-50">
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-teal-700 via-teal-800 to-slate-900 p-10 text-white lg:flex">
-        <div className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-teal-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="relative z-10 max-w-md">
-          <img src={logo} alt="" className="h-11 w-auto opacity-95 drop-shadow-md" />
-          <h1 className="font-display mt-10 text-4xl font-extrabold leading-tight tracking-tight">
-            Welcome back
+    <div className="min-h-dvh flex flex-col lg:flex-row">
+      {/* Left — welcome panel */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-[#0a0f1c] px-12 py-16 text-center text-white">
+        <div className="max-w-md">
+          <h1 className="font-display text-4xl sm:text-[2.75rem] font-bold leading-tight tracking-tight">
+            Welcome Back <span aria-hidden>👋</span>
           </h1>
-          <p className="mt-4 text-sm leading-relaxed text-teal-100/95">
-            Pick up conversations, catch up on your feed, and stay in sync with the people you care about.
+          <p className="mt-5 text-base leading-relaxed text-slate-300">
+            Build, connect and grow with your community.
+            <br />
+            Your journey starts here.
           </p>
         </div>
-        <p className="relative z-10 text-xs text-teal-200/80">Secure sign-in · Built for real communities</p>
       </div>
 
-      <div className="flex w-full flex-1 items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-[400px]">
-          <div className="surface-card animate-fade-up rounded-2xl p-6 shadow-[var(--shadow-float)] sm:p-8">
-            <div className="mb-6">
-              <h2 className="font-display text-2xl font-bold tracking-tight text-slate-900">Sign in</h2>
-              <p className="mt-1 text-sm text-slate-500">Use the email tied to your account.</p>
+      {/* Right — form */}
+      <div className="flex flex-1 flex-col items-center justify-center bg-[#f8f9fa] px-5 py-10 sm:px-8">
+        <div className="lg:hidden mb-8 text-center">
+          <h1 className="font-display text-2xl font-bold text-[#0a0f1c]">
+            Welcome Back <span aria-hidden>👋</span>
+          </h1>
+        </div>
+
+        <div className="w-full max-w-[420px] rounded-xl bg-white px-8 py-9 shadow-[0_4px_24px_rgba(15,23,42,0.08)] sm:px-10 sm:py-10">
+          <div className="mb-7">
+            <h2 className="font-display text-2xl font-bold text-[#0a0f1c]">Sign In</h2>
+            <p className="mt-1.5 text-sm text-slate-500">Enter your credentials to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="signin-email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                id="signin-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className={inputCls(errors.email)}
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="signin-email" className="mb-1.5 block text-xs font-semibold text-slate-700">
-                  Email
-                </label>
+            <div>
+              <label htmlFor="signin-password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <input
+                id="signin-password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className={inputCls(errors.password)}
+              />
+              {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-slate-600">
                 <input
-                  id="signin-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className={`${inputBase} ${errors.email ? 'border-red-400 ring-red-200' : 'border-slate-200'}`}
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-[#0a0f1c] focus:ring-[#0a0f1c]/30"
                 />
-                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="signin-password" className="mb-1.5 block text-xs font-semibold text-slate-700">
-                  Password
-                </label>
-                <input
-                  id="signin-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={`${inputBase} ${errors.password ? 'border-red-400 ring-red-200' : 'border-slate-200'}`}
-                />
-                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <label className="flex cursor-pointer items-center gap-2 text-slate-600">
-                  <input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
-                  Remember me
-                </label>
-                <a href="#forgot" className="font-semibold text-teal-700 hover:text-teal-800">
-                  Forgot password?
-                </a>
-              </div>
-
-              {isError && (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{message}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-2 w-full rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-600/25 transition hover:bg-teal-700 disabled:opacity-60"
-              >
-                {isLoading ? 'Signing in…' : 'Sign in'}
+                Remember me
+              </label>
+              <button type="button" className="font-semibold text-[#0a0f1c] hover:underline">
+                Forgot password?
               </button>
+            </div>
 
-              <div className="flex items-center gap-3 py-1">
-                <div className="h-px flex-1 bg-slate-200" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">or</span>
-                <div className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGoogleClick}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Continue with Google
-              </button>
-
-              {googleMsg && (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
-                  Google sign-in is not available yet. Please use email and password.
-                </p>
-              )}
-
-              <p className="pt-2 text-center text-xs text-slate-600">
-                No account?
-                <Link to="/signup" className="ml-1 font-semibold text-teal-700 hover:text-teal-800">
-                  Create one
-                </Link>
+            {isError && (
+              <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {message}
               </p>
-            </form>
-          </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-[#0a0f1c] py-3 text-sm font-semibold text-white transition hover:bg-[#141b2d] disabled:opacity-60"
+            >
+              {isLoading ? 'Signing in…' : 'Sign In'}
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">OR</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleClick}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+
+            {googleMsg && (
+              <p className="text-center text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg py-2 px-3">
+                Google sign-in is not available yet. Please use email and password.
+              </p>
+            )}
+
+            <p className="pt-1 text-center text-sm text-slate-600">
+              Don&apos;t have an account?{' '}
+              <Link to="/signup" className="font-semibold text-[#0a0f1c] hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </form>
         </div>
       </div>
     </div>
   );
 }
-
-export default Signin;

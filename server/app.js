@@ -90,11 +90,17 @@ const API_PREFIXES = [
 
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get('*', (req, res, next) => {
+  // Express 5 does not support app.get('*') — use middleware instead
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+    }
     if (API_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
       return next();
     }
-    return res.sendFile(path.join(clientDist, 'index.html'));
+    return res.sendFile(path.join(clientDist, 'index.html'), (err) => {
+      if (err) next(err);
+    });
   });
 }
 
