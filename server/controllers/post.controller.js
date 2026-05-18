@@ -9,7 +9,7 @@ const { sanitizePlainText } = require('../utils/sanitize.util');
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { content: rawContent, isPublic } = req.body;
+    const { content: rawContent, isPublic, mediaUrls } = req.body;
     const content = sanitizePlainText(rawContent, 10000);
     const user = await User.findById(userId).select('username profile.avatar');
 
@@ -27,35 +27,42 @@ const createPost = async (req, res) => {
       });
     }
 
-     let mediaUrls = [];
-    if (req.files && req.files.length > 0) {
-      mediaUrls = req.files.map((file) => ({
+    // Handle media URLs from frontend upload
+    let mediaArray = [];
+    if (mediaUrls && Array.isArray(mediaUrls)) {
+      mediaArray = mediaUrls.map(item => ({
+        url: item.url,
+        public_id: item.public_id,
+      }));
+    }
+    // Fallback to old multer upload if files are sent
+    else if (req.files && req.files.length > 0) {
+      mediaArray = req.files.map((file) => ({
         url: file.path,
         public_id: file.filename,
       }));
     }
 
-
     let tagsArray = [];
 
-if (req.body.tags) {
-  if (Array.isArray(req.body.tags)) {
-    tagsArray = req.body.tags;
-  } else {
-    tagsArray = String(req.body.tags)
-      .split(',')
-      .map((t) => t.trim())
+    if (req.body.tags) {
+      if (Array.isArray(req.body.tags)) {
+        tagsArray = req.body.tags;
+      } else {
+        tagsArray = String(req.body.tags)
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+    }
+    tagsArray = tagsArray
+      .map((t) => sanitizePlainText(String(t), 48))
       .filter(Boolean);
-  }
-}
-tagsArray = tagsArray
-  .map((t) => sanitizePlainText(String(t), 48))
-  .filter(Boolean);
 
     const post = await Post.create({
       user: userId,
       content,
-      media: mediaUrls,
+      media: mediaArray,
       tags: tagsArray,
       isPublic: isPublic !== undefined ? isPublic === true || isPublic === 'true' : true,
     });
@@ -326,11 +333,48 @@ const deletePost = async (req, res) => {
       return res.status(500).json({ success: false, message: error.message });
     }
    }
+
+// Cleanup uploaded images (for discarded posts/blogs)
+const cleanupImages = async (req, res) => {
+  try {
+    const { publicIds } = req.body;
+
+    if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No public IDs provided',
+      });
+    }
+
+    const results = [];
+    for (const publicId of publicIds) {
+      try {
+        const result = await cloudinary.uploader.destroy(publicId);
+        results.push({ publicId, result: result.result });
+      } catch (error) {
+        results.push({ publicId, error: error.message });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cleanup completed',
+      results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
   deletePost,
-  bulkpostinsert
+  bulkpostinsert,
+  cleanupImages,
 };

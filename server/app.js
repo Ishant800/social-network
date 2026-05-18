@@ -31,12 +31,13 @@ const { Server } = require('socket.io');
 const app = express();
 
 const clientOrigins = (
-  process.env.CLIENT_ORIGINS ||
-  'https://social-network-fronted.onrender.com,http://localhost:5173,http://127.0.0.1:5173'
+  process.env.CLIENT_ORIGINS 
+  // || 
+  // 'https://social-network-fronted.onrender.com,http://localhost:5173,http://127.0.0.1:5173'
 )
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+  // .split(',')
+  // .map((s) => s.trim())
+  // .filter(Boolean);
 
 app.set('trust proxy', 1);
 
