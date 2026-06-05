@@ -10,6 +10,8 @@ const messageSchema = new mongoose.Schema({
     avatar: { type: String },
     role: { type: String, default: 'Member' }
   },
+  likedBy: [{ type: String }],
+  replyTo: { type: String, default: null },
   createdAt: { type: Date, default: Date.now, index: true }
 });   
   

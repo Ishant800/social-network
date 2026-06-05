@@ -2,16 +2,49 @@ const mongoose = require('mongoose');
 const Post = require('../models/post.model');
 const Comment = require('../models/comment.model');
 const User = require('../models/user.model');
-const { cloudinary } = require('../config/cloudinary.config');
 const { sanitizePlainText } = require('../utils/sanitize.util');
+const { cloudinary } = require('../config/cloudinary.config');
 
-// post create
+// Interest categories
+const INTEREST_CATEGORIES = [
+  'Programming',
+  'AI',
+  'Technology',
+  'Business',
+  'Startups',
+  'Finance',
+  'Science',
+  'Education',
+  'Gaming',
+  'Sports',
+  'Movies',
+  'Music',
+  'Travel',
+  'Lifestyle',
+  'Health',
+  'Politics'
+];
+
+// post create - Accept files from frontend (same as blog upload)
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { content: rawContent, isPublic, mediaUrls } = req.body;
+<<<<<<< Updated upstream
+    const { content: rawContent, isPublic } = req.body;
+=======
+    const { content: rawContent, category, tags } = req.body;
+>>>>>>> Stashed changes
     const content = sanitizePlainText(rawContent, 10000);
-    const user = await User.findById(userId).select('username profile.avatar');
+
+    // Validate category
+    if (!category || !INTEREST_CATEGORIES.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: `Category is required and must be one of: ${INTEREST_CATEGORIES.join(', ')}`
+      });
+    }
+
+    const user = await User.findById(userId).select('username profile.fullName profile.avatar');
 
     if (!user) {
       return res.status(404).json({
@@ -27,70 +60,100 @@ const createPost = async (req, res) => {
       });
     }
 
-    // Handle media URLs from frontend upload
+<<<<<<< Updated upstream
+     let mediaUrls = [];
+    if (req.files && req.files.length > 0) {
+      mediaUrls = req.files.map((file) => ({
+=======
+    // Handle media files uploaded via multer (same as blog)
     let mediaArray = [];
-    if (mediaUrls && Array.isArray(mediaUrls)) {
-      mediaArray = mediaUrls.map(item => ({
-        url: item.url,
-        public_id: item.public_id,
-      }));
-    }
-    // Fallback to old multer upload if files are sent
-    else if (req.files && req.files.length > 0) {
-      mediaArray = req.files.map((file) => ({
+    if (req.files && req.files.length > 0) {
+      mediaArray = req.files.map(file => ({
+>>>>>>> Stashed changes
         url: file.path,
         public_id: file.filename,
       }));
     }
 
+<<<<<<< Updated upstream
+
     let tagsArray = [];
 
-    if (req.body.tags) {
-      if (Array.isArray(req.body.tags)) {
-        tagsArray = req.body.tags;
-      } else {
-        tagsArray = String(req.body.tags)
+if (req.body.tags) {
+  if (Array.isArray(req.body.tags)) {
+    tagsArray = req.body.tags;
+  } else {
+    tagsArray = String(req.body.tags)
+      .split(',')
+      .map((t) => t.trim())
+=======
+    // Process tags
+    let tagsArray = [];
+    if (tags) {
+      if (Array.isArray(tags)) {
+        tagsArray = tags;
+      } else if (typeof tags === 'string') {
+        tagsArray = tags
           .split(',')
           .map((t) => t.trim())
           .filter(Boolean);
       }
     }
+    
     tagsArray = tagsArray
       .map((t) => sanitizePlainText(String(t), 48))
+>>>>>>> Stashed changes
       .filter(Boolean);
+  }
+}
+tagsArray = tagsArray
+  .map((t) => sanitizePlainText(String(t), 48))
+  .filter(Boolean);
+
+    if (tagsArray.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one tag is required'
+      });
+    }
 
     const post = await Post.create({
-      user: userId,
+      author: userId,
       content,
+<<<<<<< Updated upstream
+      media: mediaUrls,
+=======
       media: mediaArray,
+      category,
+>>>>>>> Stashed changes
       tags: tagsArray,
-      isPublic: isPublic !== undefined ? isPublic === true || isPublic === 'true' : true,
+      visibility: 'public'
     });
 
     if (!post) {
       return res.status(400).json({
-        sucess: false,
-        error: 'failed to create post',
+        success: false,
+        message: 'Failed to create post',
       });
     }
 
     await User.findByIdAndUpdate(userId, { $inc: { 'stats.posts': 1 } });
 
     const populatedPost = await Post.findById(post._id).populate(
-      'user',
+      'author',
       'username profile.fullName profile.avatar',
     );
     const postData = populatedPost.toObject();
 
     postData.id = postData._id;
-    if (postData.user) {
-      postData.user.name = postData.user.profile?.fullName || postData.user.username;
-      postData.user.profileImage = postData.user.profile?.avatar || null;
+    if (postData.author) {
+      postData.author.name = postData.author.profile?.fullName || postData.author.username;
+      postData.author.profileImage = postData.author.profile?.avatar || null;
     }
 
     return res.status(201).json({
-      sucess: true,
-      message: 'post create sucessfully',
+      success: true,
+      message: 'Post created successfully',
       post: postData,
     });
   } catch (error) {
@@ -104,8 +167,8 @@ const createPost = async (req, res) => {
 const getMyPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const posts = await Post.find({ user: userId })
-      .populate('user', 'username profile.fullName profile.avatar')
+    const posts = await Post.find({ author: userId })
+      .populate('author', 'username profile.fullName profile.avatar')
       .sort({ createdAt: -1 });
 
     if (!posts || posts.length === 0) {
@@ -123,9 +186,9 @@ const getMyPost = async (req, res) => {
         const postData = post.toObject();
         postData.id = postData._id;
 
-        if (postData.user) {
-          postData.user.name = postData.user.profile?.fullName || postData.user.username;
-          postData.user.profileImage = postData.user.profile?.avatar || null;
+        if (postData.author) {
+          postData.author.name = postData.author.profile?.fullName || postData.author.username;
+          postData.author.profileImage = postData.author.profile?.avatar || null;
         }
 
         return postData;
@@ -151,7 +214,7 @@ const getPostDetails = async (req, res) => {
     }
 
     const post = await Post.findById(postId).populate(
-      'user',
+      'author',
       'username profile.fullName profile.avatar',
     );
     if (!post) {
@@ -170,22 +233,16 @@ const getPostDetails = async (req, res) => {
     const postData = post.toObject();
 
     postData.id = postData._id;
-
-    if (postData.isAnonymous) {
-      const { stripUserFromPost } = require('../utils/anonymous.util');
-      return res.status(200).json({
-        sucess: 'ok',
-        post: stripUserFromPost(postData),
-        comments: comments.map((c) => {
-          const { stripUserFromComment } = require('../utils/anonymous.util');
-          return c.isAnonymous ? stripUserFromComment(c) : c;
-        }),
-      });
-    }
-
+<<<<<<< Updated upstream
     if (postData.user) {
       postData.user.name = postData.user.profile?.fullName || postData.user.username;
       postData.user.profileImage = postData.user.profile?.avatar || null;
+=======
+
+    if (postData.author) {
+      postData.author.name = postData.author.profile?.fullName || postData.author.username;
+      postData.author.profileImage = postData.author.profile?.avatar || null;
+>>>>>>> Stashed changes
     }
 
     return res.status(200).json({
@@ -205,68 +262,94 @@ const updatePost = async (req, res) => {
   try {
     const userId = req.user.id;
     const postId = req.params.postId;
+    const { content: rawContent, category, tags, keepExisting } = req.body;
 
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({
         success: false,
-        message: 'post not found',
+        message: 'Post not found',
       });
     }  
 
-    if (post.user.toString() !== userId) {
-      return res.status(203).json({
-        sucess: false,
-        message: 'Unauthorized  to update this post',
+    if (post.author.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized to update this post',
       });
     }
 
-    if (req.body.content !== undefined) {
-      const next = sanitizePlainText(req.body.content, 10000);
-      if (!next.trim()) {
-        return res.status(400).json({ success: false, message: 'Post content cannot be empty' });
+    // Update content if provided
+    if (rawContent !== undefined) {
+      const content = sanitizePlainText(rawContent, 10000);
+      if (!content.trim()) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Post content cannot be empty' 
+        });
       }
-      post.content = next;
-    }
-    if (req.body.tags !== undefined) {
-      const raw = req.body.tags;
-      const list = Array.isArray(raw)
-        ? raw
-        : String(raw)
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean);
-      post.tags = list.map((t) => sanitizePlainText(String(t), 48)).filter(Boolean);
-    }
-    if (req.body.isPublic !== undefined) {
-      post.isPublic = req.body.isPublic === true || req.body.isPublic === 'true';
+      post.content = content;
     }
 
-    if (req.files && req.files.length > 0) {
-      if (post.media.length > 0) {
-        for (const mediaItem of post.media) {
-          if (mediaItem.public_id) {
-            await cloudinary.uploader.destroy(mediaItem.public_id);
-          }
-        }
+    // Update category if provided
+    if (category !== undefined) {
+      if (!INTEREST_CATEGORIES.includes(category)) {
+        return res.status(400).json({
+          success: false,
+          message: `Category must be one of: ${INTEREST_CATEGORIES.join(', ')}`
+        });
       }
-      post.media = req.files.map((file) => ({
+      post.category = category;
+    }
+
+    // Update tags if provided
+    if (tags !== undefined) {
+      let tagsArray = [];
+      if (Array.isArray(tags)) {
+        tagsArray = tags;
+      } else if (typeof tags === 'string') {
+        tagsArray = tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+      post.tags = tagsArray.map((t) => sanitizePlainText(String(t), 48)).filter(Boolean);
+    }
+
+    // Handle media files from multer
+    if (req.files && req.files.length > 0) {
+      const newMedia = req.files.map(file => ({
         url: file.path,
         public_id: file.filename,
       }));
+      
+      // If keepExisting, append new files to existing
+      if (keepExisting === 'true') {
+        post.media = [...post.media, ...newMedia];
+      } else {
+        // Delete old images from cloudinary
+        for (const m of post.media) {
+          if (m.public_id) {
+            try { await cloudinary.uploader.destroy(m.public_id); } catch { /* ignore */ }
+          }
+        }
+        post.media = newMedia;
+      }
     }
+    // If no new files uploaded but keepExisting is not set, preserve existing media
+    // (This handles the case where user edits only text/tags/category)
 
     await post.save();
     const updatedPost = await Post.findById(postId).populate(
-      'user',
+      'author',
       'username profile.fullName profile.avatar',
     );
     const postData = updatedPost.toObject();
 
     postData.id = postData._id;
-    if (postData.user) {
-      postData.user.name = postData.user.profile?.fullName || postData.user.username;
-      postData.user.profileImage = postData.user.profile?.avatar || null;
+    if (postData.author) {
+      postData.author.name = postData.author.profile?.fullName || postData.author.username;
+      postData.author.profileImage = postData.author.profile?.avatar || null;
     }
 
     res.status(200).json({
@@ -275,13 +358,12 @@ const updatePost = async (req, res) => {
       post: postData,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 
 const deletePost = async (req, res) => {
   try {
@@ -293,32 +375,33 @@ const deletePost = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    if (post.user.toString() !== userId) {
+    if (post.author.toString() !== userId) {
       return res.status(403).json({ success: false, message: 'Unauthorized to delete this post' });
     }
 
     // Delete media from cloudinary
-    if (post.media && post.media.length > 0) {
-      for (const mediaItem of post.media) {
-        if (mediaItem.public_id) {
-          await cloudinary.uploader.destroy(mediaItem.public_id);
-        }
+    for (const m of post.media) {
+      if (m.public_id) {
+        try { await cloudinary.uploader.destroy(m.public_id); } catch { /* ignore */ }
       }
-    }
-
-    if (post.voice?.public_id) {
-      await cloudinary.uploader.destroy(post.voice.public_id, { resource_type: 'video' });
     }
 
     await Post.findByIdAndDelete(postId);
     await User.findByIdAndUpdate(userId, { $inc: { 'stats.posts': -1 } });
 
-    return res.status(200).json({ success: true, message: 'Post deleted successfully' });
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Post deleted successfully' 
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
   }
 };
 
+<<<<<<< Updated upstream
 
    const bulkpostinsert = async(req,res)=>{
     try {
@@ -333,48 +416,34 @@ const deletePost = async (req, res) => {
       return res.status(500).json({ success: false, message: error.message });
     }
    }
-
-// Cleanup uploaded images (for discarded posts/blogs)
-const cleanupImages = async (req, res) => {
+=======
+// Bulk post insert (for testing)
+const bulkpostinsert = async(req, res) => {
   try {
-    const { publicIds } = req.body;
-
-    if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No public IDs provided',
-      });
-    }
-
-    const results = [];
-    for (const publicId of publicIds) {
-      try {
-        const result = await cloudinary.uploader.destroy(publicId);
-        results.push({ publicId, result: result.result });
-      } catch (error) {
-        results.push({ publicId, error: error.message });
-      }
-    }
-
+    const postdatas = req.body;
+    await Post.insertMany(postdatas);
     return res.status(200).json({
       success: true,
-      message: 'Cleanup completed',
-      results,
+      message: "Bulk insert successful"
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message 
     });
   }
 };
 
+>>>>>>> Stashed changes
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
   deletePost,
+<<<<<<< Updated upstream
+  bulkpostinsert
+=======
   bulkpostinsert,
-  cleanupImages,
+>>>>>>> Stashed changes
 };

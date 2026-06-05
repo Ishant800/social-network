@@ -9,14 +9,12 @@ import NotificationManager from '../notifications/NotificationManager';
 export default function Layout({ children }) {
   const { pathname } = useLocation();
 
-  const isAuthPage =
-    pathname === '/login' || pathname === '/signup' || pathname === '/verify-email';
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isFeedPage = pathname === '/';
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
                      pathname === '/friendsexplore';
-  const isConfessionsArea = pathname === '/confessions' || pathname === '/voice-stories';
   
   const showRightSidebar = isFeedPage || pathname === '/explore' || pathname.startsWith('/profile/');
   const showConfessionsSidebar = isConfessionsArea;

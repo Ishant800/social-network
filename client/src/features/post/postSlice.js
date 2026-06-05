@@ -167,21 +167,30 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isLoadingMore = false;
         state.isSuccess = true;
+        state.isError = false;
+        state.message = '';
+        
         const { items, page, hasMore, append, feedType } = action.payload;
+        
         if (append) {
-          state.posts = [...state.posts, ...items];
+          // Append new items avoiding duplicates
+          const existingIds = new Set(state.posts.map(p => p._id || p.id));
+          const newItems = items.filter(item => !existingIds.has(item._id || item.id));
+          state.posts = [...state.posts, ...newItems];
         } else {
-          state.posts = items;
+          state.posts = items || [];
           state.lastFetched[feedType] = Date.now();
           state.activeFeedType = feedType;
         }
+        
         state.currentPage = page || 1;
         state.hasMore = Boolean(hasMore);
 
-        // Sync likedPostIds from feed data (includes userReaction)
-        const likedIds = items
+        // Sync likedPostIds from feed data
+        const likedIds = (items || [])
           .filter(p => p.userReaction || p.isLiked)
           .map(p => p._id || p.id);
+        
         if (likedIds.length > 0) {
           const existing = new Set(state.likedPostIds);
           likedIds.forEach(id => existing.add(id));
@@ -224,25 +233,28 @@ const postSlice = createSlice({
         }
         
         // Update post in feed
-        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        const target = state.posts.find((p) => String(p._id || p.id) === String(postId));
         if (target) {
           target.likesCount = likesCount;
+          target.isLiked = isLiked;
           if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
         
         // Update post details if loaded
-        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+        if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
           state.postDetails.likesCount = likesCount;
+          state.postDetails.isLiked = isLiked;
           if (state.postDetails.stats) {
             state.postDetails.stats.likes = likesCount;
           }
         }
         
         // Update blog details if loaded
-        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+        if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
+          state.blogDetails.isLiked = isLiked;
           if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
@@ -257,29 +269,32 @@ const postSlice = createSlice({
         
         // Update liked posts array
         if (!isLiked) {
-          state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+          state.likedPostIds = state.likedPostIds.filter((id) => String(id) !== String(postId));
         }
         
         // Update post in feed
-        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        const target = state.posts.find((p) => String(p._id || p.id) === String(postId));
         if (target) {
           target.likesCount = likesCount;
+          target.isLiked = isLiked;
           if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
         
         // Update post details if loaded
-        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+        if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
           state.postDetails.likesCount = likesCount;
+          state.postDetails.isLiked = isLiked;
           if (state.postDetails.stats) {
             state.postDetails.stats.likes = likesCount;
           }
         }
         
         // Update blog details if loaded
-        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+        if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
+          state.blogDetails.isLiked = isLiked;
           if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
@@ -294,10 +309,11 @@ const postSlice = createSlice({
         const { postId, likesCount, reactions, userReaction } = action.payload;
 
         const updatePost = (p) => {
-          if ((p._id || p.id) === postId) {
+          if (String(p._id || p.id) === String(postId)) {
             p.likesCount = likesCount;
             p.reactions = reactions;
             p.userReaction = userReaction;
+            p.isLiked = Boolean(userReaction);
           }
         };
 
@@ -306,9 +322,11 @@ const postSlice = createSlice({
 
         // Update likedPostIds
         if (userReaction) {
-          if (!state.likedPostIds.includes(postId)) state.likedPostIds.push(postId);
+          if (!state.likedPostIds.some(id => String(id) === String(postId))) {
+            state.likedPostIds.push(postId);
+          }
         } else {
-          state.likedPostIds = state.likedPostIds.filter(id => id !== postId);
+          state.likedPostIds = state.likedPostIds.filter(id => String(id) !== String(postId));
         }
       })
 
@@ -316,20 +334,22 @@ const postSlice = createSlice({
       .addCase(likeBlog.fulfilled, (state, action) => {
         const { postId, likesCount, isLiked } = action.payload;
         
-        if (isLiked && !state.likedPostIds.includes(postId)) {
+        if (isLiked && !state.likedPostIds.some(id => String(id) === String(postId))) {
           state.likedPostIds.push(postId);
         }
         
-        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        const target = state.posts.find((p) => String(p._id || p.id) === String(postId));
         if (target) {
           target.likesCount = likesCount;
+          target.isLiked = isLiked;
           if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
         
-        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+        if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
+          state.blogDetails.isLiked = isLiked;
           if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
@@ -343,19 +363,21 @@ const postSlice = createSlice({
         const { postId, likesCount, isLiked } = action.payload;
         
         if (!isLiked) {
-          state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+          state.likedPostIds = state.likedPostIds.filter((id) => String(id) !== String(postId));
         }
         
-        const target = state.posts.find((p) => (p._id || p.id) === postId);
+        const target = state.posts.find((p) => String(p._id || p.id) === String(postId));
         if (target) {
           target.likesCount = likesCount;
+          target.isLiked = isLiked;
           if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
         
-        if (state.blogDetails && (state.blogDetails._id || state.blogDetails.id) === postId) {
+        if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
+          state.blogDetails.isLiked = isLiked;
           if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
@@ -397,17 +419,20 @@ const postSlice = createSlice({
       .addCase(updatePost.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
+        state.isError = false;
+        state.message = '';
+        
         const updatedPost = action.payload;
         const postId = updatedPost._id || updatedPost.id;
         
         // Update in posts array
-        const index = state.posts.findIndex(p => (p._id || p.id) === postId);
+        const index = state.posts.findIndex(p => String(p._id || p.id) === String(postId));
         if (index !== -1) {
-          state.posts[index] = updatedPost;
+          state.posts[index] = { ...state.posts[index], ...updatedPost };
         }
         
         // Update postDetails if it's the same post
-        if (state.postDetails && (state.postDetails._id || state.postDetails.id) === postId) {
+        if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
           state.postDetails = updatedPost;
         }
       })

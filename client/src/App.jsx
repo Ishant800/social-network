@@ -13,7 +13,6 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
-import VerifyEmail from './pages/VerifyEmail';
 import EditProfile from './pages/EditProfile';
 import EditPost from './pages/EditPost';
 import UserSuggestions from './pages/UserSuggestions';
@@ -26,8 +25,10 @@ import CreateBlog from './pages/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Chat';
 import SearchPage from './pages/Search';
+<<<<<<< Updated upstream
+=======
 import Confessions from './pages/Confessions';
-import VoiceStories from './pages/VoiceStories';
+>>>>>>> Stashed changes
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -45,10 +46,13 @@ export default function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+<<<<<<< Updated upstream
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+=======
     const isAuthPage =
       location.pathname === '/login' ||
-      location.pathname === '/signup' ||
-      location.pathname === '/verify-email';
+      location.pathname === '/signup';
+>>>>>>> Stashed changes
     if (token && !isAuthPage) {
    
       dispatch(getMe())
@@ -69,8 +73,16 @@ export default function App() {
     }
   }, [dispatch, location.pathname]);
 
+  // Show loading spinner
   if (loading) {
     return (
+<<<<<<< Updated upstream
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-6" />
+              <div className='h-20 w-20 b-2 '></div>    
+              
+=======
       <div className="min-h-dvh flex flex-col items-center justify-center gap-8 bg-gradient-to-b from-teal-50/40 via-white to-slate-50 px-6">
         <div className="animate-fade-up text-center">
           <div className="relative mx-auto mb-6 h-20 w-20">
@@ -78,12 +90,13 @@ export default function App() {
               className="loader-ring absolute inset-0 rounded-full border-2 border-teal-100 border-t-teal-600"
               aria-hidden
             />
-            <div className="absolute inset-[10px] flex items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80">
+            <div className="absolute inset-[10px] flex items-center justify-center ">
               <img src={logo} alt="" className="h-10 w-auto max-w-[3rem] object-contain" />
             </div>
           </div>
           <p className="font-display text-sm font-semibold text-slate-800">Loading your space</p>
           <p className="mt-1 text-xs text-slate-500">Fetching profile and notifications…</p>
+>>>>>>> Stashed changes
         </div>
       </div>
     );
@@ -95,7 +108,6 @@ export default function App() {
         {/* Public Routes */}
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
 
         {/* Protected Routes */}
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
@@ -115,8 +127,10 @@ export default function App() {
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+<<<<<<< Updated upstream
+=======
         <Route path="/confessions" element={<ProtectedRoute><Confessions /></ProtectedRoute>} />
-        <Route path="/voice-stories" element={<ProtectedRoute><VoiceStories /></ProtectedRoute>} />
+>>>>>>> Stashed changes
       </Routes>
     </Layout>
   );

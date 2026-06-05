@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
-const Comment = require('../models/comment.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const postModel = require('../models/post.model');
 const { pushNotification } = require('./notification.controller');
@@ -92,15 +90,55 @@ const updateProfile = async (req, res) => {
       await sendProfileIncompleteNotification(userid);
     }
 
+    // Get posts for current user
     const post = await postModel
-      .find({ user: userid })
+      .find({ author: userid })
       .sort({ createdAt: -1 })
       .limit(40)
-      .select('content media createdAt likesCount commentsCount isPublic tags')
+      .select('content media createdAt tags visibility')
       .lean();
+    
+    // Get blogs for current user
+    const Blog = require('../models/blogs.model');
+    const blogs = await Blog
+      .find({ author: userid })
+      .sort({ createdAt: -1 })
+      .limit(40)
+      .select('title coverImage content createdAt tags')
+      .lean();
+    
+    // Transform posts to include author data and standardize fields
+    const transformedPosts = post.map(p => ({
+      _id: p._id,
+      content: p.content,
+      media: p.media,
+      createdAt: p.createdAt,
+      tags: p.tags,
+      likesCount: p.totalReactions || 0,
+      commentsCount: p.stats?.comments || 0,
+      isPublic: p.visibility === 'public'
+    }));
+    
+    // Transform blogs to match post structure
+    const transformedBlogs = blogs.map(blog => ({
+      _id: blog._id,
+      title: blog.title,
+      coverImage: blog.coverImage,
+      content: blog.content,
+      createdAt: blog.createdAt,
+      tags: blog.tags,
+      likesCount: blog.stats?.likes || 0,
+      commentsCount: blog.stats?.comments || 0,
+      isPublic: true
+    }));
+    
+    // Combine posts and blogs
+    const allPosts = [...transformedPosts, ...transformedBlogs].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
     res.status(200).json({
       getme,
-      post,
+      post: allPosts,
     });
   } catch (error) {
     return res.status(500).json({
@@ -167,16 +205,8 @@ async function getSuggestions(req, res) {
 
     // Build aggregation pipeline for smart suggestions
     const pipeline = [
-      // Exclude already following and self; only discoverable profiles
-      {
-        $match: {
-          _id: { $nin: excludeIds.map((id) => id) },
-          $or: [
-            { 'privacy.discoverable': { $ne: false } },
-            { 'privacy.discoverable': { $exists: false } },
-          ],
-        },
-      },
+      // Exclude already following and self
+      { $match: { _id: { $nin: excludeIds.map(id => id) } } },
       
       // Add computed fields for scoring
       {
@@ -453,14 +483,6 @@ async function getFollowing(req, res) {
   }
 }
 
-function sanitizeUserForClient(user) {
-  const obj = user.toObject ? user.toObject() : { ...user };
-  delete obj.password;
-  delete obj.emailVerification;
-  delete obj.passwordReset;
-  return obj;
-}
-
 // Get any user's profile by ID
 async function getUserProfile(req, res) {
   try {
@@ -485,49 +507,76 @@ async function getUserProfile(req, res) {
         message: 'User not found'
       });
     }
-
-    const isOwnProfile = String(userId) === String(currentUserId);
-    const isFollowing = user.followers.some(
-      (follower) => String(follower._id) === String(currentUserId),
-    );
-    const isPrivate = Boolean(user.privacy?.isPrivate);
-    const canViewFull = isOwnProfile || !isPrivate || isFollowing;
-
-    if (!canViewFull) {
-      return res.json({
-        success: true,
-        user: {
-          _id: user._id,
-          username: user.username,
-          profile: {
-            fullName: user.profile?.fullName,
-            bio: user.profile?.bio,
-            avatar: user.profile?.avatar,
-          },
-          privacy: { isPrivate: true },
-          followers: [],
-          following: [],
-          stats: user.stats,
-        },
-        posts: [],
-        isFollowing,
-        isPrivateProfile: true,
-      });
-    }
     
+<<<<<<< Updated upstream
+    // Get user's posts
+=======
+    // Get posts
+>>>>>>> Stashed changes
     const posts = await postModel
-      .find({ user: userId })
+      .find({ author: userId })
       .sort({ createdAt: -1 })
       .limit(40)
-      .select('content media createdAt likesCount commentsCount isPublic tags title coverImage')
+      .select('content media createdAt tags visibility')
       .lean();
+    
+<<<<<<< Updated upstream
+    // Check if current user is following this user
+    const isFollowing = user.followers.some(
+      follower => String(follower._id) === String(currentUserId)
+=======
+    // Get blogs
+    const Blog = require('../models/blogs.model');
+    const blogs = await Blog
+      .find({ author: userId })
+      .sort({ createdAt: -1 })
+      .limit(40)
+      .select('title coverImage content createdAt tags')
+      .lean();
+    
+    // Transform posts to include author data and standardize fields
+    const transformedPosts = posts.map(post => ({
+      _id: post._id,
+      content: post.content,
+      media: post.media,
+      createdAt: post.createdAt,
+      tags: post.tags,
+      likesCount: post.totalReactions || 0,
+      commentsCount: post.stats?.comments || 0,
+      isPublic: post.visibility === 'public'
+    }));
+    
+    // Transform blogs to match post structure
+    const transformedBlogs = blogs.map(blog => ({
+      _id: blog._id,
+      title: blog.title,
+      coverImage: blog.coverImage,
+      content: blog.content,
+      createdAt: blog.createdAt,
+      tags: blog.tags,
+      likesCount: blog.stats?.likes || 0,
+      commentsCount: blog.stats?.comments || 0,
+      isPublic: true // blogs are typically public
+    }));
+    
+    // Combine posts and blogs
+    const allPosts = [...transformedPosts, ...transformedBlogs].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+>>>>>>> Stashed changes
+    );
     
     res.json({
       success: true,
-      user: sanitizeUserForClient(user),
+<<<<<<< Updated upstream
+      user,
       posts,
+      isFollowing
+=======
+      user: sanitizeUserForClient(user),
+      posts: allPosts,
       isFollowing,
       isPrivateProfile: false,
+>>>>>>> Stashed changes
     });
   } catch (error) {
     res.status(500).json({
@@ -617,6 +666,8 @@ async function getWeeklyStats(req, res) {
 }
 
 // Update user interests
+<<<<<<< Updated upstream
+=======
 async function updatePrivacy(req, res) {
   try {
     const userId = req.user.id;
@@ -696,7 +747,7 @@ async function deleteAccount(req, res) {
       } catch { /* ignore */ }
     }
 
-    const posts = await postModel.find({ user: userId }).select('media voice').lean();
+    const posts = await postModel.find({ user: userId }).select('media').lean();
     for (const post of posts) {
       if (post.media?.length) {
         for (const m of post.media) {
@@ -704,11 +755,6 @@ async function deleteAccount(req, res) {
             try { await cloudinary.uploader.destroy(m.public_id); } catch { /* ignore */ }
           }
         }
-      }
-      if (post.voice?.public_id) {
-        try {
-          await cloudinary.uploader.destroy(post.voice.public_id, { resource_type: 'video' });
-        } catch { /* ignore */ }
       }
     }
 
@@ -737,6 +783,7 @@ async function deleteAccount(req, res) {
   }
 }
 
+>>>>>>> Stashed changes
 async function updateInterests(req, res) {
   try {
     const userId = req.user.id;
@@ -786,18 +833,4 @@ async function updateInterests(req, res) {
   }
 }
 
-module.exports = {
-  getUsers,
-  updateProfile,
-  getMe,
-  getSuggestions,
-  followUser,
-  unfollowuser,
-  getFollowers,
-  getFollowing,
-  getUserProfile,
-  getWeeklyStats,
-  updateInterests,
-  updatePrivacy,
-  deleteAccount,
-};
+module.exports = { getUsers,updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getWeeklyStats, updateInterests };

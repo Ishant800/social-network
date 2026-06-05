@@ -16,17 +16,14 @@ function timeAgo(date) {
 function ReplyItem({ comment }) {
   const persona = comment.anonymousPersona;
   return (
-    <div className="flex gap-2.5 py-2.5 border-b border-slate-100 last:border-0">
+    <div className="flex gap-2 py-2 border-b border-gray-200 last:border-0">
       <AnonymousAvatar persona={persona} size="sm" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-slate-800">{persona?.name}</span>
+          <span className="text-xs font-semibold text-slate-800">{persona?.name}</span>
           <span className="text-[10px] text-slate-400">{timeAgo(comment.createdAt)}</span>
         </div>
-        <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">{comment.content}</p>
-        <button type="button" className="mt-1 text-[10px] font-semibold text-slate-400 hover:text-[#7B61FF]">
-          Reply
-        </button>
+        <p className="text-sm text-slate-600 mt-1 leading-relaxed">{comment.content}</p>
       </div>
     </div>
   );
@@ -83,99 +80,109 @@ export default function ConfessionCard({ confession, defaultExpanded = false }) 
   };
 
   return (
-    <article className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden animate-fade-up">
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start gap-3">
+    <article className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-3">
           <AnonymousAvatar persona={persona} size="md" />
-          <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-sm text-slate-900">{persona?.name}</span>
+              <span className="font-semibold text-sm text-slate-900">{persona?.name}</span>
               <span className="text-slate-300">·</span>
-              <span className="text-xs text-slate-400">{timeAgo(confession.createdAt)}</span>
+              <span className="text-xs text-slate-500">{timeAgo(confession.createdAt)}</span>
             </div>
             {confession.category && (
-              <span className="text-xs text-[#7B61FF] font-medium">
-                in {confession.category}
+              <span className="text-xs text-teal-600 font-medium">
+                {confession.category}
               </span>
             )}
           </div>
         </div>
 
-        <p className="mt-3 text-[15px] text-slate-800 leading-relaxed whitespace-pre-wrap">
+        {/* Content */}
+        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
           {confession.content}
         </p>
 
+        {/* Tags */}
         {confession.tags?.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {confession.tags.map((tag) => (
-              <span key={tag} className="text-xs font-semibold text-[#7B61FF]">#{tag}</span>
+              <span key={tag} className="text-xs font-medium text-teal-600">#{tag}</span>
             ))}
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-0.5">
+        {/* Actions */}
+        <div className="mt-3 flex items-center gap-1">
           <button
             type="button"
             onClick={handleLike}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              liked ? 'text-red-500' : 'text-slate-500 hover:bg-slate-50'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              liked 
+                ? 'text-red-600 bg-red-50' 
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Heart size={16} className={liked ? 'fill-red-500' : ''} />
-            {likeCount > 0 ? likeCount : null}
+            <Heart size={16} className={liked ? 'fill-red-600' : ''} />
+            {likeCount > 0 && <span>{likeCount}</span>}
           </button>
           <button
             type="button"
             onClick={() => setShowReplies((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <MessageCircle size={16} />
-            {(confession.commentsCount || topLevel.length) > 0
-              ? (confession.commentsCount || topLevel.length)
-              : null}
+            {(confession.commentsCount || topLevel.length) > 0 && (
+              <span>{confession.commentsCount || topLevel.length}</span>
+            )}
           </button>
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <Share2 size={16} />
           </button>
           <button
             type="button"
-            className="ml-auto flex items-center px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors"
+            className="ml-auto flex items-center px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-50 transition-colors"
           >
             <Bookmark size={16} />
           </button>
         </div>
       </div>
 
+      {/* Replies Section */}
       {showReplies && (
-        <div className="border-t border-slate-100 bg-[#faf9ff] px-4 sm:px-5 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-            Anonymous Replies
+        <div className="border-t border-gray-200 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-3">
+            Replies
           </p>
 
           {commentsLoading[postId] ? (
             <p className="text-xs text-slate-400 py-2">Loading replies…</p>
           ) : topLevel.length > 0 ? (
-            <div>{topLevel.map((c) => <ReplyItem key={c._id || c.id} comment={c} />)}</div>
+            <div className="space-y-3 mb-3">
+              {topLevel.map((c) => <ReplyItem key={c._id || c.id} comment={c} />)}
+            </div>
           ) : null}
 
-          <form onSubmit={handleReply} className="mt-2 flex items-center gap-2">
+          {/* Reply Input */}
+          <form onSubmit={handleReply} className="flex items-center gap-2">
             <AnonymousAvatar persona={persona} size="sm" />
             <input
               type="text"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Write an anonymous reply…"
-              className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B61FF]/30 focus:border-[#7B61FF]/50"
+              className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             />
             <button
               type="submit"
               disabled={!replyText.trim() || replying}
-              className="p-2.5 rounded-full bg-[#7B61FF] text-white hover:bg-[#6a52e8] disabled:opacity-40 transition-colors"
+              className="p-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Send size={15} />
+              <Send size={16} />
             </button>
           </form>
         </div>

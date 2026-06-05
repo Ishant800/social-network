@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  username: {
-     type: String,
-     required: true, 
-     unique: true, 
-     trim: true },
 
-  email: { 
+  // ==================================
+  // AUTH
+  // ==================================
+
+  username: {
     type: String,
+<<<<<<< Updated upstream
      required: true,
       unique: true ,
     }, 
@@ -17,69 +17,199 @@ const UserSchema = new mongoose.Schema({
     type: String,
      required: true,
     select: false },
-
-  emailVerified: { type: Boolean, default: false },
-
-  emailVerification: {
-    codeHash: { type: String, select: false },
-    expiresAt: { type: Date },
-    attempts: { type: Number, default: 0 },
-    lastSentAt: { type: Date },
+=======
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
   },
 
-  passwordReset: {
-    codeHash: { type: String, select: false },
-    expiresAt: { type: Date },
-    attempts: { type: Number, default: 0 },
-    lastSentAt: { type: Date },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
   },
+
+  password: {
+    type: String,
+    required: true,
+    select: false
+  },
+
+  // ==================================
+  // PROFILE
+  // ==================================
+>>>>>>> Stashed changes
 
   profile: {
-    fullName: String,
-    bio: { type: String, maxlength: 300 },
+
+    fullName: {
+      type: String,
+      trim: true
+    },
+
+    bio: {
+      type: String,
+      maxlength: 300
+    },
+
     avatar: {
       url: String,
       public_id: String
     },
+
     coverImage: {
       url: String,
       public_id: String
     },
-    location: String
+
+    location: String,
+
+    website: String
   },
+
+  // ==================================
+  // STATS
+  // ==================================
 
   stats: {
-    posts: { type: Number, default: 0 },
-    blogs: { type: Number, default: 0 }
+
+    posts: {
+      type: Number,
+      default: 0
+    },
+
+    blogs: {
+      type: Number,
+      default: 0
+    },
+
+    followers: {
+      type: Number,
+      default: 0
+    },
+
+    following: {
+      type: Number,
+      default: 0
+    }
   },
+
+  // ==================================
+  // INTERESTS
+  // ==================================
 
   preferences: {
-    interests: [String],
-    notifications: {
-      email: { type: Boolean, default: true },
-      push: { type: Boolean, default: true }
-    }  
-  },
 
-  privacy: {
-    isPrivate: { type: Boolean, default: false },
-    discoverable: { type: Boolean, default: true },
+    interests: [
+      {
+        type: String
+      }
+    ]
   },
+<<<<<<< Updated upstream
   chatList:[{
     type:mongoose.Schema.Types.ObjectId,ref:"User"
   }],
   lastSeen:{
     type:Date,
+=======
+
+  // Dynamic ranking scores
+
+  interestScores: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+
+  // ==================================
+  // FEED PREFERENCES
+  // ==================================
+
+  contentPreferences: {
+
+    posts: {
+      type: Number,
+      default: 50
+    },
+
+    blogs: {
+      type: Number,
+      default: 50
+    }
+  },
+
+  // ==================================
+  // PRIVACY
+  // ==================================
+
+  privacy: {
+
+    isPrivate: {
+      type: Boolean,
+      default: false
+    },
+
+    discoverable: {
+      type: Boolean,
+      default: true
+    }
+  },
+
+  // ==================================
+  // SOCIAL GRAPH
+  // ==================================
+
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  ],
+
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  ],
+
+  // ==================================
+  // CHAT
+  // ==================================
+
+  chatList: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  ],
+
+  lastSeen: {
+    type: Date,
+>>>>>>> Stashed changes
     default: Date.now
   },
 
-  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // ==================================
+  // ACCOUNT STATUS
+  // ==================================
 
+  status: {
+    type: String,
+    enum: [
+      "active",
+      "suspended",
+      "deleted"
+    ],
+    default: "active"
+  }
 
+},
+{
+  timestamps: true
+});
 
-}, { timestamps: true });
-
-module.exports = mongoose.model('User', UserSchema);
-
-
+module.exports = mongoose.model("User", UserSchema);

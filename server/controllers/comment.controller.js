@@ -81,9 +81,9 @@ const createComment = async (req, res) => {
       // Notify blog author
       pushNotification({ recipient: targetExists.author, actor: userId, type: 'comment', blog: postId, comment: comment._id });
     } else {
-      await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+      await Post.findByIdAndUpdate(postId, { $inc: { 'stats.comments': 1 } });
       // Notify post owner
-      pushNotification({ recipient: targetExists.user, actor: userId, type: 'comment', post: postId, comment: comment._id });
+      pushNotification({ recipient: targetExists.author, actor: userId, type: 'comment', post: postId, comment: comment._id });
     }
 
     return res.status(201).json({
@@ -198,7 +198,7 @@ const deleteComment = async (req, res) => {
 
     if (comment.target?.type === 'Post') {
       await Post.findByIdAndUpdate(comment.target.id, {
-        $inc: { commentsCount: -1 },
+        $inc: { 'stats.comments': -1 },
       });
     }
 

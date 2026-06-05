@@ -1,46 +1,31 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Bookmark,
   Compass,
+<<<<<<< Updated upstream
+=======
   VenetianMask,
-  Mic,
+>>>>>>> Stashed changes
   FileText,
   Home,
   PenSquare,
   Settings,
   Users,
-  MessageCircle,
-  Bell,
-  LogOut,
-  ChevronRight,
-  Sparkles,
   User,
 } from 'lucide-react';
-import { logout } from '../../features/auth/authSlice';
 
 // ─── NavItem ────────────────────────────────────────────────────────────────────
-function NavItem({ icon: Icon, label, path, end = false, badge, newBadge, accent = 'teal' }) {
-  const activeStyles =
-    accent === 'purple'
-      ? 'bg-[#7B61FF]/10 text-[#7B61FF]'
-      : accent === 'orange'
-        ? 'bg-orange-50 text-orange-600'
-        : 'bg-teal-50 text-teal-700';
-  const iconActive =
-    accent === 'purple'
-      ? 'text-[#7B61FF]'
-      : accent === 'orange'
-        ? 'text-orange-600'
-        : 'text-teal-600';
-
+function NavItem({ icon: Icon, label, path, end = false, badge }) {
   return (
     <NavLink
       to={path}
       end={end}
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-          isActive ? activeStyles : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+          isActive
+            ? 'bg-teal-50 text-teal-700 '
+            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
         }`
       }
     >
@@ -48,15 +33,13 @@ function NavItem({ icon: Icon, label, path, end = false, badge, newBadge, accent
         <>
           <Icon
             className={`w-[18px] h-[18px] shrink-0 transition-colors ${
-              isActive ? iconActive : 'text-slate-400 group-hover:text-slate-600'
+              isActive
+                ? 'text-teal-600'
+                : 'text-slate-400 group-hover:text-slate-600'
             }`}
           />
           <span className="flex-1 leading-none truncate">{label}</span>
-          {newBadge ? (
-            <span className="px-1.5 py-0.5 rounded-md bg-[#7B61FF] text-white text-[9px] font-bold uppercase">
-              New
-            </span>
-          ) : badge && badge > 0 ? (
+          {badge && badge > 0 ? (
             <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
               {badge > 99 ? '99+' : badge}
             </span>
@@ -78,35 +61,25 @@ function SectionLabel({ children }) {
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────────
 export default function Sidebar() {
-  const dispatch = useDispatch();
-  const navigate  = useNavigate();
-  const { user }  = useSelector((s) => s.auth);
-  const { unreadCount } = useSelector((s) => s.notifications);
-  const { items: bookmarks } = useSelector((s) => s.bookmarks);
-  const { unreadCount: messageCount } = useSelector((s) => s.messages);
-
-  const displayName = user?.profile?.fullName || user?.username || 'You';
-  const handle      = user?.username ? `@${user.username}` : '';
-  const avatarUrl   =
-    user?.profile?.avatar?.url ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=ffffff`;
+  const { user } = useSelector((s) => s.auth);
 
   // ─── Nav data with dynamic counts ───────────────────────────────────────────────────────────────────
   const mainNav = [
     { icon: Home,          label: 'Home',         path: '/',              end: true },
     { icon: Compass,       label: 'Explore',       path: '/explore'                  },
     { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
-    { icon: MessageCircle, label: 'Messages',      path: '/chats',         badge: messageCount },
-    { icon: Bell,          label: 'Notifications', path: '/notifications', badge: unreadCount  },
   ];
 
+<<<<<<< Updated upstream
+=======
   const discoverNav = [
-    { icon: VenetianMask, label: 'Anonymous Confessions', path: '/confessions', accent: 'purple', newBadge: true },
-    { icon: Mic, label: 'Voice Stories', path: '/voice-stories', accent: 'orange', newBadge: true },
+    { icon: VenetianMask, label: 'Confessions', path: '/confessions', accent: 'teal' },
   ];
 
+>>>>>>> Stashed changes
   const profileNav = [
-    { icon: User, label: 'My Profile', path: '/profile' },
+    { icon: User, label: 'My Profile', path: `/profile/${user?._id || user?.id || ''}` },
+    { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
   ];
 
   const createNav = [
@@ -114,11 +87,14 @@ export default function Sidebar() {
     { icon: FileText,  label: 'Write an Article', path: '/blog/create' },
   ];
 
+<<<<<<< Updated upstream
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login', { replace: true });
+    navigate('/login');
   };
 
+=======
+>>>>>>> Stashed changes
   return (
     <div className="h-full w-60 flex flex-col py-5 px-2">
 
@@ -126,35 +102,38 @@ export default function Sidebar() {
       <nav className="flex-1 flex flex-col gap-0.5">
 
         {/* Section: Navigation */}
-        <SectionLabel>Navigation</SectionLabel>
+        {/* <SectionLabel>Navigation</SectionLabel> */}
         {mainNav.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
 
-        <div className="mt-5">
-          <SectionLabel>Discover</SectionLabel>
+<<<<<<< Updated upstream
+=======
+        <div className="mt-0">
+          {/* <SectionLabel>Anonymous</SectionLabel> */}
           {discoverNav.map((item) => (
             <NavItem key={item.path} {...item} />
           ))}
         </div>
 
+>>>>>>> Stashed changes
         {/* Section: Profile */}
-        <div className="mt-5">
-          <SectionLabel>Profile</SectionLabel>
+        <div className="mt-0">
+          {/* <SectionLabel>Profile</SectionLabel> */}
           {profileNav.map((item) => (
             <NavItem key={item.path} {...item} />
           ))}
         </div>
 
         {/* Section: Create */}
-        <div className="mt-5">
-          <SectionLabel>Create</SectionLabel>
+        <div className="mt-0">
+          {/* <SectionLabel>Create</SectionLabel> */}
           {createNav.map((item) => (
             <NavItem key={item.path} {...item} />
           ))}
         </div>
-      </nav>
 
+<<<<<<< Updated upstream
       {/* ── Divider ─────────────────────────────────────────────────────────── */}
       <div className="my-4 border-t border-slate-100" />
 
@@ -179,18 +158,25 @@ export default function Sidebar() {
                 {handle}
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-xs font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign out
-          </button>
+          
+          
+=======
+        {/* Section: Settings */}
+        <div className="mt-0">
+          {/* <SectionLabel>Settings</SectionLabel> */}
+          <NavItem icon={Settings} label="Settings" path="/settings" />
+>>>>>>> Stashed changes
         </div>
-      </div>
+      </nav>
 
     </div>
   );

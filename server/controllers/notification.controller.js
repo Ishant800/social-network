@@ -114,10 +114,42 @@ const markOneRead = async (req, res) => {
   }
 };
 
+// POST /notifications/ping-author  — send notification to blog author
+const pingAuthor = async (req, res) => {
+  try {
+    const { authorId, blogId, blogTitle } = req.body;
+    const userId = req.user.id;
+
+    if (!authorId || !blogId) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Don't allow pinging yourself
+    if (String(authorId) === String(userId)) {
+      return res.status(400).json({ success: false, error: 'Cannot ping yourself' });
+    }
+
+    // Create notification
+    await pushNotification({
+      recipient: authorId,
+      actor: userId,
+      type: 'discussion_ping',
+      blog: blogId,
+      message: `wants you to join the discussion on "${blogTitle}"`
+    });
+
+    res.json({ success: true, message: 'Ping sent successfully' });
+  } catch (err) {
+    console.error('pingAuthor error:', err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
 module.exports = {
   pushNotification,
   streamNotifications,
   getNotifications,
   markAllRead,
   markOneRead,
+  pingAuthor,
 };

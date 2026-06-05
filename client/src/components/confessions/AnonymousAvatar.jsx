@@ -1,7 +1,7 @@
 import { VenetianMask } from 'lucide-react';
 
 export default function AnonymousAvatar({ persona, size = 'md' }) {
-  const color = persona?.avatarColor || '#7c3aed';
+  const color = persona?.avatarColor || '#0d9488'; // teal-600
   const name = persona?.name || 'Anonymous';
 
   const sizes = {
@@ -14,7 +14,7 @@ export default function AnonymousAvatar({ persona, size = 'md' }) {
   return (
     <div
       className={`${sizes[size]} rounded-full flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm`}
-      style={{ backgroundColor: `${color}22`, border: `2px solid ${color}44` }}
+      style={{ backgroundColor: `${color}15`, border: `2px solid ${color}30` }}
       title={name}
     >
       <VenetianMask size={iconSizes[size]} style={{ color }} strokeWidth={2} />

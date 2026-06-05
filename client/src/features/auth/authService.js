@@ -2,11 +2,17 @@ import API from '../../api/axios';
 
 const signup = async (userData) => {
   const response = await API.post('/auth/signup', userData);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+  }
   return response.data;
 };
 
 const login = async (userData) => {
   const response = await API.post('/auth/login', userData);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+  }
   return response.data;
 };
 
@@ -20,21 +26,13 @@ const getMe = async () => {
   return response.data;
 };
 
-const sendVerificationCode = async ({ email }) => {
-  const response = await API.post('/auth/send-verification-code', { email });
-  return response.data;
-};
-
-const verifyEmailCode = async ({ email, code }) => {
-  const response = await API.post('/auth/verify-email-code', { email, code });
-  return response.data;
-};
-
+<<<<<<< Updated upstream
+export default { signup, login, logout, getMe };
+=======
 export default {
   signup,
   login,
   logout,
   getMe,
-  sendVerificationCode,
-  verifyEmailCode,
 };
+>>>>>>> Stashed changes

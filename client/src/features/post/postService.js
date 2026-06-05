@@ -14,20 +14,29 @@ const fetchFeed = async ({ feedType = 'posts', page = 1, limit = 15 } = {}) => {
   const endpoint = feedType === 'blogs' ? '/feed/blogs' : '/feed/posts';
   const { data } = await API.get(`${endpoint}?${params.toString()}`);
   
-  const items = feedType === 'blogs' 
-    ? (data.blogs || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'blog' }))
-    : (data.posts || []).map((item) => ({ ...item, id: item._id || item.id, feedType: 'post' }));
+  // Handle both 'posts', 'blogs', and 'items' array formats
+  const rawItems = data.items || data.posts || data.blogs || [];
+  const items = rawItems.map((item) => ({ 
+    ...item, 
+    id: item._id || item.id, 
+    feedType: feedType === 'blogs' ? 'blog' : 'post' 
+  }));
   
   return {
     items,
-    hasMore: Boolean(data.pagination?.hasMore),
-    page: data.pagination?.page || page,
-    total: data.pagination?.total || 0
+    hasMore: Boolean(data.hasMore || data.pagination?.hasMore),
+    page: data.page || data.pagination?.page || page,
+    total: data.meta?.total || data.pagination?.total || 0,
+    hasInterests: data.hasInterests
   };
 };
 
-const createPost = async (postData) => {
-  const response = await API.post('/post/create', postData);
+const createPost = async (formData) => {
+  const response = await API.post('/post/create', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return normalizePost(response.data.post);
 };
 
@@ -72,8 +81,12 @@ const getBlogDetails = async (blogId) => {
   return response.data.blog;
 };
 
-const updatePost = async (postId, postData) => {
-  const response = await API.put(`/post/update/${postId}`, postData);
+const updatePost = async (postId, formData) => {
+  const response = await API.put(`/post/update/${postId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return normalizePost(response.data.post);
 };
 
@@ -89,6 +102,16 @@ const exploreBlogs = async ({ search = '', skip = 0, limit = 24, exclude = '', c
   return response.data;
 };
 
+const updateInterestScores = async ({ action, category, tags, reactionType }) => {
+  const response = await API.post('/feed/interest-scores', {
+    action,
+    category,
+    tags,
+    reactionType
+  });
+  return response.data;
+};
+
 export default {
   fetchFeed,
   createPost,
@@ -101,4 +124,5 @@ export default {
   getPostDetails,
   getBlogDetails,
   exploreBlogs,
+  updateInterestScores,
 };
