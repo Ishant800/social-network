@@ -1,4 +1,4 @@
-import { Loader2, Pencil, Send, Trash2, X, MoreHorizontal } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';

@@ -1,21 +1,19 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Bookmark,
   Compass,
+<<<<<<< Updated upstream
+=======
+  VenetianMask,
+>>>>>>> Stashed changes
   FileText,
   Home,
   PenSquare,
   Settings,
   Users,
-  MessageCircle,
-  Bell,
-  LogOut,
-  ChevronRight,
-  Sparkles,
   User,
 } from 'lucide-react';
-import { logout } from '../../features/auth/authSlice';
 
 // ─── NavItem ────────────────────────────────────────────────────────────────────
 function NavItem({ icon: Icon, label, path, end = false, badge }) {
@@ -63,30 +61,25 @@ function SectionLabel({ children }) {
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────────
 export default function Sidebar() {
-  const dispatch = useDispatch();
-  const navigate  = useNavigate();
-  const { user }  = useSelector((s) => s.auth);
-  const { unreadCount } = useSelector((s) => s.notifications);
-  const { items: bookmarks } = useSelector((s) => s.bookmarks);
-  const { unreadCount: messageCount } = useSelector((s) => s.messages);
-
-  const displayName = user?.profile?.fullName || user?.username || 'You';
-  const handle      = user?.username ? `@${user.username}` : '';
-  const avatarUrl   =
-    user?.profile?.avatar?.url ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=ffffff`;
+  const { user } = useSelector((s) => s.auth);
 
   // ─── Nav data with dynamic counts ───────────────────────────────────────────────────────────────────
   const mainNav = [
     { icon: Home,          label: 'Home',         path: '/',              end: true },
     { icon: Compass,       label: 'Explore',       path: '/explore'                  },
     { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
-    { icon: MessageCircle, label: 'Messages',      path: '/chats',         badge: messageCount },
-    { icon: Bell,          label: 'Notifications', path: '/notifications', badge: unreadCount  },
   ];
 
+<<<<<<< Updated upstream
+=======
+  const discoverNav = [
+    { icon: VenetianMask, label: 'Confessions', path: '/confessions', accent: 'teal' },
+  ];
+
+>>>>>>> Stashed changes
   const profileNav = [
-    { icon: User, label: 'My Profile', path: '/profile' },
+    { icon: User, label: 'My Profile', path: `/profile/${user?._id || user?.id || ''}` },
+    { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
   ];
 
   const createNav = [
@@ -94,11 +87,14 @@ export default function Sidebar() {
     { icon: FileText,  label: 'Write an Article', path: '/blog/create' },
   ];
 
+<<<<<<< Updated upstream
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
   };
 
+=======
+>>>>>>> Stashed changes
   return (
     <div className="h-full w-60 flex flex-col py-5 px-2">
 
@@ -106,28 +102,38 @@ export default function Sidebar() {
       <nav className="flex-1 flex flex-col gap-0.5">
 
         {/* Section: Navigation */}
-        <SectionLabel>Navigation</SectionLabel>
+        {/* <SectionLabel>Navigation</SectionLabel> */}
         {mainNav.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
 
+<<<<<<< Updated upstream
+=======
+        <div className="mt-0">
+          {/* <SectionLabel>Anonymous</SectionLabel> */}
+          {discoverNav.map((item) => (
+            <NavItem key={item.path} {...item} />
+          ))}
+        </div>
+
+>>>>>>> Stashed changes
         {/* Section: Profile */}
-        <div className="mt-5">
-          <SectionLabel>Profile</SectionLabel>
+        <div className="mt-0">
+          {/* <SectionLabel>Profile</SectionLabel> */}
           {profileNav.map((item) => (
             <NavItem key={item.path} {...item} />
           ))}
         </div>
 
         {/* Section: Create */}
-        <div className="mt-5">
-          <SectionLabel>Create</SectionLabel>
+        <div className="mt-0">
+          {/* <SectionLabel>Create</SectionLabel> */}
           {createNav.map((item) => (
             <NavItem key={item.path} {...item} />
           ))}
         </div>
-      </nav>
 
+<<<<<<< Updated upstream
       {/* ── Divider ─────────────────────────────────────────────────────────── */}
       <div className="my-4 border-t border-slate-100" />
 
@@ -163,8 +169,14 @@ export default function Sidebar() {
 
           
           
+=======
+        {/* Section: Settings */}
+        <div className="mt-0">
+          {/* <SectionLabel>Settings</SectionLabel> */}
+          <NavItem icon={Settings} label="Settings" path="/settings" />
+>>>>>>> Stashed changes
         </div>
-      </div>
+      </nav>
 
     </div>
   );

@@ -80,7 +80,10 @@ export default function Navbar() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center h-16 gap-4">
 
+<<<<<<< Updated upstream
           {/* Logo */}
+=======
+>>>>>>> Stashed changes
           <Link to="/" className="flex items-center shrink-0">
             <img src={Logo} className="h-30 w-50 rounded-xl" alt="Sanjal" />
           </Link>
@@ -95,7 +98,11 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery.trim().length >= 2 && setShowSuggestions(true)}
+<<<<<<< Updated upstream
                 className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-sm transition-all"
+=======
+                className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200/90 bg-slate-50/80 focus:bg-white focus:border-teal-400/80 text-sm transition-all placeholder:text-slate-400 outline-none"
+>>>>>>> Stashed changes
               />
               {loadingSuggestions && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
@@ -201,7 +208,7 @@ export default function Navbar() {
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-44 pl-8 pr-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm focus:outline-none"
+                      className="w-44 pl-8 pr-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-sm outline-none focus:border-teal-400"
                       autoFocus
                     />
                   </div>

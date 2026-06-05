@@ -15,7 +15,13 @@ async function syncReactions(postId) {
   counts.forEach(({ _id, count }) => { reactions[_id] = count; });
   const likesCount = Object.values(reactions).reduce((a, b) => a + b, 0);
 
-  await Post.findByIdAndUpdate(postId, { reactions, likesCount });
+  // Update both reactions object, likesCount, and totalReactions
+  await Post.findByIdAndUpdate(postId, { 
+    reactions, 
+    likesCount,
+    totalReactions: likesCount 
+  });
+  
   return { reactions, likesCount };
 }
 

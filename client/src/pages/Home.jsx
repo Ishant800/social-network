@@ -5,18 +5,41 @@ import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
 import { getFeed, resetFeed, setLikedPosts } from '../features/post/postSlice';
+<<<<<<< Updated upstream
 import { Sparkles } from 'lucide-react';
 
 const feedTabs = ['Posts', 'Blogs', 'Discussions'];
 
+=======
+import { fetchActiveDiscussions } from '../features/discussions/discussionSlice';
+import { MessagesSquare, Sparkles, Users, MessageCircle, Clock } from 'lucide-react';
+
+const feedTabs = ['Posts', 'Blogs', 'Discussions'];
+
+// Helper function to format time ago
+const formatTimeAgo = (date) => {
+  const now = new Date();
+  const past = new Date(date);
+  const diffMs = now - past;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
+};
+
+>>>>>>> Stashed changes
 export default function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const token = useSelector((s) => s.auth.token);
   const { user } = useSelector((s) => s.auth);
-  const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message, activeFeedType } = useSelector(
+  const { isLoading, isError, posts, hasMore, isLoadingMore, currentPage, message } = useSelector(
     (s) => s.posts,
   );
+  const { activeDiscussions, isLoading: discussionsLoading } = useSelector((s) => s.discussions);
   const [activeTab, setActiveTab] = useState('Posts');
   const [showInterestBanner, setShowInterestBanner] = useState(false);
   const sentinelRef = useRef(null);
@@ -46,6 +69,14 @@ export default function Home() {
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
+<<<<<<< Updated upstream
+=======
+    if (tab === 'Discussions') {
+      dispatch(resetFeed());
+      dispatch(fetchActiveDiscussions());
+      return;
+    }
+>>>>>>> Stashed changes
     const newFeedType = tab === 'Blogs' ? 'blogs' : 'posts';
     dispatch(getFeed({ feedType: newFeedType, page: 1, append: false, force: false }));
   };
@@ -86,10 +117,16 @@ export default function Home() {
   }
 
   return (
+<<<<<<< Updated upstream
     <div className="max-w-2xl mx-auto">
       {/* Interest Banner for users without interests */}
       {showInterestBanner && !hasInterests && (
         <div className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+=======
+    <div className="max-w-2xl mx-auto space-y-5">
+      {showInterestBanner && !hasInterests && !isDiscussionsTab && (
+        <div className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/90 to-white p-4 sm:p-5">
+>>>>>>> Stashed changes
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
             <div className="flex-1">
@@ -116,13 +153,21 @@ export default function Home() {
         </div>
       )}
 
+<<<<<<< Updated upstream
       {/* Filter Tabs */}
       <div className="flex gap-1 border-b border-gray-100 mb-4">
+=======
+      <div className="flex gap-1 border-b border-gray-200">
+>>>>>>> Stashed changes
         {feedTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => handleTabChange(tab)}
+<<<<<<< Updated upstream
             className={`px-4 py-2 text-sm font-medium transition-all ${
+=======
+            className={`px-4 py-3 text-sm font-medium transition-all ${
+>>>>>>> Stashed changes
               activeTab === tab
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -133,8 +178,96 @@ export default function Home() {
         ))}
       </div>
 
+<<<<<<< Updated upstream
       {/* Loading State */}
       {isLoading && (
+=======
+      {isDiscussionsTab && (
+        <>
+          {discussionsLoading && (
+            <div className="space-y-3">
+              <PostSkeleton />
+              <PostSkeleton />
+            </div>
+          )}
+
+          {!discussionsLoading && activeDiscussions.length === 0 && (
+            <section className="rounded-2xl p-6 sm:p-8 text-center border border-gray-200 bg-white">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
+                <MessagesSquare className="h-7 w-7" />
+              </div>
+              <h2 className="font-display mt-4 text-lg font-bold text-slate-900">No active discussions</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600">
+                No discussions in the last 24 hours. Open a blog and start a conversation!
+              </p>
+              <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+                <Link
+                  to="/explore"
+                  className="inline-flex justify-center rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+                >
+                  Browse articles
+                </Link>
+                <Link
+                  to="/blog/create"
+                  className="inline-flex justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-teal-200 hover:bg-teal-50/40"
+                >
+                  Write an article
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {!discussionsLoading && activeDiscussions.length > 0 && (
+            <div className="space-y-3">
+              {activeDiscussions.map((discussion) => (
+                <div
+                  key={discussion.blogId}
+                  onClick={() => navigate(`/discussionroom/${discussion.blogId}`)}
+                  className="bg-white rounded-xl border border-gray-200 p-4 hover:border-teal-300 hover:shadow-sm transition cursor-pointer"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                      <MessagesSquare className="w-5 h-5 text-teal-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                        {discussion.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <img
+                          src={discussion.author.avatar || '/default-avatar.png'}
+                          alt={discussion.author.username}
+                          className="w-4 h-4 rounded-full"
+                        />
+                        <span className="text-xs text-gray-600">
+                          {discussion.author.fullName || discussion.author.username}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {discussion.participantCount} {discussion.participantCount === 1 ? 'participant' : 'participants'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          {discussion.messageCount} {discussion.messageCount === 1 ? 'message' : 'messages'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formatTimeAgo(discussion.lastActivity)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {!isDiscussionsTab && isLoading && (
+>>>>>>> Stashed changes
         <div className="space-y-4">
           <PostSkeleton />
           <PostSkeleton />

@@ -28,66 +28,191 @@ const formatDate = (value) => {
   });
 };
 
+// Component to render TipTap JSON content
+function BlogContentRenderer({ content }) {
+  if (!content) return null;
+
+  // Function to render text with marks (bold, italic, etc.)
+  const renderText = (textNode) => {
+    if (!textNode.text) return null;
+    
+    let text = textNode.text;
+    let element = <span>{text}</span>;
+    
+    if (textNode.marks) {
+      textNode.marks.forEach(mark => {
+        switch (mark.type) {
+          case 'bold':
+            element = <strong key={Math.random()}>{element}</strong>;
+            break;
+          case 'italic':
+            element = <em key={Math.random()}>{element}</em>;
+            break;
+          case 'code':
+            element = <code key={Math.random()}>{element}</code>;
+            break;
+          case 'link':
+            element = (
+              <a 
+                key={Math.random()} 
+                href={mark.attrs?.href} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {element}
+              </a>
+            );
+            break;
+          default:
+            break;
+        }
+      });
+    }
+    
+    return element;
+  };
+
+  // Function to render a single node
+  const renderNode = (node, index) => {
+    if (!node || !node.type) return null;
+
+    switch (node.type) {
+      case 'heading':
+        const level = node.attrs?.level || 1;
+        const HeadingTag = `h${level}`;
+        return (
+          <HeadingTag key={index} className="font-bold mt-6 mb-3">
+            {node.content?.map((child, i) => renderText(child))}
+          </HeadingTag>
+        );
+
+      case 'paragraph':
+        return (
+          <p key={index} className="mb-4 text-gray-700 leading-relaxed">
+            {node.content?.map((child, i) => {
+              if (child.type === 'text') return renderText(child);
+              if (child.type === 'hardBreak') return <br key={i} />;
+              return null;
+            })}
+          </p>
+        );
+
+      case 'bulletList':
+        return (
+          <ul key={index} className="list-disc pl-6 mb-4 space-y-1">
+            {node.content?.map((item, i) => renderNode(item, i))}
+          </ul>
+        );
+
+      case 'orderedList':
+        return (
+          <ol key={index} className="list-decimal pl-6 mb-4 space-y-1">
+            {node.content?.map((item, i) => renderNode(item, i))}
+          </ol>
+        );
+
+      case 'listItem':
+        return (
+          <li key={index} className="text-gray-700">
+            {node.content?.map((child, i) => renderNode(child, i))}
+          </li>
+        );
+
+      case 'blockquote':
+        return (
+          <blockquote key={index} className="border-l-4 border-blue-500 pl-4 py-2 my-4 italic bg-blue-50 rounded-r">
+            {node.content?.map((child, i) => renderNode(child, i))}
+          </blockquote>
+        );
+
+      case 'codeBlock':
+        const code = node.content?.map(c => c.text).join('\n') || '';
+        return (
+          <pre key={index} className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4">
+            <code>{code}</code>
+          </pre>
+        );
+
+      case 'hardBreak':
+        return <br key={index} />;
+
+      case 'horizontalRule':
+        return <hr key={index} className="my-6 border-gray-200" />;
+
+      default:
+        // For unknown types, try to render content if it exists
+        if (node.content) {
+          return (
+            <div key={index}>
+              {node.content.map((child, i) => renderNode(child, i))}
+            </div>
+          );
+        }
+        return null;
+    }
+  };
+
+  // Handle different content formats
+  if (typeof content === 'string') {
+    try {
+      const parsed = JSON.parse(content);
+      return (
+        <div className="blog-content prose max-w-none">
+          {parsed.content?.map((node, index) => renderNode(node, index))}
+        </div>
+      );
+    } catch {
+      return <div className="blog-content whitespace-pre-wrap">{content}</div>;
+    }
+  }
+
+  if (content.type === 'doc' && content.content) {
+    return (
+      <div className="blog-content prose max-w-none">
+        {content.content.map((node, index) => renderNode(node, index))}
+      </div>
+    );
+  }
+
+  // Fallback for plain text
+  return <div className="blog-content">{JSON.stringify(content)}</div>;
+}
+
 const getAuthor = (blog) => {
-  const author = blog?.author || blog?.user || {};
+  const author = blog?.author || {};
+
   return {
-    name: author.username || author.name || 'Writer',
-    handle: author.username || 'writer',
+    name:
+      author?.profile?.fullName ||
+      author?.username ||
+      'Writer',
+
+    handle:
+      author?.username ||
+      'writer',
+
     avatar:
-      author.avatar?.trim() ||
-      author.profileImage?.url ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(author.username || 'Writer')}&background=3b82f6&color=ffffff`,
-    id: author._id || author.id,
+      author?.profile?.avatar?.url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        author?.username || 'Writer'
+      )}&background=3b82f6&color=ffffff`,
+
+    id: author?._id,
   };
 };
 
 const getStats = (blog) => ({
-  views: blog?.stats?.views ?? blog?.views ?? 0,
-  comments: blog?.stats?.comments ?? blog?.commentsCount ?? blog?.comments?.length ?? 0,
-  likes: blog?.stats?.likes ?? blog?.likesCount ?? 0,
+  views: blog?.stats?.views || 0,
+  comments: blog?.stats?.comments || 0,
+  likes: blog?.stats?.likes || 0,
 });
 
 const getReadTime = (blog) => blog?.readTime || 1;
 
-const getBlogBody = (blog) => {
-  if (typeof blog?.content === 'string' && blog.content.trim()) return blog.content;
-  if (typeof blog?.content?.body === 'string' && blog.content.body.trim()) return blog.content.body;
-  if (typeof blog?.body === 'string' && blog.body.trim()) return blog.body;
-  return '';
-};
 
-const parseTags = (tags) => {
-  if (!Array.isArray(tags)) return [];
-  return tags
-    .flatMap((tag) => tag.split(',').map((item) => item.trim()))
-    .filter(Boolean);
-};
-
-// Render HTML content directly
-const renderBlogContent = (htmlContent) => {
-  if (!htmlContent) return <p className="text-gray-500">No content available.</p>;
-  
-  let formattedContent = htmlContent;
-  
-  formattedContent = formattedContent.replace(/<p>/g, '<p class="mb-4 leading-relaxed">');
-  formattedContent = formattedContent.replace(/<h1>/g, '<h1 class="text-3xl font-bold mt-8 mb-4">');
-  formattedContent = formattedContent.replace(/<h2>/g, '<h2 class="text-2xl font-bold mt-8 mb-3">');
-  formattedContent = formattedContent.replace(/<h3>/g, '<h3 class="text-xl font-bold mt-6 mb-3">');
-  formattedContent = formattedContent.replace(/<ul>/g, '<ul class="list-disc ml-6 mb-4 space-y-1">');
-  formattedContent = formattedContent.replace(/<ol>/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">');
-  formattedContent = formattedContent.replace(/<li>/g, '<li class="text-gray-700">');
-  formattedContent = formattedContent.replace(/<blockquote>/g, '<blockquote class="border-l-4 border-blue-500 bg-blue-50 p-4 my-4 italic rounded-r-lg">');
-  formattedContent = formattedContent.replace(/<code>/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-blue-600">');
-  formattedContent = formattedContent.replace(/<pre>/g, '<pre class="bg-gray-900 rounded-lg p-4 my-4 overflow-x-auto">');
-  formattedContent = formattedContent.replace(/<strong>/g, '<strong class="font-bold text-gray-900">');
-  formattedContent = formattedContent.replace(/<em>/g, '<em class="italic text-gray-700">');
-  
-  return (
-    <div 
-      className="blog-content"
-      dangerouslySetInnerHTML={{ __html: formattedContent }}
-    />
-  );
+const getTags = (blog) => {
+  return blog?.tags || [];
 };
 
 // Combined Discussion Section (Comments + Live Discussion)
@@ -261,13 +386,15 @@ export default function BlogDetails() {
 
   const author = getAuthor(blog);
   const stats = {
-    views: blog?.stats?.views ?? blog?.views ?? 0,
-    comments: comments?.length ?? blog?.stats?.comments ?? blog?.commentsCount ?? 0,
-    likes: blog?.stats?.likes ?? blog?.likesCount ?? 0,
-  };
-  const tags = parseTags(blog.tags);
-  const readTime = getReadTime(blog);
-  const articleBody = getBlogBody(blog);
+  views: blog?.stats?.views || 0,
+  comments: blog?.stats?.comments || 0,
+  likes: blog?.stats?.likes || 0,
+};
+
+const tags = blog?.tags || [];
+
+const readTime = blog?.readTime || 1;
+  
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -353,7 +480,7 @@ export default function BlogDetails() {
 
         {/* Blog Body */}
         <div className="mt-8">
-          {renderBlogContent(articleBody)}
+          <BlogContentRenderer content={blog.content} />
         </div>
 
         {/* Tags */}

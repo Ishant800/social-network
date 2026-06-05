@@ -1,6 +1,7 @@
 const messageModel = require("../models/message.model");
 const PrivateMessage = require("../models/pmschema");
 const User = require("../models/user.model");
+const Blog = require("../models/blogs.model");
 
 // Separate runtime memory for private chat users
 const activeUsers = {}; // For blog discussions
@@ -21,6 +22,17 @@ module.exports = (io) => {
         .sort({ createdAt: 1 })
         .limit(50);
 
+      // Format messages with like data
+      const formattedMessages = previousMessages.map(msg => ({
+        _id: msg._id,
+        content: msg.content,
+        user: msg.user,
+        createdAt: msg.createdAt,
+        likedBy: msg.likedBy || [],
+        likes: (msg.likedBy || []).length,
+        replyTo: msg.replyTo || null
+      }));
+
       if (!activeUsers[blogId]) activeUsers[blogId] = [];
       
       const existingUser = activeUsers[blogId].find(u => u.userId === user._id);
@@ -36,12 +48,21 @@ module.exports = (io) => {
         existingUser.socketId = socket.id;
       }
 
-      socket.emit("load_messages", previousMessages);
+      // Update blog's discussion lastActivity and add participant
+      await Blog.findByIdAndUpdate(
+        blogId,
+        {
+          $set: { 'discussion.lastActivity': new Date() },
+          $addToSet: { 'discussion.participants': user._id }
+        }
+      );
+
+      socket.emit("load_messages", formattedMessages);
       io.to(blogId).emit("update_active_users", activeUsers[blogId]);
     });
 
     socket.on("send_message", async (data) => {
-      const { blogId, message, user } = data;
+      const { blogId, message, user, replyTo } = data;
       if (!blogId || !message?.trim()) return;
 
       try {
@@ -54,8 +75,18 @@ module.exports = (io) => {
             avatar: user.avatar,
             role: user.role || 'Member'
           },
+          replyTo: replyTo || null,
           createdAt: new Date()
         });
+
+        // Update blog's discussion lastActivity and add participant
+        await Blog.findByIdAndUpdate(
+          blogId,
+          {
+            $set: { 'discussion.lastActivity': new Date() },
+            $addToSet: { 'discussion.participants': user._id }
+          }
+        );
 
         const formattedMessage = {
           id: newMessage._id.toString(),
@@ -65,6 +96,7 @@ module.exports = (io) => {
           text: newMessage.content,
           time: newMessage.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           userId: newMessage.user._id,
+          replyTo: newMessage.replyTo,
           blogId
         };
 
@@ -72,6 +104,30 @@ module.exports = (io) => {
       } catch (err) {
         console.error("Error saving message:", err);
         socket.emit("error", { message: "Failed to send message" });
+      }
+    });
+
+    // Handle message likes
+    socket.on("like_message", async (data) => {
+      const { blogId, messageId, userId, action } = data;
+      if (!blogId || !messageId || !userId) return;
+
+      try {
+        // Update message likes in database
+        const updateOperation = action === 'like'
+          ? { $addToSet: { likedBy: userId } }
+          : { $pull: { likedBy: userId } };
+
+        await messageModel.findByIdAndUpdate(messageId, updateOperation);
+
+        // Broadcast like update to all users in the room
+        io.to(blogId).emit("message_liked", {
+          messageId,
+          userId,
+          action
+        });
+      } catch (err) {
+        console.error("Error updating message like:", err);
       }
     });
 

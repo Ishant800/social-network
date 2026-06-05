@@ -59,6 +59,7 @@ function Signin() {
   };
 
   return (
+<<<<<<< Updated upstream
     <div className="min-h-screen flex bg-white">
       {/* Left Section - Logo & Minimal Content */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-8 bg-gray-50 border-r border-gray-200">
@@ -183,6 +184,81 @@ function Signin() {
       </div>
     </div>
   );
+=======
+  <AuthLayout
+    heading="Welcome Back"
+    subheading="Continue your journey and stay connected with your network."
+  >
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign In</h2>
+      <p className="text-xs text-gray-600">Welcome back to your account</p>
+    </div>
+
+    <form className="space-y-3" onSubmit={handleSubmit}>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className={inputCls(errors.email)}
+        />
+        {errors.email && <p className="text-xs text-red-600 mt-0.5">{errors.email}</p>}
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          className={inputCls(errors.password)}
+        />
+        {errors.password && <p className="text-xs text-red-600 mt-0.5">{errors.password}</p>}
+      </div>
+
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="remember"
+            className="h-3.5 w-3.5 accent-teal-600 rounded border-gray-300"
+          />
+          <label htmlFor="remember" className="ml-1.5 text-gray-600 cursor-pointer">
+            Remember me
+          </label>
+        </div>
+        <a href="#forgot" className="text-teal-600 hover:text-teal-700 font-medium">
+          Forgot?
+        </a>
+      </div>
+
+      {isError && (
+        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {message}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full bg-teal-600 text-white py-2 rounded text-sm font-medium hover:bg-teal-700 transition disabled:opacity-60 mt-4"
+      >
+        {isLoading ? 'Signing in...' : 'Sign In'}
+      </button>
+
+      <p className="text-center text-xs text-gray-600 mt-4">
+        Don&apos;t have an account?
+        <Link to="/signup" className="ml-1 font-semibold text-teal-600 hover:text-teal-700">
+          Sign up
+        </Link>
+      </p>
+    </form>
+  </AuthLayout>
+);
+>>>>>>> Stashed changes
 }
 
 export default Signin;

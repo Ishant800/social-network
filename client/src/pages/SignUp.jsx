@@ -69,7 +69,17 @@ function Signup() {
       email: email.trim().toLowerCase(),
       password,
     };
+<<<<<<< Updated upstream
     dispatch(signup(formData));
+=======
+    try {
+      await dispatch(signup(formData)).unwrap();
+      dispatch(reset());
+      navigate('/');
+    } catch {
+      // Errors are surfaced via Redux (isError / message)
+    }
+>>>>>>> Stashed changes
   };
 
   return (

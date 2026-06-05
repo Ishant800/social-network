@@ -2,49 +2,104 @@ const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
 const PostLike = require('../models/post-like.model');
 const BlogLike = require('../models/blog-like.model');
+const User = require('../models/user.model');
 
-// Helper function for seeded random (for consistent randomization within a request)
-function seededRandom(seed) {
-  const x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
-}
-
-// Helper function for fuzzy tag matching (case-insensitive, partial match)
-function calculateTagMatch(postTag, userInterest) {
-  const tagLower = postTag.toLowerCase().trim();
-  const interestLower = userInterest.toLowerCase().trim();
+function calculateFreshnessBonus(createdAt) {
+  const now = Date.now();
+  const ageMs = now - new Date(createdAt).getTime();
+  const ageHours = ageMs / (1000 * 60 * 60);
+  const ageDays = ageHours / 24;
   
-  // Exact match
-  if (tagLower === interestLower) return 10;
-  
-  // One contains the other (min 4 chars)
-  if (tagLower.length >= 4 && interestLower.length >= 4) {
-    if (tagLower.includes(interestLower) || interestLower.includes(tagLower)) {
-      return 7;
-    }
-  }
-  
-  // Check if 4-5 consecutive characters match
-  if (tagLower.length >= 4 && interestLower.length >= 4) {
-    for (let i = 0; i <= tagLower.length - 4; i++) {
-      const substring = tagLower.substring(i, i + 5);
-      if (interestLower.includes(substring)) {
-        return 5;
-      }
-    }
-  }
-  
+  if (ageHours <= 1) return 50;
+  if (ageHours <= 6) return 40;
+  if (ageHours <= 24) return 30;
+  if (ageDays <= 3) return 20;
+  if (ageDays <= 7) return 10;
   return 0;
 }
 
-// Get posts feed
+// Calculate post score based on interests, following, engagement, and freshness
+function calculatePostScore(post, user, userId) {
+  let interestScore = 0;
+  let followingBonus = 0;
+  let engagementBonus = 0;
+  const freshnessBonus = calculateFreshnessBonus(post.createdAt);
+  
+  // Interest Score (Most Important)
+  const userInterestScores = user.interestScores || new Map();
+  
+  // Category match
+  if (post.category && userInterestScores.get(post.category)) {
+    interestScore += userInterestScores.get(post.category);
+  }
+  
+  // Tag matches
+  if (post.tags && post.tags.length > 0) {
+    post.tags.forEach(tag => {
+      if (userInterestScores.get(tag)) {
+        interestScore += userInterestScores.get(tag);
+      }
+    });
+  }
+  
+  // Following Bonus
+  if (user.following && user.following.some(f => String(f) === String(post.author))) {
+    followingBonus = 100;
+  }
+  
+  // Engagement Bonus (scaled down to prevent viral domination)
+  const postEngagement = post.engagementScore || 0;
+  engagementBonus = postEngagement * 0.3;
+  
+  // Final Score
+  const finalScore = interestScore + followingBonus + engagementBonus + freshnessBonus;
+  
+  return {
+    finalScore,
+    interestScore,
+    followingBonus,
+    engagementBonus,
+    freshnessBonus
+  };
+}
+
+// Apply diversity layer to prevent category repetition
+function applyDiversityLayer(posts) {
+  const diversePosts = [];
+  const categoryTracker = [];
+  const MAX_CONSECUTIVE = 3;
+  
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i];
+    const category = post.category;
+    
+    // Check last 3 posts
+    const recentCategories = categoryTracker.slice(-MAX_CONSECUTIVE);
+    const sameCategory = recentCategories.filter(c => c === category).length;
+    
+    if (sameCategory >= MAX_CONSECUTIVE) {
+      // Find next post from different category
+      const differentPost = posts.slice(i).find(p => p.category !== category);
+      if (differentPost) {
+        // Swap posts
+        const idx = posts.indexOf(differentPost);
+        [posts[i], posts[idx]] = [posts[idx], posts[i]];
+      }
+    }
+    
+    diversePosts.push(posts[i]);
+    categoryTracker.push(posts[i].category);
+  }
+  
+  return diversePosts;
+}
+
 const getPostsFeed = async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * limit;
 
+    const userId = req.user?.id;
+
+<<<<<<< Updated upstream
     // Get user's interests for personalized feed
     let userInterests = [];
     let hasInterests = false;
@@ -142,58 +197,171 @@ const getPostsFeed = async (req, res) => {
       
       likes.forEach(like => {
         userReactions[String(like.postId)] = like.reactionType;
+=======
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required"
+>>>>>>> Stashed changes
       });
     }
 
-    // Format posts with clean author data
-    const postsWithLikes = posts.map(post => {
-      const { user, interestScore, viralScore, finalScore, isRelevant, ...postData } = post;
-      const userReaction = userReactions[String(postData._id)] || null;
-      
-      return {
-        _id: postData._id,
-        content: postData.content,
-        media: postData.media,
-        tags: postData.tags,
-        likesCount: postData.likesCount || 0,
-        reactions: postData.reactions || {},
-        commentsCount: postData.commentsCount || 0,
-        createdAt: postData.createdAt,
-        isLiked: !!userReaction,
-        userReaction,
-        author: {
-          userId: user?._id,
-          username: user?.username,
-          fullName: user?.profile?.fullName || user?.username,
-          avatar: user?.profile?.avatar?.url || null
+    const user = await User.findById(userId)
+      .select("preferences.interests")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    const interests =
+      user.preferences?.interests || [];
+
+    if (interests.length === 0) {
+      return res.status(200).json({
+        success: true,
+        posts: [],
+        hasInterests: false,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          hasMore: false
         }
-      };
-    });
+      });
+    }
 
-    const total = await Post.countDocuments({ isPublic: true });
-    const hasMore = skip + posts.length < total;
+    const posts = await Post.find({
+      visibility: "public",
+      status: "active",
 
-    res.json({
+      $or: [
+        {
+          category: {
+            $in: interests
+          }
+        },
+        {
+          tags: {
+            $in: interests
+          }
+        }
+      ]
+    })
+      .populate(
+        "author",
+        "_id username profile.fullName profile.avatar"
+      )
+      .sort({
+        createdAt: -1
+      })
+      .limit(10)
+      .lean();
+
+    let userReactions = {};
+
+    if (posts.length > 0) {
+
+      const likes = await PostLike.find({
+        userId,
+        postId: {
+          $in: posts.map(p => p._id)
+        }
+      })
+      .select("postId reactionType")
+      .lean();
+
+      likes.forEach(like => {
+        userReactions[
+          String(like.postId)
+        ] = like.reactionType;
+      });
+    }
+
+    const formattedPosts =
+      posts.map(post => {
+
+        const userReaction =
+          userReactions[
+            String(post._id)
+          ] || null;
+
+        return {
+
+          _id: post._id,
+
+          content: post.content,
+
+          media: post.media,
+
+          category: post.category,
+
+          tags: post.tags,
+
+          likesCount:
+            post.totalReactions || 0,
+
+          reactions:
+            post.reactions || {},
+
+          commentsCount:
+            post.stats?.comments || 0,
+
+          createdAt:
+            post.createdAt,
+
+          isLiked:
+            !!userReaction,
+
+          userReaction,
+
+          author: {
+            userId:
+              post.author?._id,
+
+            username:
+              post.author?.username,
+
+            fullName:
+              post.author?.profile?.fullName ||
+              post.author?.username,
+
+            avatar:
+              post.author?.profile?.avatar?.url ||
+              null
+          }
+        };
+      });
+
+    return res.status(200).json({
       success: true,
-      posts: postsWithLikes,
-      hasInterests, // Send this to frontend
+      items: formattedPosts,
+      hasInterests: true,
       pagination: {
-        page,
-        limit,
-        total,
-        hasMore
+        page: 1,
+        limit: 10,
+        total: formattedPosts.length,
+        hasMore: false
       }
     });
 
   } catch (error) {
-    console.error('Get posts feed error:', error);
-    res.status(500).json({
+
+    console.error(
+      "Get posts feed error:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
-      error: 'Failed to load posts feed'
+      error: "Failed to load feed",
+      message: error.message
     });
   }
 };
-
 // Get blogs feed
 const getBlogsFeed = async (req, res) => {
   try {
@@ -232,6 +400,7 @@ const getBlogsFeed = async (req, res) => {
         coverImage: blogData.coverImage,
         readTime: blogData.readTime,
         category: blogData.category,
+        tags: blogData.tags,
         likesCount: blogData.stats?.likes || 0,
         commentsCount: blogData.stats?.comments || 0,
         views: blogData.stats?.views || 0,
@@ -252,12 +421,13 @@ const getBlogsFeed = async (req, res) => {
 
     res.json({
       success: true,
-      blogs: blogsWithLikes,
-      pagination: {
-        page,
-        limit,
+      items: blogsWithLikes,
+      page,
+      hasMore,
+      meta: {
         total,
-        hasMore
+        returned: blogsWithLikes.length,
+        feedType: 'blogs'
       }
     });
 
@@ -270,7 +440,86 @@ const getBlogsFeed = async (req, res) => {
   }
 };
 
+/**
+ * Update user interest scores based on interaction
+ * Called when user interacts with content
+ */
+const updateInterestScores = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { action, category, tags, reactionType } = req.body;
+
+    if (!action || !category) {
+      return res.status(400).json({
+        success: false,
+        error: 'Action and category are required'
+      });
+    }
+
+    // Define score increments based on action
+    const scoreMap = {
+      view: 1,
+      like: 5,
+      love: 8,
+      haha: 4,
+      wow: 6,
+      sad: 3,
+      angry: 3,
+      comment: 10,
+      bookmark: 15,
+      share: 20
+    };
+
+    // Use reactionType if provided, otherwise use action
+    const scoreAction = reactionType || action;
+    const increment = scoreMap[scoreAction] || 1;
+
+    // Get current user
+    const user = await User.findById(userId).select('interestScores');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Initialize interestScores if needed
+    if (!user.interestScores) {
+      user.interestScores = new Map();
+    }
+
+    // Update category score
+    const currentCategoryScore = user.interestScores.get(category) || 0;
+    user.interestScores.set(category, currentCategoryScore + increment);
+
+    // Update tag scores
+    if (tags && Array.isArray(tags)) {
+      tags.forEach(tag => {
+        const currentTagScore = user.interestScores.get(tag) || 0;
+        user.interestScores.set(tag, currentTagScore + increment);
+      });
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Interest scores updated',
+      interestScores: Object.fromEntries(user.interestScores)
+    });
+
+  } catch (error) {
+    console.error('Update interest scores error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update interest scores',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   getPostsFeed,
-  getBlogsFeed
+  getBlogsFeed,
+  updateInterestScores
 };

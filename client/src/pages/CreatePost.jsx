@@ -5,6 +5,29 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createpost } from '../features/post/postSlice';
 import CATEGORIES from '../constants/categories';
 
+// Tag suggestions based on category
+const getTagSuggestions = (category) => {
+  const suggestions = {
+    'Programming': ['JavaScript', 'Python', 'React', 'Node.js', 'Web Development', 'Backend', 'Frontend', 'Full-Stack'],
+    'AI': ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'Neural Networks', 'Data Science'],
+    'Technology': ['Startup', 'Innovation', 'Tech Trends', 'Software', 'Hardware', 'Cloud'],
+    'Business': ['Entrepreneurship', 'Strategy', 'Marketing', 'Finance', 'Leadership', 'Growth'],
+    'Startups': ['Funding', 'MVP', 'Product', 'Scaling', 'Team', 'Pitch'],
+    'Finance': ['Investment', 'Crypto', 'Stock Market', 'Economics', 'Banking', 'Trading'],
+    'Science': ['Research', 'Physics', 'Chemistry', 'Biology', 'Discovery', 'Experiment'],
+    'Education': ['Learning', 'Tutorial', 'Course', 'Skill', 'Development', 'Training'],
+    'Gaming': ['Console', 'PC Gaming', 'Mobile Games', 'Esports', 'Game Dev', 'Streaming'],
+    'Sports': ['Fitness', 'Training', 'Athletes', 'Competition', 'Health', 'Wellness'],
+    'Movies': ['Cinema', 'Reviews', 'Production', 'Acting', 'Directors', 'Series'],
+    'Music': ['Production', 'Artists', 'Concerts', 'Genres', 'Streaming', 'Cover'],
+    'Travel': ['Adventure', 'Destinations', 'Culture', 'Photography', 'Budget', 'Guides'],
+    'Lifestyle': ['Wellness', 'Fashion', 'Food', 'Home', 'Mindfulness', 'Hobbies'],
+    'Health': ['Fitness', 'Nutrition', 'Mental Health', 'Wellness', 'Medical', 'Exercise'],
+    'Politics': ['News', 'Policy', 'Elections', 'Government', 'Activism', 'Opinion']
+  };
+  return suggestions[category] || [];
+};
+
 export default function CreatePostPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -28,8 +51,10 @@ export default function CreatePostPage() {
       </div>
     );
   const [content, setContent] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(''); // Single category
+  const [selectedTags, setSelectedTags] = useState([]); // Tags array
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showTagsPicker, setShowTagsPicker] = useState(false);
   const [media, setMedia] = useState([]);
   const [isPublic, setIsPublic] = useState(true);
 
@@ -48,18 +73,22 @@ export default function CreatePostPage() {
   );
 
   const toggleCategory = (category) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : prev.length < 3
-        ? [...prev, category]
+    setSelectedCategory(category);
+    setShowCategoryPicker(false); // Close picker after selecting
+  };
+
+  const toggleTag = (tag) => {
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : prev.length < 5
+        ? [...prev, tag]
         : prev
     );
   };
 
-  // MEDIA HANDLER
+  // MEDIA HANDLER - Store files for upload
   const handleMediaChange = (e) => {
-
     const files = Array.from(e.target.files || []);
     const remainingSlots = 5 - media.length;
 
@@ -68,30 +97,31 @@ export default function CreatePostPage() {
       return;
     }
 
-    const newMedia = files.slice(0, remainingSlots).map(file => ({
+    const newMediaPreviews = files.slice(0, remainingSlots).map(file => ({
       file,
-      preview: URL.createObjectURL(file)
+      preview: URL.createObjectURL(file),
     }));
 
-    setMedia(prev => [...prev, ...newMedia]);
+    setMedia(prev => [...prev, ...newMediaPreviews]);
   };
 
   const removeMedia = (index) => {
-    URL.revokeObjectURL(media[index].preview);
+    const mediaItem = media[index];
+    URL.revokeObjectURL(mediaItem.preview);
     setMedia(prev => prev.filter((_, i) => i !== index));
   };
 
-  // DISCARD
   const handleDiscard = () => {
+    media.forEach(({ preview }) => URL.revokeObjectURL(preview));
     setContent('');
-    setSelectedCategories([]);
+    setSelectedCategory('');
+    setSelectedTags([]);
     setMedia([]);
     navigate('/');
   };
 
-  // SUBMIT
+  // SUBMIT - Send FormData with files
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     if (!content.trim() && media.length === 0) {
@@ -99,21 +129,37 @@ export default function CreatePostPage() {
       return;
     }
 
+    if (!selectedCategory) {
+      alert('Please select a category');
+      return;
+    }
+
+    if (selectedTags.length === 0) {
+      alert('Please add at least one tag');
+      return;
+    }
+
+    // Send FormData with files
     const formData = new FormData();
-
     formData.append('content', content);
-    formData.append('tags', selectedCategories.join(','));
-    formData.append('isPublic', isPublic);
-
+    formData.append('category', selectedCategory);
+    formData.append('tags', selectedTags.join(','));
+    
     media.forEach(({ file }) => {
-      formData.append('media', file);
+      formData.append('files', file);
     });
 
     try {
       await dispatch(createpost(formData)).unwrap();
-      handleDiscard();
+      media.forEach(({ preview }) => URL.revokeObjectURL(preview));
+      setContent('');
+      setSelectedCategory('');
+      setSelectedTags([]);
+      setMedia([]);
+      navigate('/');
     } catch (err) {
       console.error(err);
+      alert('Failed to create post');
     }
   };
 
@@ -125,42 +171,42 @@ export default function CreatePostPage() {
   }, [media]);
 
   return (
-    <div className="min-h-full bg-[#f5f7f9]">
+    <div className="min-h-full bg-slate-100">
 
       {/* HEADER */}
     
-      <div className="sticky top-0 z-10 border-b border-slate-200 bg-[#f5f7f9]/95 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-100/95 backdrop-blur">
 
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-2">
 
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="rounded-xl p-2 transition hover:bg-white"
+            className="rounded-lg p-1.5 transition hover:bg-slate-200"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <ArrowLeft className="w-3.5 h-3.5 text-black" />
           </button>
 
-          <h1 className="text-sm font-semibold text-slate-800">
+          <h1 className="text-xs font-semibold text-black">
             Create Post
           </h1>
 
-          <div className="w-8"></div>
+          <div className="w-6"></div>
 
         </div>
 
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-5 pb-24">
+      <div className="mx-auto max-w-2xl px-3 py-3 pb-20">
 
         {/* Greeting */}
 
-        <div className="mb-4 flex items-center gap-2 px-1">
-          <Sparkles className="w-4 h-4 text-indigo-500"/>
-          <p className="text-sm text-slate-700 font-medium">{greeting}</p>
+        <div className="mb-3 flex items-center gap-2 px-0.5">
+          <Sparkles className="w-3 h-3 text-blue-600"/>
+          <p className="text-xs text-black font-medium">{greeting}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-sm bg-slate-50 p-5 shadow-sm md:p-6">
+        <form onSubmit={handleSubmit} className="space-y-3 rounded-lg bg-white p-3 shadow-sm border border-slate-200">
 
           {/* CONTENT */}
 
@@ -168,64 +214,41 @@ export default function CreatePostPage() {
             value={content}
             onChange={(e)=>setContent(e.target.value)}
             placeholder="Share something..."
-            rows={10}
-            className="w-full resize-none rounded-sm border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#4e44d4]"
+            rows={6}
+            className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-xs text-black outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-200 bg-slate-50 placeholder:text-slate-500"
           />
 
-          {/* CATEGORIES */}
-          <div className="space-y-2">
+          {/* CATEGORY - SINGLE SELECT */}
+          <div className="space-y-1.5">
             <button
               type="button"
               onClick={() => setShowCategoryPicker(!showCategoryPicker)}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#4e44d4] hover:text-[#4e44d4]"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-black transition hover:border-blue-400 hover:bg-slate-50 w-full justify-between"
             >
-              <Tag className="w-4 h-4" />
-              Add Categories {selectedCategories.length > 0 && `(${selectedCategories.length}/3)`}
+              <span className="flex items-center gap-2">
+                <Tag className="w-3 h-3" />
+                {selectedCategory ? selectedCategory : 'Select Category'}
+              </span>
             </button>
-
-            {/* Selected Categories */}
-            {selectedCategories.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedCategories.map(category => (
-                  <span
-                    key={category}
-                    className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700"
-                  >
-                    {category}
-                    <button
-                      type="button"
-                      onClick={() => toggleCategory(category)}
-                      className="hover:text-blue-900"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
 
             {/* Category Picker */}
             {showCategoryPicker && (
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <p className="text-xs text-slate-500 mb-3">
-                  Select up to 3 categories (helps users discover your post)
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-600 mb-2">
+                  Select one category (required)
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {CATEGORIES.map(category => {
-                    const isSelected = selectedCategories.includes(category);
-                    const isDisabled = !isSelected && selectedCategories.length >= 3;
+                    const isSelected = selectedCategory === category;
                     return (
                       <button
                         key={category}
                         type="button"
-                        onClick={() => !isDisabled && toggleCategory(category)}
-                        disabled={isDisabled}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                        onClick={() => toggleCategory(category)}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${
                           isSelected
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : isDisabled
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-slate-100 text-black hover:bg-slate-200'
                         }`}
                       >
                         {category}
@@ -237,25 +260,124 @@ export default function CreatePostPage() {
             )}
           </div>
 
+          {/* TAGS - MULTIPLE SELECT */}
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => setShowTagsPicker(!showTagsPicker)}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-black transition hover:border-blue-400 hover:bg-slate-50 w-full justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <Tag className="w-3 h-3" />
+                Add Tags {selectedTags.length > 0 && `(${selectedTags.length}/5)`}
+              </span>
+            </button>
+
+            {/* Selected Tags */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedTags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className="hover:text-green-900"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Tags Picker */}
+            {showTagsPicker && (
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-600 mb-2">
+                  Add up to 5 tags (helps categorize your post)
+                </p>
+                <div className="space-y-2">
+                  {/* Popular tags suggestion based on category */}
+                  {selectedCategory && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-700 mb-1.5">Suggested for {selectedCategory}:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {getTagSuggestions(selectedCategory).map(tag => {
+                          const isSelected = selectedTags.includes(tag);
+                          const isDisabled = !isSelected && selectedTags.length >= 5;
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => !isDisabled && toggleTag(tag)}
+                              disabled={isDisabled}
+                              className={`px-1.5 py-0.5 rounded-full text-xs font-medium transition ${
+                                isSelected
+                                  ? 'bg-green-600 text-white hover:bg-green-700'
+                                  : isDisabled
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  : 'bg-slate-100 text-black hover:bg-slate-200'
+                              }`}
+                            >
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Or create custom tags */}
+                  <div>
+                    <p className="text-xs font-medium text-slate-700 mb-1">Or add custom tags:</p>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        id="customTagInput"
+                        placeholder="Enter tag and press Enter"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && e.target.value.trim()) {
+                            const newTag = e.target.value.trim();
+                            if (!selectedTags.includes(newTag) && selectedTags.length < 5) {
+                              toggleTag(newTag);
+                              e.target.value = '';
+                            }
+                            e.preventDefault();
+                          }
+                        }}
+                        className="flex-1 rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* MEDIA PREVIEW */}
 
           {media.length > 0 && (
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2">
 
               {media.map((item,index)=>(
                 <div
                   key={index}
-                  className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100"
+                  className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 border border-slate-200"
                 >
-                  <img src={item.preview} className="w-full h-full object-cover" />
+                  <img src={item.preview} className="w-full h-full object-cover" alt="" />
 
+                  {/* Remove button */}
                   <button
                     type="button"
                     onClick={()=>removeMedia(index)}
-                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                    className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 transition"
                   >
-                    <X className="w-3 h-3"/>
+                    <X className="w-2.5 h-2.5"/>
                   </button>
 
                 </div>
@@ -269,11 +391,11 @@ export default function CreatePostPage() {
 
           {media.length < 5 && (
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
 
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#4e44d4] hover:text-[#4e44d4]">
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-black transition hover:border-blue-400 hover:bg-slate-50">
 
-                <Image className="w-4 h-4"/>
+                <Image className="w-3 h-3"/>
 
                 Add Photo
 
@@ -287,7 +409,7 @@ export default function CreatePostPage() {
 
               </label>
 
-              <span className="text-xs text-slate-400 ml-auto">
+              <span className="text-xs text-slate-500 ml-auto">
                 {media.length}/5
               </span>
 
@@ -297,14 +419,14 @@ export default function CreatePostPage() {
 
           {/* SIMPLE PRIVACY */}
 
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-xs text-black bg-slate-50">
             <div className="flex items-center gap-2">
               {isPublic
-                ? <span className="flex items-center gap-1.5">
-                    <Globe className="w-4 h-4"/> Public post
+                ? <span className="flex items-center gap-1">
+                    <Globe className="w-3 h-3"/> Public
                   </span>
-                : <span className="flex items-center gap-1.5">
-                    <Lock className="w-4 h-4"/> Private post
+                : <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3"/> Private
                   </span>
               }
             </div>
@@ -313,18 +435,18 @@ export default function CreatePostPage() {
               type="checkbox"
               checked={isPublic}
               onChange={()=>setIsPublic(!isPublic)}
-              className="h-4 w-4 accent-[#4e44d4]"
+              className="h-3 w-3 accent-blue-600"
             />
           </div>
 
           {/* ACTION BUTTONS */}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-1">
 
             <button
               type="button"
               onClick={handleDiscard}
-              className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-black transition hover:bg-slate-100"
             >
               Discard
             </button>
@@ -332,7 +454,7 @@ export default function CreatePostPage() {
             <button
               type="submit"
               disabled={isLoading || (!content.trim() && media.length===0)}
-              className="flex-1 rounded-xl bg-[#02a7ed] py-3 text-sm font-semibold text-white transition hover:bg-[#4339bb] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-lg bg-teal-600 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? "Posting..." : "Post"}
             </button>

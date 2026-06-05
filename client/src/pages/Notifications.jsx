@@ -14,6 +14,10 @@ const getNotificationIcon = (type) => {
       return <UserPlus className="w-4 h-4 text-green-500" />;
     case 'profile_incomplete':
       return <AlertCircle className="w-4 h-4 text-orange-500" />;
+    case 'discussion_ping':
+      return <Bell className="w-4 h-4 text-purple-500" />;
+    case 'system':
+      return <Bell className="w-4 h-4 text-teal-600" />;
     default:
       return <Bell className="w-4 h-4 text-gray-500" />;
   }
@@ -31,6 +35,10 @@ const getNotificationMessage = (notification) => {
       return `${actorName} started following you`;
     case 'profile_incomplete':
       return notification.message || 'Complete your profile to help others connect with you better!';
+    case 'discussion_ping':
+      return `${actorName} ${notification.message || 'invited you to join a discussion'}`;
+    case 'system':
+      return notification.message || 'System notification';
     default:
       return 'New notification';
   }
@@ -62,8 +70,13 @@ function NotificationItem({ notification, onMarkRead, onNavigate }) {
       setIsMarking(false);
     }
     
-    if (notification.type === 'profile_incomplete') {
+    // Handle system notification - navigate to settings
+    if (notification.type === 'system') {
+      onNavigate('/settings');
+    } else if (notification.type === 'profile_incomplete') {
       onNavigate('/profile/edit');
+    } else if (notification.type === 'discussion_ping' && notification.blog) {
+      onNavigate(`/discussionroom/${notification.blog}`);
     } else if (notification.post) {
       onNavigate(`/post/${notification.post}`);
     } else if (notification.blog) {
@@ -73,8 +86,8 @@ function NotificationItem({ notification, onMarkRead, onNavigate }) {
     }
   };
 
-  const actorAvatar = notification.type === 'profile_incomplete' 
-    ? `https://ui-avatars.com/api/?name=System&background=f97316&color=ffffff`
+  const actorAvatar = notification.type === 'profile_incomplete' || notification.type === 'system'
+    ? `https://ui-avatars.com/api/?name=System&background=0d9488&color=ffffff`
     : notification.actor?.profile?.avatar?.url || 
       `https://ui-avatars.com/api/?name=${encodeURIComponent(notification.actor?.username || 'User')}&background=3b82f6&color=ffffff`;
 

@@ -8,12 +8,21 @@ import NotificationManager from '../notifications/NotificationManager';
 export default function Layout({ children }) {
   const { pathname } = useLocation();
 
+<<<<<<< Updated upstream
   const isAuthPage = pathname === '/login' || pathname === '/signup';
+=======
+  const isAuthPage =
+    pathname === '/login' || pathname === '/signup';
+>>>>>>> Stashed changes
   const isFeedPage = pathname === '/';
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
                      pathname === '/friendsexplore';
+<<<<<<< Updated upstream
+=======
+  const isConfessionsArea = pathname === '/confessions';
+>>>>>>> Stashed changes
   
   // Show right sidebar on home, explore, and profile pages
   const showRightSidebar = isFeedPage || pathname === '/explore' || pathname.startsWith('/profile/');

@@ -5,6 +5,7 @@ const {
   getNotifications,
   markAllRead,
   markOneRead,
+  pingAuthor,
 } = require('../controllers/notification.controller');
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.get('/stream',        verifyToken, streamNotifications);
 router.get('/',              verifyToken, getNotifications);
 router.put('/read',          verifyToken, markAllRead);
 router.put('/:id/read',      verifyToken, markOneRead);
+router.post('/ping-author',  verifyToken, pingAuthor);
 
 module.exports = router;

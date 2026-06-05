@@ -6,6 +6,11 @@ import bookmarkReducer from "../features/bookmarks/bookmarkSlice"
 import notificationReducer from "../features/notifications/notificationSlice"
 import commentReducer from "../features/comments/commentSlice"
 import messageReducer from "../features/messages/messageSlice"
+<<<<<<< Updated upstream
+=======
+import confessionReducer from "../features/confession/confessionSlice"
+import discussionReducer from "../features/discussions/discussionSlice"
+>>>>>>> Stashed changes
 
 export const store = configureStore({
     reducer:{
@@ -15,6 +20,12 @@ export const store = configureStore({
         bookmarks: bookmarkReducer,
         notifications: notificationReducer,
         comments: commentReducer,
+<<<<<<< Updated upstream
         messages: messageReducer
+=======
+        messages: messageReducer,
+        confession: confessionReducer,
+        discussions: discussionReducer,
+>>>>>>> Stashed changes
     }
 })
