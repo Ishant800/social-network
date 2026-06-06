@@ -1,6 +1,6 @@
 import API from "../../api/axios";
 
-const getSuggestions = async (limit = 10) => {
+const getSuggestions = async (limit = 15) => {
   const response = await API.get(`/user/usersuggestions?limit=${limit}`);
   return response.data.data;
 };

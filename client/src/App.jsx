@@ -25,10 +25,7 @@ import CreateBlog from './pages/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
 import MessageSystem from './pages/Chat';
 import SearchPage from './pages/Search';
-<<<<<<< Updated upstream
-=======
 import Confessions from './pages/Confessions';
->>>>>>> Stashed changes
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -46,13 +43,9 @@ export default function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-<<<<<<< Updated upstream
-    const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-=======
     const isAuthPage =
       location.pathname === '/login' ||
       location.pathname === '/signup';
->>>>>>> Stashed changes
     if (token && !isAuthPage) {
    
       dispatch(getMe())
@@ -76,13 +69,6 @@ export default function App() {
   // Show loading spinner
   if (loading) {
     return (
-<<<<<<< Updated upstream
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <img src={logo} alt="Logo" className="h-50 w-auto mx-auto mb-6" />
-              <div className='h-20 w-20 b-2 '></div>    
-              
-=======
       <div className="min-h-dvh flex flex-col items-center justify-center gap-8 bg-gradient-to-b from-teal-50/40 via-white to-slate-50 px-6">
         <div className="animate-fade-up text-center">
           <div className="relative mx-auto mb-6 h-20 w-20">
@@ -96,7 +82,6 @@ export default function App() {
           </div>
           <p className="font-display text-sm font-semibold text-slate-800">Loading your space</p>
           <p className="mt-1 text-xs text-slate-500">Fetching profile and notifications…</p>
->>>>>>> Stashed changes
         </div>
       </div>
     );
@@ -127,10 +112,7 @@ export default function App() {
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
-<<<<<<< Updated upstream
-=======
         <Route path="/confessions" element={<ProtectedRoute><Confessions /></ProtectedRoute>} />
->>>>>>> Stashed changes
       </Routes>
     </Layout>
   );

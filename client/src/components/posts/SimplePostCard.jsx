@@ -52,18 +52,12 @@ export default function SimplePostCard({ post }) {
   const hoverTimer = useRef(null);
 
   const isBookmarked = bookmarkIds.includes(postId);
-<<<<<<< Updated upstream
-  const authorName   = post.author?.fullName || post.author?.username || 'Unknown';
-  const authorAvatar = post.author?.avatar ||
-    `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
-=======
   const authorName = post.author?.fullName || post.author?.username || 'Unknown';
   
   // Handle avatar - can be string URL or object with .url property
   const authorAvatar = typeof post.author?.avatar === 'string' 
     ? post.author.avatar 
     : post.author?.avatar?.url || ANONYMOUS_AVATAR;
->>>>>>> Stashed changes
 
   const isOwner = currentUser && (
     post.author?.userId === currentUser._id ||
@@ -214,28 +208,18 @@ export default function SimplePostCard({ post }) {
   if (deleted) return null;
 
   return (
-<<<<<<< Updated upstream
-    <article className="bg-white rounded-lg border border-gray-200 p-4">
-=======
     <article className="bg-white rounded-sm p-4 sm:p-5 border border-gray-200 transition hover:border-gray-300">
->>>>>>> Stashed changes
 
       {/* Author Info */}
       <div className="flex items-center gap-3 mb-3">
         <img 
           src={authorAvatar} 
-<<<<<<< Updated upstream
-          alt={authorName} 
-          className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
-          onClick={(e) => {
-=======
 
           className="h-10 w-10 cursor-pointer rounded-full object-cover bg-gray-100"
           onError={(e) => {
             e.target.src = ANONYMOUS_AVATAR;
           }}
           onClick={(e) => {   
->>>>>>> Stashed changes
             e.stopPropagation();
             navigate(`/profile/${post.author?.userId || post.user?._id || post.user}`);
           }}
@@ -294,11 +278,7 @@ export default function SimplePostCard({ post }) {
 
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-<<<<<<< Updated upstream
-            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-=======
             <span className="text-xs font-medium text-black">
->>>>>>> Stashed changes
               #{post.tags[0]}
             </span>
           </div>
@@ -380,13 +360,8 @@ export default function SimplePostCard({ post }) {
                   key={type}
                   onClick={(e) => handleReact(e, type)}
                   title={label}
-<<<<<<< Updated upstream
-                  className={`relative group flex items-center justify-center w-12 h-12 rounded-full ${bg} hover:scale-125 transition-all duration-200 ${
-                    userReaction === type ? 'scale-125 ring-2 ring-blue-400' : ''
-=======
                   className={`relative group flex items-center justify-center w-8 h-8 rounded-full ${bg} hover:scale-110 transition-all duration-200 ${
                     userReaction === type ? 'scale-110 ring-1 ring-teal-400' : ''
->>>>>>> Stashed changes
                   }`}
                 >
                   <span className="text-base leading-none">{emoji}</span>
@@ -425,11 +400,7 @@ export default function SimplePostCard({ post }) {
           onClick={handleBookmark}
           className="h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50"
         >
-<<<<<<< Updated upstream
-          <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : 'text-gray-500'}`} />
-=======
           <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-teal-600 text-teal-600' : 'text-slate-500'}`} />
->>>>>>> Stashed changes
         </button>
       </div>
     </article>

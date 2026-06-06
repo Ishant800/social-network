@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import SimplePostCard from '../components/posts/SimplePostCard';
 import BlogCard from '../components/blogs/BlogCard';
 import PostSkeleton from '../components/skeletons/PostSkeleton';
 import { getFeed, resetFeed, setLikedPosts } from '../features/post/postSlice';
-<<<<<<< Updated upstream
-import { Sparkles } from 'lucide-react';
-
-const feedTabs = ['Posts', 'Blogs', 'Discussions'];
-
-=======
 import { fetchActiveDiscussions } from '../features/discussions/discussionSlice';
 import { MessagesSquare, Sparkles, Users, MessageCircle, Clock } from 'lucide-react';
 
@@ -30,7 +24,6 @@ const formatTimeAgo = (date) => {
   return `${Math.floor(diffHours / 24)}d ago`;
 };
 
->>>>>>> Stashed changes
 export default function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -46,6 +39,7 @@ export default function Home() {
   const isFirstMount = useRef(true);
 
   const feedType = activeTab === 'Blogs' ? 'blogs' : 'posts';
+  const isDiscussionsTab = activeTab === 'Discussions';
 
   // Check if user has interests
   const hasInterests = user?.preferences?.interests && user.preferences.interests.length > 0;
@@ -69,14 +63,11 @@ export default function Home() {
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-<<<<<<< Updated upstream
-=======
     if (tab === 'Discussions') {
       dispatch(resetFeed());
       dispatch(fetchActiveDiscussions());
       return;
     }
->>>>>>> Stashed changes
     const newFeedType = tab === 'Blogs' ? 'blogs' : 'posts';
     dispatch(getFeed({ feedType: newFeedType, page: 1, append: false, force: false }));
   };
@@ -117,16 +108,9 @@ export default function Home() {
   }
 
   return (
-<<<<<<< Updated upstream
-    <div className="max-w-2xl mx-auto">
-      {/* Interest Banner for users without interests */}
-      {showInterestBanner && !hasInterests && (
-        <div className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-=======
     <div className="max-w-2xl mx-auto space-y-5">
       {showInterestBanner && !hasInterests && !isDiscussionsTab && (
         <div className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/90 to-white p-4 sm:p-5">
->>>>>>> Stashed changes
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
             <div className="flex-1">
@@ -153,21 +137,12 @@ export default function Home() {
         </div>
       )}
 
-<<<<<<< Updated upstream
-      {/* Filter Tabs */}
-      <div className="flex gap-1 border-b border-gray-100 mb-4">
-=======
       <div className="flex gap-1 border-b border-gray-200">
->>>>>>> Stashed changes
         {feedTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => handleTabChange(tab)}
-<<<<<<< Updated upstream
-            className={`px-4 py-2 text-sm font-medium transition-all ${
-=======
             className={`px-4 py-3 text-sm font-medium transition-all ${
->>>>>>> Stashed changes
               activeTab === tab
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -178,10 +153,6 @@ export default function Home() {
         ))}
       </div>
 
-<<<<<<< Updated upstream
-      {/* Loading State */}
-      {isLoading && (
-=======
       {isDiscussionsTab && (
         <>
           {discussionsLoading && (
@@ -267,7 +238,6 @@ export default function Home() {
       )}
 
       {!isDiscussionsTab && isLoading && (
->>>>>>> Stashed changes
         <div className="space-y-4">
           <PostSkeleton />
           <PostSkeleton />

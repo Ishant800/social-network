@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageCircle, Loader2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { Search, Bell, MessageCircle, Loader2, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import { logout } from '../../features/auth/authSlice';
 import Logo from '../../assets/logo.png';
 import API from '../../api/axios';
 
@@ -11,8 +12,11 @@ export default function Navbar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const searchRef = useRef(null);
+  const profileDropdownRef = useRef(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.notifications);
@@ -52,6 +56,9 @@ export default function Navbar() {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSuggestions(false);
       }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setShowProfileDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -73,6 +80,19 @@ export default function Navbar() {
     setShowSearchMobile(false);
   };
 
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
+  const getUserAvatar = () => {
+    return user?.profile?.avatar?.url || user?.profile?.avatar || 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+  };
+
+  const getUserName = () => {
+    return user?.profile?.fullName || user?.username || 'User';
+  };
+
   const totalResults = (suggestions.users?.length || 0) + (suggestions.posts?.length || 0) + (suggestions.blogs?.length || 0);
 
   return (
@@ -80,10 +100,6 @@ export default function Navbar() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="flex items-center h-16 gap-4">
 
-<<<<<<< Updated upstream
-          {/* Logo */}
-=======
->>>>>>> Stashed changes
           <Link to="/" className="flex items-center shrink-0">
             <img src={Logo} className="h-30 w-50 rounded-xl" alt="Sanjal" />
           </Link>
@@ -98,11 +114,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery.trim().length >= 2 && setShowSuggestions(true)}
-<<<<<<< Updated upstream
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-sm transition-all"
-=======
                 className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200/90 bg-slate-50/80 focus:bg-white focus:border-teal-400/80 text-sm transition-all placeholder:text-slate-400 outline-none"
->>>>>>> Stashed changes
               />
               {loadingSuggestions && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
@@ -257,6 +269,68 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Profile menu"
+              >
+                <img 
+                  src={getUserAvatar()} 
+                  alt={getUserName()}
+                  className="w-12 h-12 rounded-full object-cover border-gray-200"
+                  onError={(e) => {
+                    e.target.src = 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+                  }}
+                />
+                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{getUserName()}</p>
+                    <p className="text-xs text-gray-500 truncate">@{user?.username}</p>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    <Link
+                      to={`/profile/${user?._id}`}
+                      onClick={() => setShowProfileDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>My Profile</span>
+                    </Link>
+
+                    <Link
+                      to="/settings"
+                      onClick={() => setShowProfileDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-t border-gray-100">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>

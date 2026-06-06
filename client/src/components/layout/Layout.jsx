@@ -8,27 +8,54 @@ import NotificationManager from '../notifications/NotificationManager';
 export default function Layout({ children }) {
   const { pathname } = useLocation();
 
-<<<<<<< Updated upstream
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
-=======
   const isAuthPage =
     pathname === '/login' || pathname === '/signup';
->>>>>>> Stashed changes
   const isFeedPage = pathname === '/';
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
                      pathname === '/friendsexplore';
-<<<<<<< Updated upstream
-=======
-  const isConfessionsArea = pathname === '/confessions';
->>>>>>> Stashed changes
+  
+  // Form pages handle their own layout completely
+  const isFormPage = pathname === '/post/create' || 
+                     pathname === '/blog/create' || 
+                     pathname === '/profile/edit' ||
+                     pathname === '/post/edit';
   
   // Show right sidebar on home, explore, and profile pages
   const showRightSidebar = isFeedPage || pathname === '/explore' || pathname.startsWith('/profile/');
 
   // Auth pages - bare, no chrome
   if (isAuthPage) return <>{children}</>;
+
+  // Form pages - render with navbar/sidebars but let pages handle their own content layout
+  if (isFormPage) {
+    return (
+      <div className="min-h-dvh flex flex-col">
+        {/* Fixed Navbar */}
+        <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-gray-100 bg-white/90 backdrop-blur-md">
+          <Navbar />
+        </header>
+
+        {/* Fixed Left Sidebar */}
+        <aside className="hidden lg:block fixed top-16 left-0 w-64 h-[calc(100dvh-4rem)] border-r border-gray-100 overflow-y-auto scrollbar-none z-40">
+          <Sidebar />
+        </aside>
+
+        {/* Main content - form pages handle their own layout */}
+        <main className="flex-1 pt-16 lg:ml-64">
+          {children}
+        </main>
+
+        {/* Mobile bottom nav */}
+        <div className="lg:hidden">
+          <MobileNav />
+        </div>
+
+        <NotificationManager />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh flex flex-col">

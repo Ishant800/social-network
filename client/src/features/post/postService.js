@@ -5,7 +5,7 @@ const normalizePost = (post) => ({
   feedType: 'post',
 });
 
-const fetchFeed = async ({ feedType = 'posts', page = 1, limit = 15 } = {}) => {
+const fetchFeed = async ({ feedType = 'posts', page = 1, limit = 20 } = {}) => {
   const params = new URLSearchParams({ 
     page: String(page),
     limit: String(limit) 

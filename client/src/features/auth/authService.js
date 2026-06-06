@@ -26,13 +26,9 @@ const getMe = async () => {
   return response.data;
 };
 
-<<<<<<< Updated upstream
-export default { signup, login, logout, getMe };
-=======
 export default {
   signup,
   login,
   logout,
   getMe,
 };
->>>>>>> Stashed changes

@@ -99,8 +99,6 @@ textarea {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
-<<<<<<< Updated upstream
-=======
 
 @keyframes spin-slow {
   to {
@@ -154,4 +152,3 @@ textarea {
 .animate-fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }
->>>>>>> Stashed changes

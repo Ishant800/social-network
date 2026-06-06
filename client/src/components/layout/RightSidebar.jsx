@@ -73,32 +73,7 @@ export default function RightSidebar() {
   };
 
   return (
-<<<<<<< Updated upstream
-    <div className="space-y-6 sticky top-20 p-4">
-      {/* Quick Stats */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Activity</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.posts}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Posts</div>
-          </Link>
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.followers}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Followers</div>
-          </Link>
-          <Link to="/profile" className="text-center hover:opacity-70 transition">
-            <div className="text-xl font-bold text-gray-900">{userStats.following}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Following</div>
-          </Link>
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100" />
-
-=======
     <div className="space-y-5 p-4 pb-10">
->>>>>>> Stashed changes
       {/* Who to Follow */}
       {visibleSuggestions.length > 0 && (
         <div>
@@ -150,12 +125,8 @@ export default function RightSidebar() {
                       ) : (
                         <button
                           onClick={() => handleFollow(id)}
-<<<<<<< Updated upstream
-                          className="text-xs font-medium text-blue-600 hover:text-blue-700 transition"
-=======
                           
                           className="text-xs font-semibold bg-slate-50 p-2 rounded-sm text-black  "
->>>>>>> Stashed changes
                         >
                           Follow
                         </button>
@@ -177,14 +148,8 @@ export default function RightSidebar() {
 
       <div className="border-t border-gray-100" />
 
-<<<<<<< Updated upstream
-      {/* This Week Stats */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">This Week</h2>
-=======
       <div className="rounded-2xl p-4">
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">This week</h2>
->>>>>>> Stashed changes
         {loadingStats ? (
           <div className="space-y-2.5">
             {[1, 2, 3, 4].map((i) => (
@@ -221,98 +186,6 @@ export default function RightSidebar() {
         )}
       </div>
 
-<<<<<<< Updated upstream
-      <div className="border-t border-gray-100" />
-
-      {/* Quick Access */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Access</h2>
-        <div className="space-y-1">
-          <Link 
-            to="/bookmarks" 
-            className="flex items-center justify-between py-2 hover:opacity-70 transition group"
-          >
-            <div className="flex items-center gap-2.5">
-              <Bookmark className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Saved Items</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {bookmarks?.length > 0 && (
-                <span className="text-xs text-gray-500">
-                  {bookmarks.length}
-                </span>
-              )}
-              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            </div>
-          </Link>
-
-          <Link 
-            to="/notifications" 
-            className="flex items-center justify-between py-2 hover:opacity-70 transition group"
-          >
-            <div className="flex items-center gap-2.5">
-              <Bell className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Notifications</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">
-                  {unreadCount}
-                </span>
-              )}
-              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            </div>
-          </Link>
-
-          <Link 
-            to="/chats" 
-            className="flex items-center justify-between py-2 hover:opacity-70 transition group"
-          >
-            <div className="flex items-center gap-2.5">
-              <MessageCircle className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-700">Messages</span>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-          </Link>
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100" />
-
-      {/* Create Shortcuts */}
-      <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Create</h2>
-        <div className="space-y-1">
-          <Link 
-            to="/post/create"
-            className="flex items-center gap-2.5 py-2 hover:opacity-70 transition"
-          >
-            <Star className="w-4 h-4 text-blue-500" />
-            <span className="text-sm text-gray-700">Write a Post</span>
-          </Link>
-          <Link 
-            to="/blog/create"
-            className="flex items-center gap-2.5 py-2 hover:opacity-70 transition"
-          >
-            <Star className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm text-gray-700">Write an Article</span>
-          </Link>
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100" />
-
-      {/* Footer */}
-      <div className="pt-2 pb-8">
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
-          <Link to="/terms" className="hover:text-gray-600 transition">Terms</Link>
-          <span>·</span>
-          <Link to="/privacy" className="hover:text-gray-600 transition">Privacy</Link>
-          <span>·</span>
-          <Link to="/about" className="hover:text-gray-600 transition">About</Link>
-          <span>·</span>
-          <Link to="/help" className="hover:text-gray-600 transition">Help</Link>
-=======
       <div className="px-1 pt-2">
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
           <Link to="/terms" className="transition hover:text-teal-700">
@@ -330,7 +203,6 @@ export default function RightSidebar() {
           <Link to="/help" className="transition hover:text-teal-700">
             Help
           </Link>
->>>>>>> Stashed changes
         </div>
         <p className="mt-2 text-xs text-gray-400">© 2024 Social Network</p>
       </div>

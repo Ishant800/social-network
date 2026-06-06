@@ -34,7 +34,6 @@ export default function CreateBlog() {
     categoryName: '',
     tags: '',
     status: 'draft',
-    isFeatured: false,
   });
   const [coverImage, setCoverImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -220,14 +219,17 @@ export default function CreateBlog() {
     formData.append('categoryName', form.categoryName.trim());
     formData.append('tags', form.tags.trim());
     formData.append('status', form.status);
-    formData.append('isFeatured', form.isFeatured);
 
     if (coverImage?.file) {
       formData.append('coverImage', coverImage.file);
     }
 
     try {
-      await API.post('/blog/create', formData);
+      await API.post('/blog/create', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       await dispatch(getMe());
       navigate('/profile');
     } catch (error) {
@@ -373,7 +375,7 @@ export default function CreateBlog() {
                 name="body"
                 value={form.body}
                 onChange={handleChange}
-                placeholder="Write your article here...&#10;&#10;**bold** *italic* `code`&#10;# Heading 1&#10;## Heading 2&#10;- bullet list&#10;> quote&#10;&#10;Double Enter for new paragraph"
+                placeholder="Start writing your article here...&#10;&#10;Use these formatting shortcuts:&#10;**bold text** for bold&#10;*italic text* for italic&#10;`code` for inline code&#10;# Big Heading&#10;## Medium Heading&#10;### Small Heading&#10;- Bullet list item&#10;> Quote or callout&#10;&#10;Press Enter twice for a new paragraph."
                 rows={18}
                 className={`w-full resize-none rounded-xl border px-4 py-3 text-sm leading-7 text-gray-700 font-mono outline-none transition focus:border-blue-500 ${
                   errors.body ? 'border-red-500' : 'border-gray-200'
@@ -397,6 +399,7 @@ export default function CreateBlog() {
                   className="w-full rounded-xl border border-gray-200 py-3 pl-11 pr-4 text-sm text-gray-700 outline-none focus:border-blue-500 transition"
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-400">Popular: Technology, Business, Programming, AI, Design, Lifestyle</p>
             </div>
 
             <div>
@@ -405,10 +408,10 @@ export default function CreateBlog() {
                 name="tags"
                 value={form.tags}
                 onChange={handleChange}
-                placeholder="react, design, frontend (comma separated)"
+                placeholder="react, javascript, tutorial"
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 outline-none focus:border-blue-500 transition"
               />
-              <p className="mt-1 text-xs text-gray-400">Separate tags with commas</p>
+              <p className="mt-1 text-xs text-gray-400">Separate with commas, helps with discoverability</p>
             </div>
           </div>
 
@@ -470,20 +473,6 @@ export default function CreateBlog() {
                     🚀 Publish
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Feature Article</p>
-                  <p className="text-xs text-gray-500">Mark this article as featured</p>
-                </div>
-                <input
-                  type="checkbox"
-                  name="isFeatured"
-                  checked={form.isFeatured}
-                  onChange={handleChange}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
               </div>
 
               <div className="rounded-lg bg-gray-50 p-3">

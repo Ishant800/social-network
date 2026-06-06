@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { signup } from "../features/auth/authSlice";
+import { signup, reset } from "../features/auth/authSlice";
 import logo from "../assets/logo.png";
 
 function Signup() {
@@ -69,9 +69,6 @@ function Signup() {
       email: email.trim().toLowerCase(),
       password,
     };
-<<<<<<< Updated upstream
-    dispatch(signup(formData));
-=======
     try {
       await dispatch(signup(formData)).unwrap();
       dispatch(reset());
@@ -79,7 +76,6 @@ function Signup() {
     } catch {
       // Errors are surfaced via Redux (isError / message)
     }
->>>>>>> Stashed changes
   };
 
   return (

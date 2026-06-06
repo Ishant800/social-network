@@ -3,10 +3,7 @@ import { useSelector } from 'react-redux';
 import {
   Bookmark,
   Compass,
-<<<<<<< Updated upstream
-=======
   VenetianMask,
->>>>>>> Stashed changes
   FileText,
   Home,
   PenSquare,
@@ -70,13 +67,10 @@ export default function Sidebar() {
     { icon: Users,         label: 'Friends',       path: '/friendsexplore'           },
   ];
 
-<<<<<<< Updated upstream
-=======
   const discoverNav = [
     { icon: VenetianMask, label: 'Confessions', path: '/confessions', accent: 'teal' },
   ];
 
->>>>>>> Stashed changes
   const profileNav = [
     { icon: User, label: 'My Profile', path: `/profile/${user?._id || user?.id || ''}` },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
@@ -87,14 +81,6 @@ export default function Sidebar() {
     { icon: FileText,  label: 'Write an Article', path: '/blog/create' },
   ];
 
-<<<<<<< Updated upstream
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
-  };
-
-=======
->>>>>>> Stashed changes
   return (
     <div className="h-full w-60 flex flex-col py-5 px-2">
 
@@ -107,8 +93,6 @@ export default function Sidebar() {
           <NavItem key={item.path} {...item} />
         ))}
 
-<<<<<<< Updated upstream
-=======
         <div className="mt-0">
           {/* <SectionLabel>Anonymous</SectionLabel> */}
           {discoverNav.map((item) => (
@@ -116,7 +100,6 @@ export default function Sidebar() {
           ))}
         </div>
 
->>>>>>> Stashed changes
         {/* Section: Profile */}
         <div className="mt-0">
           {/* <SectionLabel>Profile</SectionLabel> */}
@@ -133,48 +116,10 @@ export default function Sidebar() {
           ))}
         </div>
 
-<<<<<<< Updated upstream
-      {/* ── Divider ─────────────────────────────────────────────────────────── */}
-      <div className="my-4 border-t border-slate-100" />
-
-      {/* ── Bottom ──────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-0.5">
-        <NavItem icon={Settings} label="Settings" path="/settings" />
-
-        {/* Profile card */}
-        <div className="mt-3 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-3 shadow-sm">
-          {/* Avatar row */}
-          <div className="flex items-center gap-2.5">
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-teal-100 shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">
-                {displayName}
-              </p>
-              <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
-                {handle}
-              </p>
-            </div>
-            <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-
-          
-          
-=======
         {/* Section: Settings */}
         <div className="mt-0">
           {/* <SectionLabel>Settings</SectionLabel> */}
           <NavItem icon={Settings} label="Settings" path="/settings" />
->>>>>>> Stashed changes
         </div>
       </nav>
 

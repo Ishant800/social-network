@@ -12,14 +12,9 @@ import {
   Share2,
   Camera,
   UserPlus,
-<<<<<<< Updated upstream
-  UserCheck
-=======
   UserCheck,
-  Lock,
   Send,
   Sparkles,
->>>>>>> Stashed changes
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -71,12 +66,8 @@ export default function Profile() {
     if (isOwnProfile) {
       // Use current user data from Redux
       setProfileData(currentUser);
-<<<<<<< Updated upstream
       setProfilePosts(currentUserPosts || []);
-=======
-      setIsPrivateProfile(Boolean(currentUser?.privacy?.isPrivate));
       fetchMyPosts(); // Fetch own posts
->>>>>>> Stashed changes
     } else {
       fetchUserProfile();
     }
@@ -420,11 +411,7 @@ export default function Profile() {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 shrink-0">
                   {isOwnProfile ? (
-<<<<<<< Updated upstream
-                    <div className="relative">
-=======
                     <div className="relative flex items-center gap-2">
->>>>>>> Stashed changes
                       <button
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="p-2 hover:bg-gray-50 transition-colors"
@@ -665,8 +652,4 @@ export default function Profile() {
       {renderContent()}
     </div>
   );
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes
