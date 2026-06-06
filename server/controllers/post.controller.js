@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Post = require('../models/post.model');
+const PostLike = require('../models/post-like.model');
 const Comment = require('../models/comment.model');
 const User = require('../models/user.model');
 const { sanitizePlainText } = require('../utils/sanitize.util');
@@ -198,17 +199,32 @@ const getPostDetails = async (req, res) => {
       parentComment: null,
     })
       .sort({ createdAt: -1 });
-    const postData = post.toObject();
 
+    const userId = req.user?.id || req.user?._id;
+    let userReaction = null;
+    if (userId) {
+      const like = await PostLike.findOne({ userId, postId }).select('reactionType').lean();
+      userReaction = like?.reactionType || null;
+    }
+
+    const postData = post.toObject();
     postData.id = postData._id;
+    postData.likesCount = postData.totalReactions || postData.likesCount || 0;
+    postData.commentsCount = postData.stats?.comments ?? comments.length;
+    postData.reactions = postData.reactions || {};
+    postData.userReaction = userReaction;
+    postData.isLiked = !!userReaction;
 
     if (postData.author) {
-      postData.author.name = postData.author.profile?.fullName || postData.author.username;
-      postData.author.profileImage = postData.author.profile?.avatar || null;
+      postData.author.userId = postData.author._id;
+      postData.author.fullName = postData.author.profile?.fullName || postData.author.username;
+      postData.author.name = postData.author.fullName;
+      postData.author.avatar = postData.author.profile?.avatar?.url || postData.author.profile?.avatar || null;
+      postData.author.profileImage = postData.author.avatar;
     }
 
     return res.status(200).json({
-      sucess: 'ok',
+      success: true,
       post: postData,
       comments,
     });

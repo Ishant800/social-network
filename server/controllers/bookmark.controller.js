@@ -2,12 +2,17 @@ const Bookmark = require('../models/bookmark.model');
 const Post     = require('../models/post.model');
 const Blog     = require('../models/blogs.model');
 
+const normalizeBookmarkType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'blog' ? 'Blog' : 'Post';
+};
+
 // POST /bookmark/:itemId  — toggle bookmark (add or remove)
 const toggleBookmark = async (req, res) => {
   try {
     const userId = req.user.id;
     const { itemId } = req.params;
-    const type = req.query.type === 'Blog' ? 'Blog' : 'Post';
+    const type = normalizeBookmarkType(req.query.type);
 
     const query = { user: userId, type };
     if (type === 'Post') query.post = itemId;
@@ -17,6 +22,8 @@ const toggleBookmark = async (req, res) => {
 
     if (existing) {
       await existing.deleteOne();
+      const Model = type === 'Post' ? Post : Blog;
+      await Model.findByIdAndUpdate(itemId, { $inc: { 'stats.bookmarks': -1 } });
       return res.json({ success: true, bookmarked: false, message: 'Bookmark removed' });
     }
 
@@ -28,6 +35,8 @@ const toggleBookmark = async (req, res) => {
     if (!exists) return res.status(404).json({ success: false, error: 'Item not found' });
 
     const bookmark = await Bookmark.create(query);
+    const Model = type === 'Post' ? Post : Blog;
+    await Model.findByIdAndUpdate(itemId, { $inc: { 'stats.bookmarks': 1 } });
     return res.status(201).json({ success: true, bookmarked: true, bookmark, message: 'Bookmarked' });
   } catch (err) {
     console.error('toggleBookmark error:', err);
@@ -44,8 +53,8 @@ const getBookmarks = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate({
         path: 'post',
-        select: 'content media tags createdAt user likesCount commentsCount',
-        populate: { path: 'user', select: 'username name profile' },
+        select: 'content media tags createdAt author likesCount totalReactions stats',
+        populate: { path: 'author', select: 'username profile.fullName profile.avatar' },
       })
       .populate({
         path: 'blog',
@@ -53,13 +62,39 @@ const getBookmarks = async (req, res) => {
         populate: { path: 'author', select: 'username name profile' },
       });
 
+    const normalizeAuthor = (author) => {
+      if (!author) return author;
+      const obj = typeof author.toObject === 'function' ? author.toObject() : author;
+      return {
+        ...obj,
+        fullName: obj.profile?.fullName || obj.name || obj.username,
+        avatar: obj.profile?.avatar?.url || obj.profile?.avatar || null,
+      };
+    };
+
     // Flatten into a unified list and attach feedType for PostCard
     const items = bookmarks.map((b) => {
       if (b.type === 'Post' && b.post) {
-        return { ...b.post.toObject(), feedType: 'post', bookmarkId: b._id };
+        const post = b.post.toObject();
+        return {
+          ...post,
+          feedType: 'post',
+          bookmarkId: b._id,
+          likesCount: post.totalReactions || post.likesCount || 0,
+          commentsCount: post.stats?.comments || 0,
+          author: normalizeAuthor(post.author),
+        };
       }
       if (b.type === 'Blog' && b.blog) {
-        return { ...b.blog.toObject(), feedType: 'blog', bookmarkId: b._id };
+        const blog = b.blog.toObject();
+        return {
+          ...blog,
+          feedType: 'blog',
+          bookmarkId: b._id,
+          likesCount: blog.stats?.likes || 0,
+          commentsCount: blog.stats?.comments || 0,
+          author: normalizeAuthor(blog.author),
+        };
       }
       return null;
     }).filter(Boolean);

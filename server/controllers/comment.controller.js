@@ -30,7 +30,8 @@ const createComment = async (req, res) => {
     const userId = req.user.id;
     const postId = req.params.postId;
     const { text } = req.body;
-    const targetType = req.body.targetType === 'Blog' ? 'Blog' : 'Post';
+    const targetType =
+      String(req.body.targetType || '').toLowerCase() === 'blog' ? 'Blog' : 'Post';
     
     // Fetch only needed user fields
     const user = await User.findById(userId)
@@ -112,7 +113,8 @@ const createComment = async (req, res) => {
 const getPostComments = async (req, res) => {
   try {
     const postId = req.params.postId;
-    const targetType = req.query.type === 'Blog' ? 'Blog' : 'Post';
+    const targetType =
+      String(req.query.type || '').toLowerCase() === 'blog' ? 'Blog' : 'Post';
 
     // Get comments
     const comments = await Comment.find({

@@ -5,7 +5,82 @@ const Blog = require("../models/blogs.model");
 
 // Separate runtime memory for private chat users
 const activeUsers = {}; // For blog discussions
-const privateActiveUsers = {}; // For private chat { userId: socketId }
+const privateActiveUsers = {}; // For private chat { userId: Set<socketId> }
+
+const isUserOnline = (userId) => {
+  const sockets = privateActiveUsers[String(userId)];
+  return Boolean(sockets && sockets.size > 0);
+};
+
+const addPrivateSocket = (userId, socketId) => {
+  const key = String(userId);
+  if (!privateActiveUsers[key]) privateActiveUsers[key] = new Set();
+  const wasOffline = privateActiveUsers[key].size === 0;
+  privateActiveUsers[key].add(socketId);
+  return wasOffline;
+};
+
+const removePrivateSocket = (socketId) => {
+  for (const userId of Object.keys(privateActiveUsers)) {
+    if (privateActiveUsers[userId].has(socketId)) {
+      privateActiveUsers[userId].delete(socketId);
+      const isNowOffline = privateActiveUsers[userId].size === 0;
+      if (isNowOffline) delete privateActiveUsers[userId];
+      return { userId, isNowOffline };
+    }
+  }
+  return null;
+};
+
+const emitToUser = (io, userId, event, data) => {
+  const sockets = privateActiveUsers[String(userId)];
+  if (!sockets) return;
+  sockets.forEach((socketId) => io.to(socketId).emit(event, data));
+};
+
+const getFirstSocketId = (userId) => {
+  const sockets = privateActiveUsers[String(userId)];
+  if (!sockets || sockets.size === 0) return null;
+  return [...sockets][0];
+};
+
+const USER_CHAT_FIELDS = 'username profile.fullName profile.avatar lastSeen';
+
+const formatChatUser = (user) => {
+  if (!user) return null;
+  const profile = user.profile || {};
+  const avatar = profile.avatar;
+  return {
+    _id: String(user._id),
+    username: user.username,
+    fullName: profile.fullName || user.username,
+    profile: {
+      fullName: profile.fullName || null,
+      avatar: avatar?.url
+        ? { url: avatar.url, public_id: avatar.public_id || null }
+        : null,
+    },
+    profileImage: avatar?.url ? { url: avatar.url } : null,
+    lastSeen: user.lastSeen || null,
+  };
+};
+
+const formatPrivateMessageUser = (user) => {
+  if (!user) return null;
+  const profile = user.profile || {};
+  const avatarUrl = profile.avatar?.url || null;
+  return {
+    _id: String(user._id),
+    username: user.username,
+    fullName: profile.fullName || user.username,
+    avatar: avatarUrl,
+    profile: {
+      fullName: profile.fullName || null,
+      avatar: profile.avatar || null,
+    },
+    profileImage: avatarUrl ? { url: avatarUrl } : null,
+  };
+};
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
@@ -47,7 +122,7 @@ module.exports = (io) => {
       } else {
         existingUser.socketId = socket.id;
       }
-
+   
       // Update blog's discussion lastActivity and add participant
       await Blog.findByIdAndUpdate(
         blogId,
@@ -100,7 +175,8 @@ module.exports = (io) => {
           blogId
         };
 
-        io.to(blogId).emit("receive_message", formattedMessage);
+        socket.to(blogId).emit("receive_message", formattedMessage);
+        socket.emit("receive_message", formattedMessage);
       } catch (err) {
         console.error("Error saving message:", err);
         socket.emit("error", { message: "Failed to send message" });
@@ -136,26 +212,32 @@ module.exports = (io) => {
     // Register user for private chat
     socket.on("register_private_user", async ({ userId }) => {
       if (!userId) return;
-      privateActiveUsers[userId] = socket.id;
-      
-      // Update user's lastSeen to mark as online
+      const userKey = String(userId);
+      const cameOnline = addPrivateSocket(userKey, socket.id);
+
       await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
-      
-      // Notify all users in their chat list that this user is online
+
       const user = await User.findById(userId).select('chatList');
-      if (user && user.chatList) {
-        user.chatList.forEach(chatUserId => {
-          const chatUserSocketId = privateActiveUsers[chatUserId.toString()];
-          if (chatUserSocketId) {
-            io.to(chatUserSocketId).emit("user_status_changed", { 
-              userId, 
-              isOnline: true 
+      if (user?.chatList?.length) {
+        if (cameOnline) {
+          user.chatList.forEach((chatUserId) => {
+            emitToUser(io, chatUserId, "user_status_changed", {
+              userId: userKey,
+              isOnline: true,
             });
-          }
-        });
+          });
+        }
+
+        const onlineUserIds = user.chatList
+          .map((id) => String(id))
+          .filter((id) => isUserOnline(id));
+
+        socket.emit("online_users_snapshot", { onlineUserIds });
+      } else {
+        socket.emit("online_users_snapshot", { onlineUserIds: [] });
       }
-      
-      console.log(`User ${userId} registered for private chat`);
+
+      console.log(`User ${userKey} registered for private chat`);
     });
 
     // Send private message
@@ -175,35 +257,29 @@ module.exports = (io) => {
         await User.findByIdAndUpdate(from, { $addToSet: { chatList: to } });
         await User.findByIdAndUpdate(to, { $addToSet: { chatList: from } });
 
-        const populatedMessage = await newMessage.populate('from to', 'username profile.avatar');
+        const populatedMessage = await newMessage.populate('from to', USER_CHAT_FIELDS);
 
+        const messageId = String(populatedMessage._id);
         const formattedMessage = {
-          id: populatedMessage._id,
-          from: {
-            _id: populatedMessage.from._id,
-            username: populatedMessage.from.username,
-            avatar: populatedMessage.from.profile?.avatar?.url
-          },
-          to: {
-            _id: populatedMessage.to._id,
-            username: populatedMessage.to.username,
-            avatar: populatedMessage.to.profile?.avatar?.url
-          },
+          id: messageId,
+          _id: messageId,
+          from: formatPrivateMessageUser(populatedMessage.from),
+          to: formatPrivateMessageUser(populatedMessage.to),
           content: populatedMessage.content,
           createdAt: populatedMessage.createdAt,
           read: false,
           delivered: false
         };
 
-        // Send to sender
+        // Confirm to sender only
         socket.emit("private_message_sent", formattedMessage);
 
-        // Send to receiver if online
-        const receiverSocketId = privateActiveUsers[to];
-        if (receiverSocketId) {
+        // Send to receiver if online (never echo back to sender socket)
+        const receiverSocketId = getFirstSocketId(to);
+        const senderSocketId = socket.id;
+        if (receiverSocketId && receiverSocketId !== senderSocketId) {
           io.to(receiverSocketId).emit("receive_private_message", formattedMessage);
-          
-          // Mark as delivered
+
           await PrivateMessage.findByIdAndUpdate(newMessage._id, { delivered: true });
           socket.emit("message_delivered", { messageId: newMessage._id });
         }
@@ -224,13 +300,10 @@ module.exports = (io) => {
         );
 
         // Notify other user that messages were read
-        const otherSocketId = privateActiveUsers[otherUserId];
-        if (otherSocketId) {
-          io.to(otherSocketId).emit("messages_read", { 
-            conversationId, 
-            readBy: userId 
-          });
-        }
+        emitToUser(io, otherUserId, "messages_read", {
+          conversationId,
+          readBy: String(userId),
+        });
       } catch (err) {
         console.error("Error marking messages as read:", err);
       }
@@ -244,9 +317,23 @@ module.exports = (io) => {
         const messages = await PrivateMessage.find({ conversationId })
           .sort({ createdAt: 1 })
           .limit(50)
-          .populate('from to', 'username profile.avatar');
+          .populate('from to', USER_CHAT_FIELDS);
 
-        socket.emit("private_chat_history", messages);
+        const formattedHistory = messages.map((msg) => ({
+          id: String(msg._id),
+          _id: String(msg._id),
+          from: formatPrivateMessageUser(msg.from),
+          to: formatPrivateMessageUser(msg.to),
+          content: msg.content,
+          createdAt: msg.createdAt,
+          read: msg.read,
+          delivered: msg.delivered,
+        }));
+
+        socket.emit("private_chat_history", {
+          otherUserId: String(otherUserId),
+          messages: formattedHistory,
+        });
       } catch (err) {
         console.error("Error getting chat history:", err);
         socket.emit("error", { message: "Failed to load chat history" });
@@ -257,7 +344,7 @@ module.exports = (io) => {
     socket.on("get_chat_list", async ({ userId }) => {
       try {
         const user = await User.findById(userId)
-          .populate('chatList', 'username profile.avatar lastSeen');
+          .populate('chatList', USER_CHAT_FIELDS);
 
         if (!user) return;
 
@@ -275,13 +362,13 @@ module.exports = (io) => {
             });
 
             // Check if user is online (connected in last 30 seconds)
-            const isOnline = privateActiveUsers[chatUser._id.toString()] !== undefined;
+            const isOnline = isUserOnline(chatUser._id);
 
             return {
-              user: chatUser,
+              user: formatChatUser(chatUser),
               lastMessage,
               unreadCount,
-              isOnline
+              isOnline,
             };
           })
         );
@@ -296,10 +383,7 @@ module.exports = (io) => {
     // Typing indicator for private chat
     socket.on("private_typing", ({ from, to, isTyping }) => {
       if (!from || !to) return;
-      const receiverSocketId = privateActiveUsers[to];
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("user_typing", { userId: from, isTyping });
-      }
+      emitToUser(io, to, "user_typing", { userId: String(from), isTyping });
     });
 
     // Handle disconnect
@@ -314,28 +398,19 @@ module.exports = (io) => {
         }
       }
 
-      // Remove from private chat users and update lastSeen
-      for (const userId in privateActiveUsers) {
-        if (privateActiveUsers[userId] === socket.id) {
-          // Update user's lastSeen to mark as offline
-          await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
-          
-          // Notify all users in their chat list that this user is offline
-          const user = await User.findById(userId).select('chatList');
-          if (user && user.chatList) {
-            user.chatList.forEach(chatUserId => {
-              const chatUserSocketId = privateActiveUsers[chatUserId.toString()];
-              if (chatUserSocketId) {
-                io.to(chatUserSocketId).emit("user_status_changed", { 
-                  userId, 
-                  isOnline: false 
-                });
-              }
+      const removed = removePrivateSocket(socket.id);
+      if (removed?.isNowOffline) {
+        const userKey = String(removed.userId);
+        await User.findByIdAndUpdate(userKey, { lastSeen: new Date() });
+
+        const user = await User.findById(userKey).select('chatList');
+        if (user?.chatList?.length) {
+          user.chatList.forEach((chatUserId) => {
+            emitToUser(io, chatUserId, "user_status_changed", {
+              userId: userKey,
+              isOnline: false,
             });
-          }
-          
-          delete privateActiveUsers[userId];
-          break;
+          });
         }
       }
 

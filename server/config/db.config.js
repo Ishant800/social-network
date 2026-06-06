@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
-function getMongoUri() {
-  return (
-    process.env.MONGODB_URI ||
-    process.env.MONGO_URI ||
-    process.env.CNS ||
-    ''
-  );
-}
+// function getMongoUri() {
+//   return (
+//     // process.env.MONGODB_URI ||
+//     // process.env.MONGO_URI ||
+//     process.env.CNS ||
+//     ''
+//   );
+// }
 
 async function connectDb() {
-  const uri = getMongoUri();
+  const uri = "mongodb+srv://ishantkarmacharya_db_user:5JbfKLh9SFwyaSAZ@cluster0.uimpgyf.mongodb.net/?appName=Cluster0";
   try {
     console.log('Connecting to MongoDB...');
     if (!uri || typeof uri !== 'string') {

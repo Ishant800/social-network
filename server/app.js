@@ -4,8 +4,7 @@ const dotenv = require('dotenv');
 
 
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-// dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -88,8 +87,8 @@ const clientDist = path.resolve(__dirname, '../client/dist');
 const API_PREFIXES = [
   '/auth', '/feed', '/post', '/blog', '/user', '/comment', '/likes',
   '/bookmark', '/notifications', '/search', '/recommendation', '/bulk', '/upload', '/health', '/socket.io',
-];
-
+];  
+ 
 // if (fs.existsSync(clientDist)) {
 //   app.use(express.static(clientDist));
 //   // Express 5 does not support app.get('*') — use middleware instead

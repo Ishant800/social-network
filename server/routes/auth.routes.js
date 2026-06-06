@@ -17,12 +17,7 @@ router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
-/**
- * POST /auth/setup-interests
- * Setup user interests after signup
- * Protected: Requires authentication
- * Body: { interests: [String] }
- */
+
 router.post('/setup-interests', verifyToken, setupUserInterests);
 
 module.exports = router;
