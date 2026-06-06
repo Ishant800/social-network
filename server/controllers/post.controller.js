@@ -29,11 +29,7 @@ const INTEREST_CATEGORIES = [
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-<<<<<<< Updated upstream
-    const { content: rawContent, isPublic } = req.body;
-=======
     const { content: rawContent, category, tags } = req.body;
->>>>>>> Stashed changes
     const content = sanitizePlainText(rawContent, 10000);
 
     // Validate category
@@ -60,33 +56,15 @@ const createPost = async (req, res) => {
       });
     }
 
-<<<<<<< Updated upstream
-     let mediaUrls = [];
-    if (req.files && req.files.length > 0) {
-      mediaUrls = req.files.map((file) => ({
-=======
     // Handle media files uploaded via multer (same as blog)
     let mediaArray = [];
     if (req.files && req.files.length > 0) {
       mediaArray = req.files.map(file => ({
->>>>>>> Stashed changes
         url: file.path,
         public_id: file.filename,
       }));
     }
 
-<<<<<<< Updated upstream
-
-    let tagsArray = [];
-
-if (req.body.tags) {
-  if (Array.isArray(req.body.tags)) {
-    tagsArray = req.body.tags;
-  } else {
-    tagsArray = String(req.body.tags)
-      .split(',')
-      .map((t) => t.trim())
-=======
     // Process tags
     let tagsArray = [];
     if (tags) {
@@ -102,13 +80,7 @@ if (req.body.tags) {
     
     tagsArray = tagsArray
       .map((t) => sanitizePlainText(String(t), 48))
->>>>>>> Stashed changes
       .filter(Boolean);
-  }
-}
-tagsArray = tagsArray
-  .map((t) => sanitizePlainText(String(t), 48))
-  .filter(Boolean);
 
     if (tagsArray.length === 0) {
       return res.status(400).json({
@@ -120,12 +92,8 @@ tagsArray = tagsArray
     const post = await Post.create({
       author: userId,
       content,
-<<<<<<< Updated upstream
-      media: mediaUrls,
-=======
       media: mediaArray,
       category,
->>>>>>> Stashed changes
       tags: tagsArray,
       visibility: 'public'
     });
@@ -233,16 +201,10 @@ const getPostDetails = async (req, res) => {
     const postData = post.toObject();
 
     postData.id = postData._id;
-<<<<<<< Updated upstream
-    if (postData.user) {
-      postData.user.name = postData.user.profile?.fullName || postData.user.username;
-      postData.user.profileImage = postData.user.profile?.avatar || null;
-=======
 
     if (postData.author) {
       postData.author.name = postData.author.profile?.fullName || postData.author.username;
       postData.author.profileImage = postData.author.profile?.avatar || null;
->>>>>>> Stashed changes
     }
 
     return res.status(200).json({
@@ -401,22 +363,6 @@ const deletePost = async (req, res) => {
   }
 };
 
-<<<<<<< Updated upstream
-
-   const bulkpostinsert = async(req,res)=>{
-    try {
-      const postdatas = req.body
-      
-       const posts = await Post.insertMany(postdatas)
-       return res.status(200).json({
-        sucess:true,
-        message:"bulk insert sucessfully"
-       })
-    } catch (error) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-   }
-=======
 // Bulk post insert (for testing)
 const bulkpostinsert = async(req, res) => {
   try {
@@ -434,16 +380,11 @@ const bulkpostinsert = async(req, res) => {
   }
 };
 
->>>>>>> Stashed changes
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
   deletePost,
-<<<<<<< Updated upstream
-  bulkpostinsert
-=======
   bulkpostinsert,
->>>>>>> Stashed changes
 };

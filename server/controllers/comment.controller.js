@@ -5,28 +5,22 @@ const User = require('../models/user.model');
 const { sanitizePlainText } = require('../utils/sanitize.util');
 const { pushNotification } = require('./notification.controller');
 
-const serializeComment = (comment) => {
+// Optimized serializer - returns only necessary fields
+const serializeComment = (comment, userDoc = null) => {
   const commentObject = typeof comment.toObject === 'function' ? comment.toObject() : comment;
-  const user = commentObject.user || {};
-
+  
+  // Use userDoc if provided, otherwise use comment.user
+  const user = userDoc || commentObject.user || {};
+  
   return {
     _id: commentObject._id,
-    id: commentObject._id,
-    text: commentObject.content,
     content: commentObject.content,
     createdAt: commentObject.createdAt,
-    updatedAt: commentObject.updatedAt,
     user: {
       _id: user._id,
-      id: user._id,
       username: user.username,
-      name: user.username,
-      profile: {
-        fullName: user.username,
-        avatar: user.avatar ? { url: user.avatar } : null,
-      },
-      profileImage: user.avatar ? { url: user.avatar } : null,
-      avatar: user.avatar ? { url: user.avatar } : null,
+      fullName: user.profile?.fullName || user.username,
+      avatar: user.profile?.avatar?.url || user.avatar || null,
     },
   };
 };
@@ -37,7 +31,10 @@ const createComment = async (req, res) => {
     const postId = req.params.postId;
     const { text } = req.body;
     const targetType = req.body.targetType === 'Blog' ? 'Blog' : 'Post';
-    const user = await User.findById(userId).select('username profile.avatar');
+    
+    // Fetch only needed user fields
+    const user = await User.findById(userId)
+    .select('username profile.fullName profile.avatar');
 
     const cleaned = sanitizePlainText(text, 4000);
     if (!cleaned.trim()) {
@@ -76,12 +73,22 @@ const createComment = async (req, res) => {
       },
     });
 
+    // Update comment count and get updated target
+    let updatedTarget;
     if (targetType === 'Blog') {
-      await Blog.findByIdAndUpdate(postId, { $inc: { 'stats.comments': 1 } });
+      updatedTarget = await Blog.findByIdAndUpdate(
+        postId, 
+        { $inc: { 'stats.comments': 1 } },
+        { new: true }
+      ).select('stats.comments');
       // Notify blog author
       pushNotification({ recipient: targetExists.author, actor: userId, type: 'comment', blog: postId, comment: comment._id });
     } else {
-      await Post.findByIdAndUpdate(postId, { $inc: { 'stats.comments': 1 } });
+      updatedTarget = await Post.findByIdAndUpdate(
+        postId, 
+        { $inc: { 'stats.comments': 1 } },
+        { new: true }
+      ).select('stats.comments');
       // Notify post owner
       pushNotification({ recipient: targetExists.author, actor: userId, type: 'comment', post: postId, comment: comment._id });
     }
@@ -89,7 +96,10 @@ const createComment = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'comment created successfully',
-      comment: serializeComment(comment),
+      comment: serializeComment(comment, user),
+      postId: postId,
+      stats: updatedTarget?.stats,
+      commentsCount: updatedTarget?.stats?.comments || 0
     });
   } catch (error) {
     return res.status(500).json({
@@ -104,16 +114,38 @@ const getPostComments = async (req, res) => {
     const postId = req.params.postId;
     const targetType = req.query.type === 'Blog' ? 'Blog' : 'Post';
 
+    // Get comments
     const comments = await Comment.find({
       'target.type': targetType,
       'target.id': postId,
       parentComment: null,
     })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Extract unique user IDs
+    const userIds = [...new Set(comments.map(c => c.user._id.toString()))];
+    
+    // Fetch user data for all comment authors in one query
+    const users = await User.find({ _id: { $in: userIds } })
+      .select('_id username profile.fullName profile.avatar')
+      .lean();
+    
+    // Create user map for quick lookup
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user._id.toString()] = user;
+    });
+
+    // Serialize comments with fetched user data
+    const serializedComments = comments.map(comment => {
+      const userDoc = userMap[comment.user._id.toString()];
+      return serializeComment(comment, userDoc);
+    });
 
     return res.status(200).json({
       success: true,
-      comments: comments.map(serializeComment),
+      comments: serializedComments,
     });
   } catch (error) {
     return res.status(500).json({
@@ -155,10 +187,13 @@ const updateComment = async (req, res) => {
     comment.content = text.trim();
     await comment.save();
 
+    // Fetch user data
+    const user = await User.findById(userId).select('username profile.fullName profile.avatar');
+
     return res.status(200).json({
       success: true,
       message: 'Comment updated successfully',
-      comment: serializeComment(comment),
+      comment: serializeComment(comment, user),
     });
   } catch (error) {
     return res.status(500).json({
@@ -188,6 +223,7 @@ const deleteComment = async (req, res) => {
         message: 'Unauthorized',
       });
     }
+    
     await Comment.findByIdAndDelete(commentId);
 
     if (comment.target?.type === 'Blog') {

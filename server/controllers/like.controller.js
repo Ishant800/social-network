@@ -32,7 +32,7 @@ const reactToPost = async (req, res) => {
     const { postId } = req.params;
     const { reactionType = 'like' } = req.body;
 
-    const post = await Post.findById(postId).populate('user', '_id');
+    const post = await Post.findById(postId).populate('author', '_id');
     if (!post) return res.status(404).json({ success: false, error: 'Post not found' });
 
     const existing = await PostLike.findOne({ userId, postId });
@@ -42,7 +42,19 @@ const reactToPost = async (req, res) => {
         // Same reaction → remove it (toggle off)
         await PostLike.findOneAndDelete({ userId, postId });
         const { reactions, likesCount } = await syncReactions(postId);
-        return res.json({ success: true, postId, likesCount, reactions, userReaction: null });
+        
+        // Get updated stats
+        const updatedPost = await Post.findById(postId).select('stats totalReactions likesCount reactions');
+        
+        return res.json({ 
+          success: true, 
+          postId, 
+          likesCount, 
+          reactions, 
+          userReaction: null,
+          stats: updatedPost?.stats,
+          totalReactions: updatedPost?.totalReactions
+        });
       } else {
         // Different reaction → update it
         existing.reactionType = reactionType;
@@ -53,13 +65,25 @@ const reactToPost = async (req, res) => {
       await PostLike.create({ userId, postId, reactionType });
 
       // Notify post owner
-      if (String(post.user._id) !== String(userId)) {
-        await pushNotification({ recipient: post.user._id, actor: userId, type: 'like', post: postId });
+      if (String(post.author._id) !== String(userId)) {
+        await pushNotification({ recipient: post.author._id, actor: userId, type: 'like', post: postId });
       }
     }
 
     const { reactions, likesCount } = await syncReactions(postId);
-    return res.json({ success: true, postId, likesCount, reactions, userReaction: reactionType });
+    
+    // Get updated stats
+    const updatedPost = await Post.findById(postId).select('stats totalReactions likesCount reactions');
+    
+    return res.json({ 
+      success: true, 
+      postId, 
+      likesCount, 
+      reactions, 
+      userReaction: reactionType,
+      stats: updatedPost?.stats,
+      totalReactions: updatedPost?.totalReactions
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -74,7 +98,18 @@ const removeReaction = async (req, res) => {
     await PostLike.findOneAndDelete({ userId, postId });
     const { reactions, likesCount } = await syncReactions(postId);
 
-    res.json({ success: true, postId, likesCount, reactions, userReaction: null });
+    // Get updated stats
+    const updatedPost = await Post.findById(postId).select('stats totalReactions likesCount reactions');
+
+    res.json({ 
+      success: true, 
+      postId, 
+      likesCount, 
+      reactions, 
+      userReaction: null,
+      stats: updatedPost?.stats,
+      totalReactions: updatedPost?.totalReactions
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -111,9 +146,13 @@ const likeBlog = async (req, res) => {
     // Create like
     await BlogLike.create({ userId, blogId });
 
-    // Update blog likes count
+    // Update blog likes count and get updated document
     const likesCount = await BlogLike.countDocuments({ blogId });
-    await Blog.findByIdAndUpdate(blogId, { 'stats.likes': likesCount });
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      blogId, 
+      { 'stats.likes': likesCount },
+      { new: true }
+    ).select('stats');
 
     // Send notification to blog author (if not liking own blog)
     if (String(blog.author._id) !== String(userId)) {
@@ -130,7 +169,8 @@ const likeBlog = async (req, res) => {
       message: 'Blog liked',
       postId: blogId,
       likesCount,
-      isLiked: true
+      isLiked: true,
+      stats: updatedBlog?.stats
     });
   } catch (error) {
     console.error('Like blog error:', error);
@@ -153,16 +193,21 @@ const unlikeBlog = async (req, res) => {
     // Delete like
     await like.deleteOne();
 
-    // Update blog likes count
+    // Update blog likes count and get updated document
     const likesCount = await BlogLike.countDocuments({ blogId });
-    await Blog.findByIdAndUpdate(blogId, { 'stats.likes': likesCount });
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      blogId, 
+      { 'stats.likes': likesCount },
+      { new: true }
+    ).select('stats');
 
     res.json({
       success: true,
       message: 'Blog unliked',
       postId: blogId,
       likesCount,
-      isLiked: false
+      isLiked: false,
+      stats: updatedBlog?.stats
     });
   } catch (error) {
     console.error('Unlike blog error:', error);
