@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   unreadCount: 0,
   chatList: [],
+  onlineUsers: {},
 };
 
 const messageSlice = createSlice({
@@ -27,15 +28,42 @@ const messageSlice = createSlice({
     resetUnreadCount: (state) => {
       state.unreadCount = 0;
     },
+    setOnlineUsersFromChatList: (state, action) => {
+      state.onlineUsers = action.payload;
+    },
+    setUserOnlineStatus: (state, action) => {
+      const { userId, isOnline } = action.payload;
+      const id = String(userId);
+      if (isOnline) {
+        state.onlineUsers[id] = true;
+      } else {
+        delete state.onlineUsers[id];
+      }
+    },
+    markChatAsRead: (state, action) => {
+      const chatUserId = String(action.payload);
+      state.chatList = state.chatList.map((chat) =>
+        String(chat.user._id) === chatUserId
+          ? { ...chat, unreadCount: 0 }
+          : chat,
+      );
+      state.unreadCount = state.chatList.reduce(
+        (total, chat) => total + (chat.unreadCount || 0),
+        0,
+      );
+    },
   },
 });
 
-export const { 
-  setUnreadCount, 
-  setChatList, 
-  incrementUnreadCount, 
-  decrementUnreadCount, 
-  resetUnreadCount 
+export const {
+  setUnreadCount,
+  setChatList,
+  incrementUnreadCount,
+  decrementUnreadCount,
+  resetUnreadCount,
+  setOnlineUsersFromChatList,
+  setUserOnlineStatus,
+  markChatAsRead,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

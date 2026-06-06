@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, VenetianMask } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { submitConfession, clearConfessionError } from '../../features/confession/confessionSlice';
+import { submitConfession, clearConfessionError } from '@/features/confession/confessionSlice';
 
 const CATEGORIES = [
   'Relationships', 'College Life', 'Funny', 'Unpopular Opinions',

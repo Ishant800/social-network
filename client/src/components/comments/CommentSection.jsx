@@ -2,7 +2,7 @@ import { Loader2, Pencil, Send, Trash2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 function formatCommentTime(value) {
   if (!value) return '';
@@ -110,7 +110,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
 
   const startEditing = (comment) => {
     setEditingId(comment._id || comment.id);
-    setEditingText(comment.text || '');
+    setEditingText(comment.content || comment.text || '');
     setOpenMenuId(null);
   };
 
@@ -210,15 +210,11 @@ export default function CommentSection({ postId, compact = false, targetType = '
           const isOwner = user?._id === comment.user?._id || user?.id === comment.user?._id;
           const isEditing = editingId === commentId;
           
-          // Get avatar with proper fallback chain
-          const avatar = 
-            comment.user?.profile?.avatar?.url ||
-            comment.user?.profileImage?.url ||
-            comment.user?.avatar?.url ||
-            'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
-          
-          const userName = comment.user?.profile?.fullName || comment.user?.name || comment.user?.username || 'User';
-          const userId = comment.user?._id || comment.user?.id;
+          // Get user data with optimized structure
+          const userName = comment.user?.fullName || comment.user?.username || 'User';
+          const avatar = comment.user?.avatar || 'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
+          const userId = comment.user?._id;
+          const commentContent = comment.content || comment.text || '';
 
           return (
             <div key={commentId} className="border-b border-gray-200 pb-4">
@@ -313,7 +309,7 @@ export default function CommentSection({ postId, compact = false, targetType = '
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm leading-6 text-gray-700">{comment.text}</p>
+                    <p className="mt-3 text-sm leading-6 text-gray-700">{commentContent}</p>
                   )}
                 </div>
               </div>

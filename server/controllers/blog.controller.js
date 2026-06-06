@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Blog = require('../models/blogs.model');
+const BlogLike = require('../models/blog-like.model');
 const User = require('../models/user.model');
 const Message = require('../models/message.model');
 const { cloudinary } = require('../config/cloudinary.config');
@@ -54,13 +55,32 @@ const calculateReadTime = (content) => {
 };
 
 const normalizeContent = ({ content, body }) => {
+  const parseJsonContent = (value) => {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
   if (content && typeof content === 'object' && !Array.isArray(content)) {
     return content;
   }
 
+  const parsedContent = parseJsonContent(content);
+  if (parsedContent) return parsedContent;
+
   if (typeof content === 'string' && content.trim()) {
     return { body: content.trim() };
   }
+
+  const parsedBody = parseJsonContent(body);
+  if (parsedBody) return parsedBody;
 
   if (typeof body === 'string' && body.trim()) {
     return { body: body.trim() };
@@ -237,6 +257,16 @@ const getBlogDetails = async (req, res) => {
     await Blog.findByIdAndUpdate(blog._id, { $inc: { 'stats.views': 1 } });
     blog.stats = { ...blog.stats, views: (blog.stats?.views || 0) + 1 };
 
+    const userId = req.user?.id || req.user?._id;
+    let isLiked = false;
+    if (userId) {
+      isLiked = !!(await BlogLike.findOne({ userId, blogId: blog._id }).select('_id').lean());
+    }
+
+    blog.isLiked = isLiked;
+    blog.likesCount = blog.stats?.likes || 0;
+    blog.commentsCount = blog.stats?.comments || 0;
+
     return res.status(200).json({ success: true, blog });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -363,10 +393,12 @@ const deleteBlog = async (req, res) => {
 
 const getActiveDiscussions = async (req, res) => {
   try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const hours = Math.min(Math.max(parseInt(req.query.hours, 10) || 168, 1), 720);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 20);
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
 
     const activity = await Message.aggregate([
-      { $match: { createdAt: { $gte: twentyFourHoursAgo } } },
+      { $match: { createdAt: { $gte: since } } },
       {
         $group: {
           _id: '$blogId',
@@ -376,7 +408,7 @@ const getActiveDiscussions = async (req, res) => {
         },
       },
       { $sort: { lastActivity: -1 } },
-      { $limit: 50 },
+      { $limit: limit * 3 },
     ]);
 
     const activityByBlogId = new Map(activity.map((item) => [String(item._id), item]));
@@ -414,7 +446,8 @@ const getActiveDiscussions = async (req, res) => {
           lastActivity: active?.lastActivity || blog.createdAt,
         };
       })
-      .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+      .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity))
+      .slice(0, limit);
 
     return res.status(200).json({ success: true, discussions });
   } catch (error) {

@@ -3,8 +3,8 @@ import { Heart, MessageCircle, Mic, Send } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import AnonymousAvatar from './AnonymousAvatar';
 import VoicePlayer from './VoicePlayer';
-import { loadComments, submitReply } from '../../features/confession/confessionSlice';
-import confessionService from '../../features/confession/confessionService';
+import { loadComments, submitReply } from '@/features/confession/confessionSlice';
+import confessionService from '@/features/confession/confessionService';
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date)) / 1000);

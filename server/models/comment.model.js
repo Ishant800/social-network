@@ -30,12 +30,7 @@ const CommentSchema = new mongoose.Schema({
 
   stats: {
     likes: { type: Number, default: 0 }
-<<<<<<< Updated upstream
-  }
-
-=======
   },
->>>>>>> Stashed changes
 }, { timestamps: true });
 
 module.exports = mongoose.model('Comment', CommentSchema);

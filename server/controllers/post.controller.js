@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Post = require('../models/post.model');
+const PostLike = require('../models/post-like.model');
 const Comment = require('../models/comment.model');
 const User = require('../models/user.model');
 const { sanitizePlainText } = require('../utils/sanitize.util');
@@ -29,11 +30,7 @@ const INTEREST_CATEGORIES = [
 const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-<<<<<<< Updated upstream
-    const { content: rawContent, isPublic } = req.body;
-=======
     const { content: rawContent, category, tags } = req.body;
->>>>>>> Stashed changes
     const content = sanitizePlainText(rawContent, 10000);
 
     // Validate category
@@ -60,33 +57,15 @@ const createPost = async (req, res) => {
       });
     }
 
-<<<<<<< Updated upstream
-     let mediaUrls = [];
-    if (req.files && req.files.length > 0) {
-      mediaUrls = req.files.map((file) => ({
-=======
     // Handle media files uploaded via multer (same as blog)
     let mediaArray = [];
     if (req.files && req.files.length > 0) {
       mediaArray = req.files.map(file => ({
->>>>>>> Stashed changes
         url: file.path,
         public_id: file.filename,
       }));
     }
 
-<<<<<<< Updated upstream
-
-    let tagsArray = [];
-
-if (req.body.tags) {
-  if (Array.isArray(req.body.tags)) {
-    tagsArray = req.body.tags;
-  } else {
-    tagsArray = String(req.body.tags)
-      .split(',')
-      .map((t) => t.trim())
-=======
     // Process tags
     let tagsArray = [];
     if (tags) {
@@ -102,13 +81,7 @@ if (req.body.tags) {
     
     tagsArray = tagsArray
       .map((t) => sanitizePlainText(String(t), 48))
->>>>>>> Stashed changes
       .filter(Boolean);
-  }
-}
-tagsArray = tagsArray
-  .map((t) => sanitizePlainText(String(t), 48))
-  .filter(Boolean);
 
     if (tagsArray.length === 0) {
       return res.status(400).json({
@@ -120,12 +93,8 @@ tagsArray = tagsArray
     const post = await Post.create({
       author: userId,
       content,
-<<<<<<< Updated upstream
-      media: mediaUrls,
-=======
       media: mediaArray,
       category,
->>>>>>> Stashed changes
       tags: tagsArray,
       visibility: 'public'
     });
@@ -173,14 +142,14 @@ const getMyPost = async (req, res) => {
 
     if (!posts || posts.length === 0) {
       return res.status(200).json({
-        sucess: 'ok',
+        success: true,
         totalCount: 0,
         message: 'no post available',
       });
     }
 
     return res.status(200).json({
-      sucess: 'ok',
+      success: true,
       totalCount: posts.length,
       posts: posts.map((post) => {
         const postData = post.toObject();
@@ -219,7 +188,7 @@ const getPostDetails = async (req, res) => {
     );
     if (!post) {
       return res.status(400).json({
-        sucess: 'ok',
+        success: true,
         message: 'post not found ',
       });
     }
@@ -230,23 +199,32 @@ const getPostDetails = async (req, res) => {
       parentComment: null,
     })
       .sort({ createdAt: -1 });
-    const postData = post.toObject();
 
+    const userId = req.user?.id || req.user?._id;
+    let userReaction = null;
+    if (userId) {
+      const like = await PostLike.findOne({ userId, postId }).select('reactionType').lean();
+      userReaction = like?.reactionType || null;
+    }
+
+    const postData = post.toObject();
     postData.id = postData._id;
-<<<<<<< Updated upstream
-    if (postData.user) {
-      postData.user.name = postData.user.profile?.fullName || postData.user.username;
-      postData.user.profileImage = postData.user.profile?.avatar || null;
-=======
+    postData.likesCount = postData.totalReactions || postData.likesCount || 0;
+    postData.commentsCount = postData.stats?.comments ?? comments.length;
+    postData.reactions = postData.reactions || {};
+    postData.userReaction = userReaction;
+    postData.isLiked = !!userReaction;
 
     if (postData.author) {
-      postData.author.name = postData.author.profile?.fullName || postData.author.username;
-      postData.author.profileImage = postData.author.profile?.avatar || null;
->>>>>>> Stashed changes
+      postData.author.userId = postData.author._id;
+      postData.author.fullName = postData.author.profile?.fullName || postData.author.username;
+      postData.author.name = postData.author.fullName;
+      postData.author.avatar = postData.author.profile?.avatar?.url || postData.author.profile?.avatar || null;
+      postData.author.profileImage = postData.author.avatar;
     }
 
     return res.status(200).json({
-      sucess: 'ok',
+      success: true,
       post: postData,
       comments,
     });
@@ -401,22 +379,6 @@ const deletePost = async (req, res) => {
   }
 };
 
-<<<<<<< Updated upstream
-
-   const bulkpostinsert = async(req,res)=>{
-    try {
-      const postdatas = req.body
-      
-       const posts = await Post.insertMany(postdatas)
-       return res.status(200).json({
-        sucess:true,
-        message:"bulk insert sucessfully"
-       })
-    } catch (error) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-   }
-=======
 // Bulk post insert (for testing)
 const bulkpostinsert = async(req, res) => {
   try {
@@ -434,16 +396,11 @@ const bulkpostinsert = async(req, res) => {
   }
 };
 
->>>>>>> Stashed changes
 module.exports = {
   createPost,
   getMyPost,
   getPostDetails,
   updatePost,
   deletePost,
-<<<<<<< Updated upstream
-  bulkpostinsert
-=======
   bulkpostinsert,
->>>>>>> Stashed changes
 };

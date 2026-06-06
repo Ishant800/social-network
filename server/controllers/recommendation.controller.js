@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Post = require('../models/post.model');
 const Blog = require('../models/blogs.model');
+const PostLike = require('../models/post-like.model');
+const BlogLike = require('../models/blog-like.model');
 const User = require('../models/user.model');
 const UserInteraction = require('../models/userinteractions.model');
 
@@ -259,7 +261,7 @@ const calculateInterestMatchScore = (user, category, tags) => {
  * If content author is followed by current user: +100
  */
 const calculateFollowingBonus = (userId, authorId, userFollowing) => {
-  if (userFollowing && userFollowing.includes(authorId.toString())) {
+  if (userFollowing?.some((id) => String(id) === String(authorId))) {
     return 100;
   }
   return 0;
@@ -308,6 +310,282 @@ const calculateFinalScore = (
 // ====================================
 // FEED GENERATION
 // ====================================
+
+const getUserInterestKeys = (user) => {
+  const fromScores = user.interestScores
+    ? [...user.interestScores.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([key]) => key)
+    : [];
+  const fromPrefs = user.preferences?.interests || [];
+  return [...new Set([...fromPrefs, ...fromScores])];
+};
+
+const scoreContentPool = (user, items, contentType) =>
+  items
+    .map((item) => {
+      const scores = calculateFinalScore(user, item, false, contentType);
+      return { ...item, ...scores, contentType };
+    })
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+const pickMixedFeed = (interestPool, followingPool, discoveryPool, limit) => {
+  const interestTarget = Math.round(limit * 0.7);
+  const followingTarget = Math.round(limit * 0.2);
+  const discoveryTarget = Math.max(limit - interestTarget - followingTarget, 0);
+
+  const seen = new Set();
+  const result = [];
+
+  const take = (pool, max) => {
+    let taken = 0;
+    for (const item of pool) {
+      if (taken >= max || result.length >= limit) return;
+      const id = String(item._id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      result.push(item);
+      taken += 1;
+    }
+  };
+
+  take(interestPool, interestTarget);
+  take(followingPool, followingTarget);
+  take(discoveryPool, discoveryTarget);
+
+  for (const pool of [interestPool, followingPool, discoveryPool]) {
+    for (const item of pool) {
+      if (result.length >= limit) break;
+      const id = String(item._id);
+      if (!seen.has(id)) {
+        seen.add(id);
+        result.push(item);
+      }
+    }
+  }
+
+  return result;
+};
+
+const formatExplorePost = (post, userReaction = null) => ({
+  _id: post._id,
+  content: post.content,
+  media: post.media || [],
+  category: post.category,
+  tags: post.tags || [],
+  likesCount: post.totalReactions || 0,
+  reactions: post.reactions || {},
+  commentsCount: post.stats?.comments || 0,
+  createdAt: post.createdAt,
+  isLiked: !!userReaction,
+  userReaction,
+  feedType: 'post',
+  author: {
+    userId: post.author?._id,
+    username: post.author?.username,
+    fullName: post.author?.profile?.fullName || post.author?.username,
+    avatar: post.author?.profile?.avatar?.url || null,
+  },
+});
+
+const formatExploreBlog = (blog, isLiked = false) => ({
+  _id: blog._id,
+  title: blog.title,
+  summary: blog.summary,
+  coverImage: blog.coverImage,
+  readTime: blog.readTime,
+  category: blog.category,
+  tags: blog.tags || [],
+  likesCount: blog.stats?.likes || 0,
+  commentsCount: blog.stats?.comments || 0,
+  views: blog.stats?.views || 0,
+  createdAt: blog.createdAt,
+  publishedAt: blog.publishedAt,
+  isLiked,
+  feedType: 'blog',
+  author: {
+    userId: blog.author?._id,
+    username: blog.author?.username,
+    fullName: blog.author?.profile?.fullName || blog.author?.username,
+    avatar: blog.author?.profile?.avatar?.url || null,
+  },
+});
+
+const buildExploreSection = async (user, userId, contentType, limit, skip) => {
+  const totalNeeded = skip + limit;
+  const poolSize = Math.max(totalNeeded * 4, 40);
+  const interestKeys = getUserInterestKeys(user);
+  const followingIds = user.following || [];
+  const authorField = { author: { $nin: [userId] } };
+
+  let interestItems = [];
+  let followingItems = [];
+  let discoveryItems = [];
+
+  if (contentType === 'post') {
+    const basePostQuery = { visibility: 'public', status: 'active', ...authorField };
+
+    if (interestKeys.length > 0) {
+      interestItems = await Post.find({
+        ...basePostQuery,
+        $or: [{ category: { $in: interestKeys } }, { tags: { $in: interestKeys } }],
+      })
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ engagementScore: -1, createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    } else {
+      interestItems = await Post.find(basePostQuery)
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ engagementScore: -1, createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    }
+
+    if (followingIds.length > 0) {
+      followingItems = await Post.find({
+        ...basePostQuery,
+        author: { $in: followingIds },
+      })
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    }
+
+    discoveryItems = await Post.find({
+      ...basePostQuery,
+      ...(interestKeys.length > 0
+        ? { category: { $nin: interestKeys }, tags: { $nin: interestKeys } }
+        : {}),
+    })
+      .populate('author', 'username profile.fullName profile.avatar')
+      .sort({ engagementScore: -1, createdAt: -1 })
+      .limit(poolSize)
+      .lean();
+  } else {
+    const baseBlogQuery = { status: 'published', ...authorField };
+
+    if (interestKeys.length > 0) {
+      interestItems = await Blog.find({
+        ...baseBlogQuery,
+        $or: [{ category: { $in: interestKeys } }, { tags: { $in: interestKeys } }],
+      })
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ engagementScore: -1, publishedAt: -1, createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    } else {
+      interestItems = await Blog.find(baseBlogQuery)
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ engagementScore: -1, publishedAt: -1, createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    }
+
+    if (followingIds.length > 0) {
+      followingItems = await Blog.find({
+        ...baseBlogQuery,
+        author: { $in: followingIds },
+      })
+        .populate('author', 'username profile.fullName profile.avatar')
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(poolSize)
+        .lean();
+    }
+
+    discoveryItems = await Blog.find({
+      ...baseBlogQuery,
+      ...(interestKeys.length > 0
+        ? { category: { $nin: interestKeys }, tags: { $nin: interestKeys } }
+        : {}),
+    })
+      .populate('author', 'username profile.fullName profile.avatar')
+      .sort({ engagementScore: -1, publishedAt: -1, createdAt: -1 })
+      .limit(poolSize)
+      .lean();
+  }
+
+  const interestScored = scoreContentPool(user, interestItems, contentType);
+  const followingScored = scoreContentPool(user, followingItems, contentType);
+  const discoveryScored = scoreContentPool(user, discoveryItems, contentType);
+  const mixed = pickMixedFeed(interestScored, followingScored, discoveryScored, totalNeeded);
+  const pageItems = mixed.slice(skip, skip + limit);
+
+  return {
+    items: pageItems,
+    hasMore: mixed.length > skip + limit || pageItems.length === limit,
+  };
+};
+
+/**
+ * Explore feed: separate posts + blogs sections
+ * Mix per section: 70% interest, 20% following, 10% discovery
+ */
+const getExploreFeed = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postsLimit = Math.min(parseInt(req.query.postsLimit, 10) || 8, 20);
+    const blogsLimit = Math.min(parseInt(req.query.blogsLimit, 10) || 6, 20);
+    const postsSkip = Math.max(parseInt(req.query.postsSkip, 10) || 0, 0);
+    const blogsSkip = Math.max(parseInt(req.query.blogsSkip, 10) || 0, 0);
+
+    const user = await User.findById(userId).select(
+      'interestScores following preferences.interests',
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const [postsSection, blogsSection] = await Promise.all([
+      postsLimit > 0
+        ? buildExploreSection(user, userId, 'post', postsLimit, postsSkip)
+        : Promise.resolve({ items: [], hasMore: false }),
+      blogsLimit > 0
+        ? buildExploreSection(user, userId, 'blog', blogsLimit, blogsSkip)
+        : Promise.resolve({ items: [], hasMore: false }),
+    ]);
+
+    const postIds = postsSection.items.map((p) => p._id);
+    const blogIds = blogsSection.items.map((b) => b._id);
+
+    const [postLikes, blogLikes] = await Promise.all([
+      postIds.length
+        ? PostLike.find({ userId, postId: { $in: postIds } }).select('postId reactionType').lean()
+        : [],
+      blogIds.length
+        ? BlogLike.find({ userId, blogId: { $in: blogIds } }).select('blogId').lean()
+        : [],
+    ]);
+
+    const postReactionMap = {};
+    postLikes.forEach((like) => {
+      postReactionMap[String(like.postId)] = like.reactionType;
+    });
+    const likedBlogIds = new Set(blogLikes.map((like) => String(like.blogId)));
+
+    const posts = postsSection.items.map((post) =>
+      formatExplorePost(post, postReactionMap[String(post._id)] || null),
+    );
+    const blogs = blogsSection.items.map((blog) =>
+      formatExploreBlog(blog, likedBlogIds.has(String(blog._id))),
+    );
+
+    return res.status(200).json({
+      success: true,
+      posts,
+      blogs,
+      mix: { interest: 70, following: 20, discovery: 10 },
+      postsHasMore: postsSection.hasMore,
+      blogsHasMore: blogsSection.hasMore,
+    });
+  } catch (error) {
+    console.error('Get explore feed error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 /**
  * Get personalized feed for user
@@ -879,6 +1157,7 @@ const trackBlogRead = async (req, res) => {
 module.exports = {
   // Feed generation
   getPersonalizedFeed,
+  getExploreFeed,
 
   // Interaction tracking
   trackView,

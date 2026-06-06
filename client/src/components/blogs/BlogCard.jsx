@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Bookmark, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { likeBlog, unlikeBlog } from '../../features/post/postSlice';
-import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
+import { likeBlog, unlikeBlog } from '@/features/post/postSlice';
+import { toggleBookmark } from '@/features/bookmarks/bookmarkSlice';
+import { getDisplayName, getAvatarUrl } from '@/utils/userDisplay';
 
 export default function BlogCard({ post }) {
   const dispatch = useDispatch();
@@ -17,9 +18,11 @@ export default function BlogCard({ post }) {
   const [isLiking, setIsLiking] = useState(false);
 
   const isBookmarked = bookmarkIds.includes(postId);
-  const authorName = post.author?.fullName || post.author?.username || 'Unknown';
+  const authorName = getDisplayName(post.author);
   const authorId = post.author?.userId || post.author?._id;
-  const authorAvatar = post.author?.avatar || `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
+  const authorAvatar =
+    getAvatarUrl(post.author) ||
+    'https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg';
 
   const createdDate = new Date(post.publishedAt || post.createdAt);
   const formattedDate = createdDate.toLocaleDateString('en-US', { 

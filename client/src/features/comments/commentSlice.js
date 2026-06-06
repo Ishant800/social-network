@@ -21,12 +21,14 @@ export const comment = createAsyncThunk(
 )
 
 export const getcomments = createAsyncThunk(
-    "post/getcomments",
-    async(postId,thunkAPI)=>{
+    "comments/getcomments",
+    async ({ postId, targetType = 'Post' }, thunkAPI) => {
         try {
-            return await commentService.getComents(postId)
+            return await commentService.getComments(postId, targetType);
         } catch (error) {
-            return thunkAPI.rejectWithValue(error.response.data.error)
+            return thunkAPI.rejectWithValue(
+                error.response?.data?.error || error.response?.data?.message || error.message,
+            );
         }
     }
 )
@@ -52,10 +54,11 @@ const commentSlice = createSlice({
         .addCase(comment.fulfilled,(state,action)=>{
             state.isLoading = false;
             state.isSuccess = true;
+            const newComment = action.payload?.comment || action.payload;
             if (state.comments) {
-                state.comments.unshift(action.payload);
+                state.comments.unshift(newComment);
             } else {
-                state.comments = [action.payload];
+                state.comments = [newComment];
             }
         })
         .addCase(comment.rejected,(state,action)=>{

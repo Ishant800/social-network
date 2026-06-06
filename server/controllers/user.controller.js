@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
+const Comment = require('../models/comment.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const postModel = require('../models/post.model');
 const { pushNotification } = require('./notification.controller');
@@ -77,9 +79,9 @@ const updateProfile = async (req, res) => {
       
     if(!getme){
       return res.status(400).json({
-        sucess:false,
-        message:"user not found"
-      })
+        success: false,
+        message: 'user not found',
+      });
     }
 
     // Check if profile is incomplete
@@ -187,129 +189,144 @@ async function sendProfileIncompleteNotification(userId) {
   }
 }
 
-async function getSuggestions(req, res) {
+const getSuggestions = async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const user = await User.findById(currentUserId).select('following preferences.interests');
 
-    if (!user) {
+    const currentUser = await User.findById(currentUserId)
+      .select("following preferences.interests")
+      .lean();
+
+    if (!currentUser) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found"
       });
     }
 
-    const following = Array.isArray(user.following) ? user.following : [];
-    const userInterests = user.preferences?.interests || [];
-    const excludeIds = [...following, currentUserId];
+    const userInterests =
+      currentUser.preferences?.interests?.map(
+        interest => interest.toLowerCase().trim()
+      ) || [];
 
-    // Build aggregation pipeline for smart suggestions
-    const pipeline = [
-      // Exclude already following and self
-      { $match: { _id: { $nin: excludeIds.map(id => id) } } },
-      
-      // Add computed fields for scoring
+    if (userInterests.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        count: 0
+      });
+    }
+
+    const excludeIds = [
+      new mongoose.Types.ObjectId(currentUserId),
+      ...(currentUser.following || []).map(
+        id => new mongoose.Types.ObjectId(id)
+      )
+    ];
+
+    const suggestions = await User.aggregate([
       {
-        $addFields: {
-          // Score based on shared interests
-          interestScore: {
-            $size: {
-              $ifNull: [
-                {
-                  $setIntersection: [
-                    { $ifNull: ['$preferences.interests', []] },
-                    userInterests
-                  ]
-                },
-                []
-              ]
-            }
-          },
-          // Score based on mutual followers
-          mutualFollowersCount: {
-            $size: {
-              $ifNull: [
-                {
-                  $setIntersection: [
-                    { $ifNull: ['$followers', []] },
-                    following
-                  ]
-                },
-                []
-              ]
-            }
-          },
-          // Follower count for popularity
-          followerCount: { $size: { $ifNull: ['$followers', []] } }
+        $match: {
+          _id: {
+            $nin: excludeIds
+          }
         }
       },
-      
-      // Calculate total score
+
       {
         $addFields: {
-          totalScore: {
-            $add: [
-              { $multiply: ['$interestScore', 10] },      // Interests weight: 10
-              { $multiply: ['$mutualFollowersCount', 5] }, // Mutual followers weight: 5
-              { $multiply: ['$followerCount', 0.1] }       // Popularity weight: 0.1
+          normalizedInterests: {
+            $map: {
+              input: {
+                $ifNull: [
+                  "$preferences.interests",
+                  []
+                ]
+              },
+              as: "interest",
+              in: {
+                $trim: {
+                  input: {
+                    $toLower: "$$interest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+
+      {
+        $addFields: {
+          matchedInterests: {
+            $setIntersection: [
+              "$normalizedInterests",
+              userInterests
             ]
           }
         }
       },
-      
-      // Sort by score (highest first), then by recent activity
-      { $sort: { totalScore: -1, lastSeen: -1 } },
-      
-      // Limit to 50 suggestions
-      { $limit: 50 },
-      
-      // Project only needed fields
+
+      {
+        $addFields: {
+          matchCount: {
+            $size: "$matchedInterests"
+          }
+        }
+      },
+
+      {
+        $match: {
+          matchCount: {
+            $gt: 0
+          }
+        }
+      },
+
+      {
+        $sort: {
+          matchCount: -1,
+          lastSeen: -1,
+          createdAt: -1
+        }
+      },
+
       {
         $project: {
           _id: 1,
           username: 1,
           email: 1,
           profile: 1,
-          followers: 1,
-          following: 1,
-          'preferences.interests': 1,
+          preferences: 1,
           lastSeen: 1,
-          totalScore: 1,
-          interestScore: 1,
-          mutualFollowersCount: 1
+          matchedInterests: 1,
+          matchCount: 1
         }
+      },
+
+      {
+        $limit: 20
       }
-    ];
-
-    const suggestions = await User.aggregate(pipeline);
-
-    // If not enough suggestions with interests, add random active users
-    if (suggestions.length < 15) {
-      const additionalUsers = await User.find({
-        _id: { $nin: [...excludeIds, ...suggestions.map(s => s._id)] }
-      })
-        .select('-password')
-        .populate('followers', 'username')
-        .sort({ lastSeen: -1 })
-        .limit(15 - suggestions.length)
-        .lean();
-      
-      suggestions.push(...additionalUsers);
-    }
+    ]);
 
     return res.status(200).json({
       success: true,
       data: suggestions,
       count: suggestions.length
     });
+
   } catch (error) {
+    console.error(
+      "Get suggestions error:",
+      error
+    );
+
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: error.message
     });
   }
-}
-
+};
 
 async function followUser(req,res){
   try {
@@ -508,11 +525,7 @@ async function getUserProfile(req, res) {
       });
     }
     
-<<<<<<< Updated upstream
-    // Get user's posts
-=======
     // Get posts
->>>>>>> Stashed changes
     const posts = await postModel
       .find({ author: userId })
       .sort({ createdAt: -1 })
@@ -520,11 +533,6 @@ async function getUserProfile(req, res) {
       .select('content media createdAt tags visibility')
       .lean();
     
-<<<<<<< Updated upstream
-    // Check if current user is following this user
-    const isFollowing = user.followers.some(
-      follower => String(follower._id) === String(currentUserId)
-=======
     // Get blogs
     const Blog = require('../models/blogs.model');
     const blogs = await Blog
@@ -562,21 +570,22 @@ async function getUserProfile(req, res) {
     // Combine posts and blogs
     const allPosts = [...transformedPosts, ...transformedBlogs].sort((a, b) => 
       new Date(b.createdAt) - new Date(a.createdAt)
->>>>>>> Stashed changes
     );
+
+    let isFollowing = false;
+    if (String(currentUserId) !== String(userId)) {
+      const viewer = await User.findById(currentUserId).select('following').lean();
+      isFollowing = (viewer?.following || []).some(
+        (id) => String(id) === String(userId),
+      );
+    }
     
     res.json({
       success: true,
-<<<<<<< Updated upstream
-      user,
-      posts,
-      isFollowing
-=======
       user: sanitizeUserForClient(user),
       posts: allPosts,
       isFollowing,
       isPrivateProfile: false,
->>>>>>> Stashed changes
     });
   } catch (error) {
     res.status(500).json({
@@ -596,9 +605,9 @@ async function getUsers(req,res){
     
   } catch (error) {
     res.status(500).json({
-      sucess:true,
-      error:error.message
-    })
+      success: false,
+      error: error.message,
+    });
   }
 
 }
@@ -612,8 +621,8 @@ async function getWeeklyStats(req, res) {
 
     // Get user's posts from this week
     const userPosts = await postModel.find({
-      user: userId,
-      createdAt: { $gte: oneWeekAgo }
+      author: userId,
+      createdAt: { $gte: oneWeekAgo },
     }).select('_id');
 
     const postIds = userPosts.map(p => p._id);
@@ -621,15 +630,14 @@ async function getWeeklyStats(req, res) {
     // Count likes received on user's posts this week
     const PostLike = require('../models/post-like.model');
     const likesReceived = await PostLike.countDocuments({
-      post: { $in: postIds },
-      createdAt: { $gte: oneWeekAgo }
+      postId: { $in: postIds },
+      createdAt: { $gte: oneWeekAgo },
     });
 
-    // Count comments on user's posts this week
-    const Comment = require('../models/comment.model');
     const commentsReceived = await Comment.countDocuments({
-      post: { $in: postIds },
-      createdAt: { $gte: oneWeekAgo }
+      'target.id': { $in: postIds },
+      'target.type': 'Post',
+      createdAt: { $gte: oneWeekAgo },
     });
 
     // Count profile views (using notifications as proxy)
@@ -666,8 +674,6 @@ async function getWeeklyStats(req, res) {
 }
 
 // Update user interests
-<<<<<<< Updated upstream
-=======
 async function updatePrivacy(req, res) {
   try {
     const userId = req.user.id;
@@ -747,7 +753,7 @@ async function deleteAccount(req, res) {
       } catch { /* ignore */ }
     }
 
-    const posts = await postModel.find({ user: userId }).select('media').lean();
+    const posts = await postModel.find({ author: userId }).select('media').lean();
     for (const post of posts) {
       if (post.media?.length) {
         for (const m of post.media) {
@@ -758,7 +764,7 @@ async function deleteAccount(req, res) {
       }
     }
 
-    await postModel.deleteMany({ user: userId });
+    await postModel.deleteMany({ author: userId });
     await Comment.deleteMany({ 'user._id': userId });
     await Notification.deleteMany({
       $or: [{ recipient: userId }, { actor: userId }],
@@ -783,7 +789,6 @@ async function deleteAccount(req, res) {
   }
 }
 
->>>>>>> Stashed changes
 async function updateInterests(req, res) {
   try {
     const userId = req.user.id;
@@ -833,4 +838,4 @@ async function updateInterests(req, res) {
   }
 }
 
-module.exports = { getUsers,updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getWeeklyStats, updateInterests };
+module.exports = { getUsers,updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getWeeklyStats, updateInterests, updatePrivacy, deleteAccount };

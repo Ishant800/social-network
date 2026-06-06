@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Bookmark, Send } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import AnonymousAvatar from './AnonymousAvatar';
-import { loadComments, submitReply } from '../../features/confession/confessionSlice';
-import confessionService from '../../features/confession/confessionService';
+import { loadComments, submitReply } from '@/features/confession/confessionSlice';
+import confessionService from '@/features/confession/confessionService';
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date)) / 1000);

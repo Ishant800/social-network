@@ -1,15 +1,10 @@
 import axios from 'axios';
 
-<<<<<<< Updated upstream
-const baseURL = import.meta.env.VITE_API_URL || 'https://social-network-backend-9gdm.onrender.com';
-// const baseURL = "http://localhost:5000"
-=======
 const envUrl = (import.meta.env.VITE_API_URL || '').trim();
 
 // Use environment variable or fallback to localhost for development
 const baseURL = envUrl || 'http://localhost:5000';
 
->>>>>>> Stashed changes
 const API = axios.create({
   baseURL,
 });

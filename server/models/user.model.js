@@ -2,22 +2,8 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
 
-  // ==================================
-  // AUTH
-  // ==================================
-
   username: {
     type: String,
-<<<<<<< Updated upstream
-     required: true,
-      unique: true ,
-    }, 
-
-  password: { 
-    type: String,
-     required: true,
-    select: false },
-=======
     required: true,
     unique: true,
     trim: true,
@@ -37,10 +23,6 @@ const UserSchema = new mongoose.Schema({
     select: false
   },
 
-  // ==================================
-  // PROFILE
-  // ==================================
->>>>>>> Stashed changes
 
   profile: {
 
@@ -65,13 +47,9 @@ const UserSchema = new mongoose.Schema({
     },
 
     location: String,
-
     website: String
   },
 
-  // ==================================
-  // STATS
-  // ==================================
 
   stats: {
 
@@ -96,9 +74,7 @@ const UserSchema = new mongoose.Schema({
     }
   },
 
-  // ==================================
-  // INTERESTS
-  // ==================================
+
 
   preferences: {
 
@@ -108,15 +84,6 @@ const UserSchema = new mongoose.Schema({
       }
     ]
   },
-<<<<<<< Updated upstream
-  chatList:[{
-    type:mongoose.Schema.Types.ObjectId,ref:"User"
-  }],
-  lastSeen:{
-    type:Date,
-=======
-
-  // Dynamic ranking scores
 
   interestScores: {
     type: Map,
@@ -124,9 +91,6 @@ const UserSchema = new mongoose.Schema({
     default: {}
   },
 
-  // ==================================
-  // FEED PREFERENCES
-  // ==================================
 
   contentPreferences: {
 
@@ -141,9 +105,7 @@ const UserSchema = new mongoose.Schema({
     }
   },
 
-  // ==================================
-  // PRIVACY
-  // ==================================
+  
 
   privacy: {
 
@@ -158,9 +120,7 @@ const UserSchema = new mongoose.Schema({
     }
   },
 
-  // ==================================
-  // SOCIAL GRAPH
-  // ==================================
+
 
   followers: [
     {
@@ -189,7 +149,6 @@ const UserSchema = new mongoose.Schema({
 
   lastSeen: {
     type: Date,
->>>>>>> Stashed changes
     default: Date.now
   },
 

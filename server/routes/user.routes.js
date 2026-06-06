@@ -1,19 +1,5 @@
 const express = require('express');
-const {
-  updateProfile,
-  getMe,
-  getSuggestions,
-  followUser,
-  unfollowuser,
-  getFollowers,
-  getFollowing,
-  getUserProfile,
-  getUsers,
-  getWeeklyStats,
-  updateInterests,
-  updatePrivacy,
-  deleteAccount,
-} = require('../controllers/user.controller');
+const { updateProfile, getMe, getSuggestions, followUser, unfollowuser, getFollowers, getFollowing, getUserProfile, getUsers, getWeeklyStats, updateInterests, updatePrivacy, deleteAccount } = require('../controllers/user.controller');
 const { upload } = require('../config/cloudinary.config');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { validateObjectId } = require('../middleware/validateObjectId.middleware');

@@ -4,8 +4,7 @@ const dotenv = require('dotenv');
 
 
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-// dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -23,22 +22,13 @@ const feedRoute = require('./routes/feed.routes');
 const bookmarkRoute = require('./routes/bookmark.routes');
 const notificationRoute = require('./routes/notification.routes');
 const searchRoute = require('./routes/search.routes');
-<<<<<<< Updated upstream
-=======
 const recommendationRoute = require('./routes/recommendation.routes');
 const bulkDataRoute = require('./routes/bulk-data.routes');
 const uploadRoute = require('./routes/upload.routes');
->>>>>>> Stashed changes
 const { Server } = require('socket.io');
 
 const app = express();
 
-<<<<<<< Updated upstream
-const clientOrigins = ("https://social-network-fronted.onrender.com" )
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-=======
 // const clientOrigins = (
 //   process.env.CLIENT_ORIGINS 
 //   // || 
@@ -47,19 +37,14 @@ const clientOrigins = ("https://social-network-fronted.onrender.com" )
   // .split(',')
   // .map((s) => s.trim())
   // .filter(Boolean);
->>>>>>> Stashed changes
 
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
-<<<<<<< Updated upstream
-    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
-=======
     
     origin: "http://localhost:5173",
->>>>>>> Stashed changes
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -93,8 +78,6 @@ app.use('/likes', likeRoute);
 app.use('/bookmark', bookmarkRoute);
 app.use('/notifications', notificationRoute);
 app.use('/search', searchRoute);
-<<<<<<< Updated upstream
-=======
 app.use('/recommendation', recommendationRoute);
 app.use('/bulk', bulkDataRoute);
 app.use('/upload', uploadRoute);     
@@ -104,35 +87,30 @@ const clientDist = path.resolve(__dirname, '../client/dist');
 const API_PREFIXES = [
   '/auth', '/feed', '/post', '/blog', '/user', '/comment', '/likes',
   '/bookmark', '/notifications', '/search', '/recommendation', '/bulk', '/upload', '/health', '/socket.io',
-];
-
-if (fs.existsSync(clientDist)) {
-  app.use(express.static(clientDist));
-  // Express 5 does not support app.get('*') — use middleware instead
-  app.use((req, res, next) => {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      return next();
-    }
-    if (API_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
-      return next();
-    }
-    return res.sendFile(path.join(clientDist, 'index.html'), (err) => {
-      if (err) next(err);
-    });
-  });
-}
->>>>>>> Stashed changes
+];  
+ 
+// if (fs.existsSync(clientDist)) {
+//   app.use(express.static(clientDist));
+//   // Express 5 does not support app.get('*') — use middleware instead
+//   app.use((req, res, next) => {
+//     if (req.method !== 'GET' && req.method !== 'HEAD') {
+//       return next();
+//     }
+//     if (API_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
+//       return next();
+//     }
+//     return res.sendFile(path.join(clientDist, 'index.html'), (err) => {
+//       if (err) next(err);
+//     });
+//   });
+// }
 
 connectDb();
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-<<<<<<< Updated upstream
-    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
-=======
     origin: "http://localhost:5173",
->>>>>>> Stashed changes
     methods: ['GET', 'POST'],
     credentials: true,
   },

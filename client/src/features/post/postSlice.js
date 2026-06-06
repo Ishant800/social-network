@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import postService from './postService';
+import { comment } from '@/features/comments/commentSlice';
 
 const initialState = {
   posts: [],
@@ -49,7 +50,7 @@ export const getFeed = createAsyncThunk(
         }
       }
 
-      const data = await postService.fetchFeed({ feedType, page });
+      const data = await postService.fetchFeed({ feedType, page, limit: 20 });
       return { ...data, append: Boolean(append), feedType };
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -225,7 +226,7 @@ const postSlice = createSlice({
       })
 
       .addCase(likePost.fulfilled, (state, action) => {
-        const { postId, likesCount, isLiked } = action.payload;
+        const { postId, likesCount, isLiked, stats } = action.payload;
         
         // Update liked posts array
         if (isLiked && !state.likedPostIds.includes(postId)) {
@@ -237,7 +238,9 @@ const postSlice = createSlice({
         if (target) {
           target.likesCount = likesCount;
           target.isLiked = isLiked;
-          if (target.stats) {
+          if (target.stats && stats) {
+            target.stats = { ...target.stats, ...stats };
+          } else if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
@@ -246,7 +249,9 @@ const postSlice = createSlice({
         if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
           state.postDetails.likesCount = likesCount;
           state.postDetails.isLiked = isLiked;
-          if (state.postDetails.stats) {
+          if (state.postDetails.stats && stats) {
+            state.postDetails.stats = { ...state.postDetails.stats, ...stats };
+          } else if (state.postDetails.stats) {
             state.postDetails.stats.likes = likesCount;
           }
         }
@@ -255,7 +260,9 @@ const postSlice = createSlice({
         if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
           state.blogDetails.isLiked = isLiked;
-          if (state.blogDetails.stats) {
+          if (state.blogDetails.stats && stats) {
+            state.blogDetails.stats = { ...state.blogDetails.stats, ...stats };
+          } else if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
         }
@@ -265,7 +272,7 @@ const postSlice = createSlice({
       })
 
       .addCase(unlikePost.fulfilled, (state, action) => {
-        const { postId, likesCount, isLiked } = action.payload;
+        const { postId, likesCount, isLiked, stats } = action.payload;
         
         // Update liked posts array
         if (!isLiked) {
@@ -277,7 +284,9 @@ const postSlice = createSlice({
         if (target) {
           target.likesCount = likesCount;
           target.isLiked = isLiked;
-          if (target.stats) {
+          if (target.stats && stats) {
+            target.stats = { ...target.stats, ...stats };
+          } else if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
@@ -286,7 +295,9 @@ const postSlice = createSlice({
         if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
           state.postDetails.likesCount = likesCount;
           state.postDetails.isLiked = isLiked;
-          if (state.postDetails.stats) {
+          if (state.postDetails.stats && stats) {
+            state.postDetails.stats = { ...state.postDetails.stats, ...stats };
+          } else if (state.postDetails.stats) {
             state.postDetails.stats.likes = likesCount;
           }
         }
@@ -295,7 +306,9 @@ const postSlice = createSlice({
         if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
           state.blogDetails.isLiked = isLiked;
-          if (state.blogDetails.stats) {
+          if (state.blogDetails.stats && stats) {
+            state.blogDetails.stats = { ...state.blogDetails.stats, ...stats };
+          } else if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
         }
@@ -332,7 +345,7 @@ const postSlice = createSlice({
 
       // Blog likes
       .addCase(likeBlog.fulfilled, (state, action) => {
-        const { postId, likesCount, isLiked } = action.payload;
+        const { postId, likesCount, isLiked, stats } = action.payload;
         
         if (isLiked && !state.likedPostIds.some(id => String(id) === String(postId))) {
           state.likedPostIds.push(postId);
@@ -342,7 +355,9 @@ const postSlice = createSlice({
         if (target) {
           target.likesCount = likesCount;
           target.isLiked = isLiked;
-          if (target.stats) {
+          if (target.stats && stats) {
+            target.stats = { ...target.stats, ...stats };
+          } else if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
@@ -350,7 +365,9 @@ const postSlice = createSlice({
         if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
           state.blogDetails.isLiked = isLiked;
-          if (state.blogDetails.stats) {
+          if (state.blogDetails.stats && stats) {
+            state.blogDetails.stats = { ...state.blogDetails.stats, ...stats };
+          } else if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
         }
@@ -360,7 +377,7 @@ const postSlice = createSlice({
       })
 
       .addCase(unlikeBlog.fulfilled, (state, action) => {
-        const { postId, likesCount, isLiked } = action.payload;
+        const { postId, likesCount, isLiked, stats } = action.payload;
         
         if (!isLiked) {
           state.likedPostIds = state.likedPostIds.filter((id) => String(id) !== String(postId));
@@ -370,7 +387,9 @@ const postSlice = createSlice({
         if (target) {
           target.likesCount = likesCount;
           target.isLiked = isLiked;
-          if (target.stats) {
+          if (target.stats && stats) {
+            target.stats = { ...target.stats, ...stats };
+          } else if (target.stats) {
             target.stats.likes = likesCount;
           }
         }
@@ -378,7 +397,9 @@ const postSlice = createSlice({
         if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
           state.blogDetails.likesCount = likesCount;
           state.blogDetails.isLiked = isLiked;
-          if (state.blogDetails.stats) {
+          if (state.blogDetails.stats && stats) {
+            state.blogDetails.stats = { ...state.blogDetails.stats, ...stats };
+          } else if (state.blogDetails.stats) {
             state.blogDetails.stats.likes = likesCount;
           }
         }
@@ -407,6 +428,12 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.blogDetails = action.payload;
+        const blogId = action.payload?._id || action.payload?.id;
+        if (blogId && action.payload?.isLiked) {
+          if (!state.likedPostIds.some((id) => String(id) === String(blogId))) {
+            state.likedPostIds.push(blogId);
+          }
+        }
       })
       .addCase(getBlogDetails.rejected, (state, action) => {
         state.isLoading = false;
@@ -440,6 +467,37 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      
+      // Listen to comment creation to update comment counts
+      .addCase(comment.fulfilled, (state, action) => {
+        const payload = action.payload;
+        const postId = payload?.postId || payload?.comment?.target?.id;
+        const newCommentsCount = payload?.commentsCount;
+        
+        if (!postId) return;
+        
+        // Update comment count in posts feed
+        const target = state.posts.find((p) => String(p._id || p.id) === String(postId));
+        if (target) {
+          if (target.stats) {
+            target.stats.comments = newCommentsCount !== undefined ? newCommentsCount : (target.stats.comments || 0) + 1;
+          }
+        }
+        
+        // Update comment count in postDetails
+        if (state.postDetails && String(state.postDetails._id || state.postDetails.id) === String(postId)) {
+          if (state.postDetails.stats) {
+            state.postDetails.stats.comments = newCommentsCount !== undefined ? newCommentsCount : (state.postDetails.stats.comments || 0) + 1;
+          }
+        }
+        
+        // Update comment count in blogDetails
+        if (state.blogDetails && String(state.blogDetails._id || state.blogDetails.id) === String(postId)) {
+          if (state.blogDetails.stats) {
+            state.blogDetails.stats.comments = newCommentsCount !== undefined ? newCommentsCount : (state.blogDetails.stats.comments || 0) + 1;
+          }
+        }
       });
   },
 });

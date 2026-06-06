@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getPersonalizedFeed,
+  getExploreFeed,
   trackView,
   trackReaction,
   trackComment,
@@ -21,6 +22,12 @@ const { verifyToken } = require('../middleware/auth.middleware');
  * Query params: limit, page
  */
 router.get('/feed', verifyToken, getPersonalizedFeed);
+
+/**
+ * GET /api/recommendation/explore
+ * Posts + blogs for explore page (70% interest, 20% following, 10% discovery)
+ */
+router.get('/explore', verifyToken, getExploreFeed);
 
 // ====================================
 // INTERACTION TRACKING ENDPOINTS

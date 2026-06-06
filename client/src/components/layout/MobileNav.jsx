@@ -1,107 +1,65 @@
-import { Bell, Home, Plus, User, Search, MessageCircle, LogOut } from 'lucide-react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../features/auth/authSlice';
-
-function TabLink({ to, end, icon, label, badge }) {
-  const Icon = icon;
-  const location = useLocation();
-  const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
-  
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive: navActive }) => {
-        const active = navActive !== undefined ? navActive : isActive;
-        return `flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[0.65rem] font-medium transition-all duration-200 ${
-          active 
-            ? 'text-teal-700 bg-teal-50' 
-            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-        }`;
-      }}
-    >
-      {({ isActive: navActive }) => {
-        const active = navActive !== undefined ? navActive : isActive;
-        return (
-          <div className="relative">
-            <Icon className={`h-5 w-5 transition-all ${active ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
-            {badge && badge > 0 && (
-              <span className="absolute -top-1 -right-2 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
-                {badge > 99 ? '99+' : badge}
-              </span>
-            )}
-          </div>
-        );
-      }}
-    </NavLink>
-  );
-}
+import { NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import {
+  Home,
+  Compass,
+  PenSquare,
+  User,
+  Bell,
+} from 'lucide-react';
 
 export default function MobileNav() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const isCreatePage = location.pathname === '/post/create' || location.pathname === '/blog/create';
-  
-  // Get dynamic counts from Redux store
-  const { unreadCount } = useSelector((state) => state.notifications);
-  const { unreadCount: messageCount } = useSelector((state) => state.messages);
+  const { user } = useSelector((s) => s.auth);
+  const { unreadCount } = useSelector((s) => s.notifications);
 
-  const handleSignOut = () => {
-    dispatch(logout());
-    navigate('/login', { replace: true });
-  };
-
-  if (isCreatePage) return null;
+  const navItems = [
+    { icon: Home, path: '/', label: 'Home', end: true },
+    { icon: Compass, path: '/explore', label: 'Explore' },
+    { icon: PenSquare, path: '/post/create', label: 'Create' },
+    { icon: Bell, path: '/notifications', label: 'Notifications', badge: unreadCount },
+    { icon: User, path: `/profile/${user?._id || user?.id || ''}`, label: 'Profile' },
+  ];
 
   return (
-    <>
-      {/* Spacer to prevent content hiding behind nav */}
-      <div className="h-[72px]" />
-      
-      <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-soft)] bg-white/90 backdrop-blur-xl shadow-[0_-8px_32px_rgba(15,23,42,0.06)]"
-        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
-      >
-        <div className="relative mx-auto flex items-stretch justify-between gap-0.5 px-2 overflow-x-auto">
-          {/* Home */}
-          <TabLink to="/" end icon={Home} label="Home" />
-
-          {/* Search */}
-          <TabLink to="/explore" icon={Search} label="Explore" />
-
-          {/* Create Button - Floating */}
-          <div className="relative -top-5">
-            <NavLink
-              to="/post/create"
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white shadow-lg shadow-teal-600/35 ring-4 ring-white transition-all active:scale-95 hover:shadow-xl hover:from-teal-400 hover:to-teal-600"
-              aria-label="Create post"
-            >
-              <Plus className="h-7 w-7" strokeWidth={2.5} />
-            </NavLink>
-          </div>
-
-          {/* Messages */}
-          <TabLink to="/chats" icon={MessageCircle} label="Messages" badge={messageCount} />
-
-          {/* Notifications */}
-          <TabLink to="/notifications" icon={Bell} label="Alerts" badge={unreadCount} />
-
-          {/* Profile */}
-          <TabLink to="/profile" icon={User} label="Profile" />
-
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="flex min-h-[3.25rem] min-w-[3.25rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[0.65rem] font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all"
-            aria-label="Sign out"
+    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-md">
+      <div className="flex items-center justify-around px-2 py-2">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.end}
+            className={({ isActive }) =>
+              `relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
+                isActive
+                  ? 'text-teal-600'
+                  : 'text-gray-500 active:bg-gray-100'
+              }`
+            }
           >
-            <LogOut className="h-5 w-5 stroke-[2.2]" />
-            <span className="text-[0.65rem] leading-none">Logout</span>
-          </button>
-        </div>
-      </nav>
-    </>
+            {({ isActive }) => (
+              <>
+                <div className="relative">
+                  <item.icon
+                    className={`w-5 h-5 ${
+                      isActive ? 'text-teal-600' : 'text-gray-500'
+                    }`}
+                  />
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[10px] font-medium ${
+                  isActive ? 'text-teal-600' : 'text-gray-500'
+                }`}>
+                  {item.label}
+                </span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
+    </nav>
   );
 }

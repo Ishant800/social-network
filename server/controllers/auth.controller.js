@@ -1,14 +1,8 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
 const { generateToken } = require('../utils/token.util');
-<<<<<<< Updated upstream
-
-const BCRYPT_ROUNDS = 12;
-const MIN_PASSWORD_LENGTH = 8;
-=======
 const crypto = require('crypto');
-const { sendMail } = require('../utils/mailer.util');
-const { passwordResetEmail } = require('../utils/emailTemplates.util');
+
 
 // Interest categories from recommendation system
 const INTEREST_CATEGORIES = [
@@ -54,7 +48,6 @@ function hashCode(code) {
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
->>>>>>> Stashed changes
 
 //  Generate unique username
 const generateUsername = async (email) => {
@@ -72,11 +65,7 @@ const generateUsername = async (email) => {
   return username;
 };
 
-<<<<<<< Updated upstream
-//  REGISTER
-=======
 //  REGISTER — Create user immediately without email verification
->>>>>>> Stashed changes
 const register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -95,10 +84,7 @@ const register = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-<<<<<<< Updated upstream
-=======
     // Check if user already exists
->>>>>>> Stashed changes
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({
@@ -106,42 +92,15 @@ const register = async (req, res) => {
       });
     }
 
-    const username = await generateUsername(normalizedEmail);
+    const usernames = await generateUsername(normalizedEmail);
 
     const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const username = await generateUsername(normalizedEmail);
 
-<<<<<<< Updated upstream
-=======
     // Create user directly without verification
->>>>>>> Stashed changes
     const user = await User.create({
-      username,
+      username:usernames,
       email: normalizedEmail,
       password: hashedPassword,
-<<<<<<< Updated upstream
-      profile: name ? { fullName: name.trim() } : {}
-    });
-
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      token
-    });
-
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({
-        error: 'Duplicate field value'
-      });
-    }
-
-    res.status(500).json({
-      error: 'Failed to register user'
-    });
-=======
       profile: name ? { fullName: name.trim() } : {},
     });
 
@@ -164,7 +123,6 @@ const register = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Failed to create account' });
->>>>>>> Stashed changes
   }
 };
 
@@ -178,13 +136,9 @@ const login = async (req, res) => {
         error: 'Email and password are required'
       });
     }
-<<<<<<< Updated upstream
-    const user = await User.findOne({ email:email }).select('+password');
-=======
 
     const normalizedEmail = email.toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
->>>>>>> Stashed changes
 
     if (!user) {
       return res.status(401).json({
@@ -202,12 +156,6 @@ const login = async (req, res) => {
 
     const token = generateToken(user._id);
 
-<<<<<<< Updated upstream
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token
-=======
     // Check if user has interests, if not send a reminder notification
     if (!user.preferences?.interests || user.preferences.interests.length === 0) {
       const { pushNotification } = require('./notification.controller');
@@ -223,7 +171,6 @@ const login = async (req, res) => {
       success: true,
       message: 'Login successful',
       token,
->>>>>>> Stashed changes
     });
      
   } catch (error) {
@@ -234,9 +181,6 @@ const login = async (req, res) => {
   } 
 };
 
-<<<<<<< Updated upstream
-module.exports = { register, login };
-=======
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -438,4 +382,3 @@ module.exports = {
   resetPassword,
   setupUserInterests,
 };
->>>>>>> Stashed changes

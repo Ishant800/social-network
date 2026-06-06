@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const signup = async (userData) => {
   const response = await API.post('/auth/signup', userData);
@@ -26,13 +26,9 @@ const getMe = async () => {
   return response.data;
 };
 
-<<<<<<< Updated upstream
-export default { signup, login, logout, getMe };
-=======
 export default {
   signup,
   login,
   logout,
   getMe,
 };
->>>>>>> Stashed changes

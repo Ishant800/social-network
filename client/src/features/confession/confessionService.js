@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const fetchConfessions = async ({ page = 1, limit = 15, category = 'All' } = {}) => {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
