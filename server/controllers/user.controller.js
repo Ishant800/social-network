@@ -571,6 +571,14 @@ async function getUserProfile(req, res) {
     const allPosts = [...transformedPosts, ...transformedBlogs].sort((a, b) => 
       new Date(b.createdAt) - new Date(a.createdAt)
     );
+
+    let isFollowing = false;
+    if (String(currentUserId) !== String(userId)) {
+      const viewer = await User.findById(currentUserId).select('following').lean();
+      isFollowing = (viewer?.following || []).some(
+        (id) => String(id) === String(userId),
+      );
+    }
     
     res.json({
       success: true,
@@ -622,15 +630,14 @@ async function getWeeklyStats(req, res) {
     // Count likes received on user's posts this week
     const PostLike = require('../models/post-like.model');
     const likesReceived = await PostLike.countDocuments({
-      post: { $in: postIds },
-      createdAt: { $gte: oneWeekAgo }
+      postId: { $in: postIds },
+      createdAt: { $gte: oneWeekAgo },
     });
 
-    // Count comments on user's posts this week
-    const Comment = require('../models/comment.model');
     const commentsReceived = await Comment.countDocuments({
-      post: { $in: postIds },
-      createdAt: { $gte: oneWeekAgo }
+      'target.id': { $in: postIds },
+      'target.type': 'Post',
+      createdAt: { $gte: oneWeekAgo },
     });
 
     // Count profile views (using notifications as proxy)
