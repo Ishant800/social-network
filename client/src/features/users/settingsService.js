@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const updatePrivacy = async ({ isPrivate, discoverable }) => {
   const { data } = await API.put('/user/privacy', { isPrivate, discoverable });

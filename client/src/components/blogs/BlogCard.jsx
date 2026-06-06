@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Bookmark, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { likeBlog, unlikeBlog } from '../../features/post/postSlice';
-import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
-import { getDisplayName, getAvatarUrl } from '../../utils/userDisplay';
+import { likeBlog, unlikeBlog } from '@/features/post/postSlice';
+import { toggleBookmark } from '@/features/bookmarks/bookmarkSlice';
+import { getDisplayName, getAvatarUrl } from '@/utils/userDisplay';
 
 export default function BlogCard({ post }) {
   const dispatch = useDispatch();

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, MapPin, User, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import API from '../api/axios';
+import API from '@/api/axios';
 
 export default function EditProfile() {
   const navigate = useNavigate();

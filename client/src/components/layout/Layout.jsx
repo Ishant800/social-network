@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import RightSidebar from './RightSidebar';
 import MobileNav from './MobileNav';
 import Navbar from './Navbar';
-import NotificationManager from '../notifications/NotificationManager';
+import NotificationManager from '@/components/notifications/NotificationManager';
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();

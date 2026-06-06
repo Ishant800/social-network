@@ -10,9 +10,9 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { markChatAsRead } from '../features/messages/messageSlice';
-import { usePrivateChat } from '../context/PrivateChatContext';
-import { getDisplayName, getAvatarUrl } from '../utils/userDisplay';
+import { markChatAsRead } from '@/features/messages/messageSlice';
+import { usePrivateChat } from '@/context/PrivateChatContext';
+import { getDisplayName, getAvatarUrl } from '@/utils/userDisplay';
 
 const normalizePrivateMessage = (msg) => {
   const id = String(msg.id || msg._id || '');

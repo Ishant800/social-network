@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate, useNavigate } from 'react-router-dom';
-import SimplePostCard from '../components/posts/SimplePostCard';
-import BlogCard from '../components/blogs/BlogCard';
-import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getFeed, setLikedPosts } from '../features/post/postSlice';
+import SimplePostCard from '@/components/posts/SimplePostCard';
+import BlogCard from '@/components/blogs/BlogCard';
+import PostSkeleton from '@/components/ui/skeletons/PostSkeleton';
+import { getFeed, setLikedPosts } from '@/features/post/postSlice';
 import { Sparkles } from 'lucide-react';
 
 const feedTabs = ['Posts', 'Blogs'];

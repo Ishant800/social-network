@@ -12,9 +12,9 @@ import {
   Minus,
   Link2,
 } from 'lucide-react';
-import { domToTipTap, countTipTapWords } from '../../utils/tiptapJson';
+import { domToTipTap, countTipTapWords } from '@/utils/tiptapJson';
 
-export { isTipTapContentEmpty } from '../../utils/tiptapJson';
+export { isTipTapContentEmpty } from '@/utils/tiptapJson';
 
 const ToolbarButton = ({ active, onClick, title, children }) => (
   <button

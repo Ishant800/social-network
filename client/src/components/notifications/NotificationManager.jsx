@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import NotificationToast from './NotificationToast';
-import { addNotificationFromSSE } from '../../features/notifications/notificationSlice';
+import { addNotificationFromSSE } from '@/features/notifications/notificationSlice';
 
 export default function NotificationManager() {
   const dispatch = useDispatch();

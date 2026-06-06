@@ -14,7 +14,7 @@ import {
   Paperclip,
   Bell,
 } from 'lucide-react';
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

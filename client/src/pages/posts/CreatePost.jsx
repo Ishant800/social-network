@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { X, Image as ImageIcon, Tag } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { updatePost } from '../features/post/postSlice';
-import CATEGORIES from '../constants/categories';
-
+import { ArrowLeft, Image, X, Globe, Lock, Sparkles, Tag } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { createpost } from '@/features/post/postSlice';
+import CATEGORIES from '@/constants/categories';
 
 // Tag suggestions based on category
 const getTagSuggestions = (category) => {
@@ -29,61 +28,53 @@ const getTagSuggestions = (category) => {
   return suggestions[category] || [];
 };
 
-export default function EditPost() {
+export default function CreatePostPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
-  const post = location.state?.post;
+  const { user } = useSelector((state) => state.auth);
   const { isLoading } = useSelector((state) => state.posts);
-  
+
+  if(!user) return (
+      <div className="max-w-3xl mx-auto p-6 text-center">
+        <h2 className="text-lg font-semibold text-slate-900">
+          You don't have an account yet
+        </h2>
+        <p className="text-slate-600 mt-2">
+          Create an account to continue and access your profile.
+        </p>
+        <Link
+          to="/signup"
+          className="inline-flex mt-4 items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition"
+        >
+          Create account
+        </Link>
+      </div>
+    );
   const [content, setContent] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(''); // Single category
+  const [selectedTags, setSelectedTags] = useState([]); // Tags array
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showTagsPicker, setShowTagsPicker] = useState(false);
-  const [images, setImages] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [media, setMedia] = useState([]);
+  const [isPublic, setIsPublic] = useState(true);
 
-  useEffect(() => {
-    if (post) {
-      setContent(post.content || '');
-      setSelectedCategory(post.category || '');
-      setSelectedTags(post.tags || []);
-      setExistingImages(post.images || post.media || []);
-    }
-  }, [post]);
+  const firstName = user?.profile?.fullName?.split(' ')[0] || user?.username || 'there';
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    const remainingSlots = 5 - (images.length + existingImages.length);
-    
-    if (remainingSlots <= 0) {
-      alert('You can only upload up to 5 images');
-      return;
-    }
+  const greetings = [
+    `Hey ${firstName}, what's on your mind?`,
+    `${firstName}, got something interesting to share?`,
+    `Tell your story, ${firstName}`,
+    `What's happening, ${firstName}?`,
+    `Feeling creative, ${firstName}?`,
+  ];
 
-    const newImagePreviews = files.slice(0, remainingSlots).map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-
-    setImages(prev => [...prev, ...newImagePreviews]);
-  };
-
-  const removeImage = (index, isExisting = false) => {
-    if (isExisting) {
-      setExistingImages(prev => prev.filter((_, i) => i !== index));
-    } else {
-      const imageItem = images[index];
-      URL.revokeObjectURL(imageItem.preview);
-      setImages(prev => prev.filter((_, i) => i !== index));
-    }
-  };
+  const [greeting] = useState(
+    greetings[Math.floor(Math.random() * greetings.length)]
+  );
 
   const toggleCategory = (category) => {
     setSelectedCategory(category);
-    setShowCategoryPicker(false);
+    setShowCategoryPicker(false); // Close picker after selecting
   };
 
   const toggleTag = (tag) => {
@@ -96,10 +87,45 @@ export default function EditPost() {
     );
   };
 
+  // MEDIA HANDLER - Store files for upload
+  const handleMediaChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const remainingSlots = 5 - media.length;
+
+    if (files.length > remainingSlots) {
+      alert(`You can upload only ${remainingSlots} more files`);
+      return;
+    }
+
+    const newMediaPreviews = files.slice(0, remainingSlots).map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setMedia(prev => [...prev, ...newMediaPreviews]);
+  };
+
+  const removeMedia = (index) => {
+    const mediaItem = media[index];
+    URL.revokeObjectURL(mediaItem.preview);
+    setMedia(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDiscard = () => {
+    media.forEach(({ preview }) => URL.revokeObjectURL(preview));
+    setContent('');
+    setSelectedCategory('');
+    setSelectedTags([]);
+    setMedia([]);
+    navigate('/');
+  };
+
+  // SUBMIT - Send FormData with files
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && images.length === 0 && existingImages.length === 0) {
-      alert('Please add some content or images');
+
+    if (!content.trim() && media.length === 0) {
+      alert('Add some content or media');
       return;
     }
 
@@ -113,72 +139,83 @@ export default function EditPost() {
       return;
     }
 
-    if (!post?._id && !post?.id) {
-      alert('Post ID not found');
-      return;
-    }
-
-    setSaving(true);
-    
-    // Send FormData with files (only new images)
+    // Send FormData with files
     const formData = new FormData();
     formData.append('content', content);
     formData.append('category', selectedCategory);
     formData.append('tags', selectedTags.join(','));
-    formData.append('keepExisting', 'true'); // Keep existing images
     
-    images.forEach(({ file }) => {
+    media.forEach(({ file }) => {
       formData.append('files', file);
     });
 
     try {
-      const postId = post._id || post.id;
-      await dispatch(updatePost({ postId, postData: formData })).unwrap();
-      navigate('/profile');
-    } catch (error) {
-      console.error('Failed to update post:', error);
-      alert(error || 'Failed to update post');
-    } finally {
-      setSaving(false);
+      await dispatch(createpost(formData)).unwrap();
+      media.forEach(({ preview }) => URL.revokeObjectURL(preview));
+      setContent('');
+      setSelectedCategory('');
+      setSelectedTags([]);
+      setMedia([]);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to create post');
     }
   };
 
-  const totalImages = images.length + existingImages.length;
+  // cleanup previews
+  useEffect(() => {
+    return () => {
+      media.forEach(({ preview }) => URL.revokeObjectURL(preview));
+    };
+  }, [media]);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200">
-        <div className="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition"
-          >
-            <X className="w-3.5 h-3.5 text-black" />
-          </button>
-          <h1 className="text-xs font-semibold text-black">Edit Post</h1>
+    <div className="min-h-full bg-slate-100">
+
+      {/* HEADER */}
+    
+      <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-100/95 backdrop-blur">
+
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-2">
+
           <button
-            onClick={handleSubmit}
-            disabled={isLoading || saving || (!content.trim() && totalImages === 0)}
-            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            type="button"
+            onClick={() => navigate(-1)}
+            className="rounded-lg p-1.5 transition hover:bg-slate-200"
           >
-            {isLoading || saving ? 'Saving...' : 'Save'}
+            <ArrowLeft className="w-3.5 h-3.5 text-black" />
           </button>
+
+          <h1 className="text-xs font-semibold text-black">
+            Create Post
+          </h1>
+
+          <div className="w-6"></div>
+
         </div>
+
       </div>
 
-      {/* Form */}
-      <div className="max-w-2xl mx-auto px-3 py-4">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          
-          {/* Content */}
+      <div className="mx-auto max-w-2xl px-3 py-3 pb-20">
+
+        {/* Greeting */}
+
+        <div className="mb-3 flex items-center gap-2 px-0.5">
+          <Sparkles className="w-3 h-3 text-blue-600"/>
+          <p className="text-xs text-black font-medium">{greeting}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3 rounded-lg bg-white p-3 shadow-sm border border-slate-200">
+
+          {/* CONTENT */}
+
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What's on your mind?"
-            rows={4}
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 resize-none placeholder:text-slate-500 text-black bg-slate-50"
+            onChange={(e)=>setContent(e.target.value)}
+            placeholder="Share something..."
+            rows={6}
+            className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-xs text-black outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-200 bg-slate-50 placeholder:text-slate-500"
           />
 
           {/* CATEGORY - SINGLE SELECT */}
@@ -300,7 +337,7 @@ export default function EditPost() {
                     <div className="flex gap-1.5">
                       <input
                         type="text"
-                        id="customTagInputEdit"
+                        id="customTagInput"
                         placeholder="Enter tag and press Enter"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && e.target.value.trim()) {
@@ -321,71 +358,113 @@ export default function EditPost() {
             )}
           </div>
 
-          {/* Image Previews */}
-          {totalImages > 0 && (
+          {/* MEDIA PREVIEW */}
+
+          {media.length > 0 && (
+
             <div className="grid grid-cols-3 gap-2">
-              {/* Existing Images */}
-              {existingImages.map((img, index) => (
-                <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                  <img src={img?.url || img} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index, true)}
-                    className="absolute top-1.5 right-1.5 p-0.5 bg-black/60 text-white rounded-lg hover:bg-black/80 transition"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              ))}
-              
-              {/* New Images */}
-              {images.map(({ preview }, index) => (
-                <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                  <img src={preview} alt="" className="w-full h-full object-cover" />
-                  
+
+              {media.map((item,index)=>(
+                <div
+                  key={index}
+                  className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 border border-slate-200"
+                >
+                  <img src={item.preview} className="w-full h-full object-cover" alt="" />
+
                   {/* Remove button */}
                   <button
                     type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1.5 right-1.5 p-0.5 bg-black/60 text-white rounded-lg hover:bg-black/80 transition"
+                    onClick={()=>removeMedia(index)}
+                    className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 transition"
                   >
-                    <X className="w-2.5 h-2.5" />
+                    <X className="w-2.5 h-2.5"/>
                   </button>
+
                 </div>
               ))}
+
             </div>
+
           )}
 
-          {/* Upload Area */}
-          {totalImages < 5 && (
-            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-blue-300 hover:bg-blue-50/20 transition">
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="p-1.5 bg-slate-100 rounded-lg">
-                  <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-                </div>
-                <span className="text-xs text-slate-700 font-medium">
-                  {totalImages === 0 ? 'Add photos' : `Add ${5 - totalImages} more`}
-                </span>
-                <span className="text-xs text-slate-500">PNG, JPG up to 10MB</span>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </label>
+          {/* MEDIA BUTTONS */}
+
+          {media.length < 5 && (
+
+            <div className="flex items-center gap-2">
+
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-black transition hover:border-blue-400 hover:bg-slate-50">
+
+                <Image className="w-3 h-3"/>
+
+                Add Photo
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMediaChange}
+                  className="hidden"
+                />
+
+              </label>
+
+              <span className="text-xs text-slate-500 ml-auto">
+                {media.length}/5
+              </span>
+
+            </div>
+
           )}
 
-          {/* Image Count */}
-          {totalImages > 0 && (
-            <p className="text-xs text-slate-600 text-center">
-              {totalImages} of 5 images used
-            </p>
-          )}
+          {/* SIMPLE PRIVACY */}
+
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-xs text-black bg-slate-50">
+            <div className="flex items-center gap-2">
+              {isPublic
+                ? <span className="flex items-center gap-1">
+                    <Globe className="w-3 h-3"/> Public
+                  </span>
+                : <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3"/> Private
+                  </span>
+              }
+            </div>
+
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={()=>setIsPublic(!isPublic)}
+              className="h-3 w-3 accent-blue-600"
+            />
+          </div>
+
+          {/* ACTION BUTTONS */}
+
+          <div className="flex gap-2 pt-1">
+
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-black transition hover:bg-slate-100"
+            >
+              Discard
+            </button>
+
+            <button
+              type="submit"
+              disabled={isLoading || (!content.trim() && media.length===0)}
+              className="flex-1 rounded-lg bg-teal-600 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? "Posting..." : "Post"}
+            </button>
+
+          </div>
+
         </form>
+
       </div>
+
     </div>
   );
 }

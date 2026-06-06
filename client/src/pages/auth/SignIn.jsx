@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../features/auth/authSlice";
-import logo from "../assets/logo.png";
+import { login } from '@/features/auth/authSlice';
+import logo from '@/assets/logo.png';
 
 function Signin() {
   const [email, setEmail] = useState("");

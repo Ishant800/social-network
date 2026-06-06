@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ArrowLeft, ImagePlus, Tag, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
-import { getMe } from '../features/auth/authSlice';
-import BlogEditor, { isTipTapContentEmpty } from '../components/blogs/BlogEditor';
+import API from '@/api/axios';
+import { getMe } from '@/features/auth/authSlice';
+import BlogEditor, { isTipTapContentEmpty } from '@/components/blogs/BlogEditor';
 
 const BLOG_CATEGORIES = [
   'Technology',

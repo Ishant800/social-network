@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const getBookmarks = async () => {
   const response = await API.get('/bookmark');

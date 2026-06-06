@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const getActiveDiscussions = async ({ limit = 6, hours = 168 } = {}) => {
   const params = new URLSearchParams({

@@ -1,4 +1,4 @@
-import API from "../../api/axios";
+import API from '@/api/axios';
 
 const getSuggestions = async (limit = 15) => {
   const response = await API.get(`/user/usersuggestions?limit=${limit}`);

@@ -13,11 +13,11 @@ import {
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
-import PostSkeleton from '../components/skeletons/PostSkeleton';
-import CommentSection from '../components/comments/CommentSection';
-import { getBlogDetails, likeBlog, unlikeBlog } from '../features/post/postSlice';
-import { toggleBookmark } from '../features/bookmarks/bookmarkSlice';
-import engagementService from '../features/engagement/engagementService';
+import PostSkeleton from '@/components/ui/skeletons/PostSkeleton';
+import CommentSection from '@/components/comments/CommentSection';
+import { getBlogDetails, likeBlog, unlikeBlog } from '@/features/post/postSlice';
+import { toggleBookmark } from '@/features/bookmarks/bookmarkSlice';
+import engagementService from '@/features/engagement/engagementService';
 
 const formatDate = (value) => {
   if (!value) return '';

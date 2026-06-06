@@ -10,11 +10,11 @@ import {
   Shield,
   Trash2,
 } from 'lucide-react';
-import API from '../api/axios';
-import { setUser, logout } from '../features/auth/authSlice';
-import settingsService from '../features/user/settingsService';
-import DeleteAccountModal from '../components/settings/DeleteAccountModal';
-import CATEGORIES from '../constants/categories';
+import API from '@/api/axios';
+import { setUser, logout } from '@/features/auth/authSlice';
+import settingsService from '@/features/users/settingsService';
+import DeleteAccountModal from '@/components/settings/DeleteAccountModal';
+import CATEGORIES from '@/constants/categories';
 
 function Toggle({ on, onChange, disabled }) {
   return (

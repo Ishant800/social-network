@@ -18,8 +18,8 @@ import {
 import {
   fetchBookmarks,
   toggleBookmark as toggleBookmarkAction,
-} from '../features/bookmarks/bookmarkSlice';
-import { getDisplayName, getAvatarUrl } from '../utils/userDisplay';
+} from '@/features/bookmarks/bookmarkSlice';
+import { getDisplayName, getAvatarUrl } from '@/utils/userDisplay';
 
 const formatDate = (date) => {
   if (!date) return '';

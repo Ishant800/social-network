@@ -5,7 +5,7 @@ import {
   setChatList,
   setUserOnlineStatus,
   setOnlineUsersFromChatList,
-} from '../features/messages/messageSlice';
+} from '@/features/messages/messageSlice';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

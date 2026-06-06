@@ -8,8 +8,8 @@ import {
   Clock,
   Loader2,
 } from 'lucide-react';
-import { fetchActiveDiscussions } from '../features/discussions/discussionSlice';
-import { getAvatarUrl, getDisplayName } from '../utils/userDisplay';
+import { fetchActiveDiscussions } from '@/features/discussions/discussionSlice';
+import { getAvatarUrl, getDisplayName } from '@/utils/userDisplay';
 
 const formatTimeAgo = (date) => {
   if (!date) return '';

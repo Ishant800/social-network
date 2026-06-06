@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, FileText, MessageSquare } from 'lucide-react';
-import postService from '../features/post/postService';
-import SimplePostCard from '../components/posts/SimplePostCard';
-import BlogCard from '../components/blogs/BlogCard';
+import postService from '@/features/post/postService';
+import SimplePostCard from '@/components/posts/SimplePostCard';
+import BlogCard from '@/components/blogs/BlogCard';
 
 const POSTS_LIMIT = 8;
 const BLOGS_LIMIT = 6;

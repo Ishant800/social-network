@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const getNotifications = (page = 1) =>
   API.get(`/notifications?page=${page}`).then((r) => r.data);

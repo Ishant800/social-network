@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Mic, Square, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { submitConfession, clearConfessionError } from '../../features/confession/confessionSlice';
+import { submitConfession, clearConfessionError } from '@/features/confession/confessionSlice';
 import VoicePlayer from './VoicePlayer';
 
 const CATEGORIES = [

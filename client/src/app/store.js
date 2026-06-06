@@ -1,14 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit"
-import authReducer from "../features/auth/authSlice"
-import postReducer from "../features/post/postSlice"
-import userReducer from "../features/users/userSlice"
-import bookmarkReducer from "../features/bookmarks/bookmarkSlice"
-import notificationReducer from "../features/notifications/notificationSlice"
-import commentReducer from "../features/comments/commentSlice"
-import messageReducer from "../features/messages/messageSlice"
-import confessionReducer from "../features/confession/confessionSlice"
-import discussionReducer from "../features/discussions/discussionSlice"
-import profileReducer from "../features/profile/profileSlice"
+import authReducer from '@/features/auth/authSlice'
+import postReducer from '@/features/post/postSlice'
+import userReducer from '@/features/users/userSlice'
+import bookmarkReducer from '@/features/bookmarks/bookmarkSlice'
+import notificationReducer from '@/features/notifications/notificationSlice'
+import commentReducer from '@/features/comments/commentSlice'
+import messageReducer from '@/features/messages/messageSlice'
+import confessionReducer from '@/features/confession/confessionSlice'
+import discussionReducer from '@/features/discussions/discussionSlice'
+import profileReducer from '@/features/profile/profileSlice'
 
 export const store = configureStore({
     reducer:{

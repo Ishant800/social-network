@@ -17,8 +17,8 @@ import {
   markAllRead,
   markOneRead,
   resetNotifications,
-} from '../features/notifications/notificationSlice';
-import { getDisplayName, getAvatarUrl } from '../utils/userDisplay';
+} from '@/features/notifications/notificationSlice';
+import { getDisplayName, getAvatarUrl } from '@/utils/userDisplay';
 
 const FILTER_TABS = [
   { key: 'all', label: 'All' },

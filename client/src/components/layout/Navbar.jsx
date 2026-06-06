@@ -1,39 +1,49 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Bell, MessageCircle, Loader2, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { logout } from '../../features/auth/authSlice';
-import Logo from '../../assets/logo.png';
-import API from '../../api/axios';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { logout } from '@/features/auth/authSlice';
+import Logo from '@/assets/logo.png';
+import API from '@/api/axios';
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchMobile, setShowSearchMobile] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState({ users: [], posts: [], blogs: [] });
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const searchRef = useRef(null);
   const profileDropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [urlSearchParams] = useSearchParams();
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.notifications);
   const { unreadCount: messageCount } = useSelector((state) => state.messages);
 
+  useEffect(() => {
+    if (location.pathname === '/search') {
+      setSearchQuery(urlSearchParams.get('q') || '');
+    }
+  }, [location.pathname, urlSearchParams]);
+
   // Fetch suggestions when query changes
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.trim().length < 2) {
-        setSuggestions([]);
+        setSuggestions({ users: [], posts: [], blogs: [] });
         setShowSuggestions(false);
         return;
       }
 
       setLoadingSuggestions(true);
       try {
-        const response = await API.get(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        const response = await API.get('/search', {
+          params: { q: searchQuery.trim(), preview: true },
+        });
         if (response.data.success) {
           const { users, posts, blogs } = response.data.results;
           setSuggestions({ users: users.slice(0, 5), posts: posts.slice(0, 3), blogs: blogs.slice(0, 3) });
@@ -64,18 +74,24 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const goToSearchResults = (keyword) => {
+    const q = keyword.trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+    setShowSearchMobile(false);
+    setShowSuggestions(false);
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setShowSearchMobile(false);
-      setShowSuggestions(false);
-    }
+    goToSearchResults(searchQuery);
   };
 
   const handleSuggestionClick = (path) => {
     navigate(path);
-    setSearchQuery('');
+    if (!path.startsWith('/search')) {
+      setSearchQuery('');
+    }
     setShowSuggestions(false);
     setShowSearchMobile(false);
   };
@@ -122,8 +138,12 @@ export default function Navbar() {
             </form>
 
             {/* Suggestions Dropdown */}
-            {showSuggestions && totalResults > 0 && (
+            {showSuggestions && searchQuery.trim().length >= 2 && !loadingSuggestions && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+                {totalResults === 0 ? (
+                  <div className="px-4 py-6 text-center text-sm text-gray-500">No results found.</div>
+                ) : (
+                <>
                 {/* Users */}
                 {suggestions.users && suggestions.users.length > 0 && (
                   <div className="p-2">
@@ -160,8 +180,10 @@ export default function Navbar() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 line-clamp-2">{post.content}</p>
-                          {post.tags && post.tags.length > 0 && (
-                            <p className="text-xs text-blue-600 mt-1">#{post.tags[0]}</p>
+                          {(post.tags?.length > 0 || post.category) && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              {post.tags?.[0] ? `#${post.tags[0]}` : post.category}
+                            </p>
                           )}
                         </div>
                       </button>
@@ -181,8 +203,10 @@ export default function Navbar() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">{blog.title}</p>
-                          {blog.category?.name && (
-                            <p className="text-xs text-gray-500 mt-0.5">{blog.category.name}</p>
+                          {blog.category && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {typeof blog.category === 'string' ? blog.category : blog.category.name}
+                            </p>
                           )}
                         </div>
                       </button>
@@ -199,6 +223,8 @@ export default function Navbar() {
                     View all results
                   </button>
                 </div>
+                </>
+                )}
               </div>
             )}
           </div>

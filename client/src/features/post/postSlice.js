@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import postService from './postService';
-import { comment } from '../comments/commentSlice';
+import { comment } from '@/features/comments/commentSlice';
 
 const initialState = {
   posts: [],

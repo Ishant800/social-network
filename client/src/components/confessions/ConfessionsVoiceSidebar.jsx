@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Mic, Waves } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loadVoiceFeed } from '../../features/confession/confessionSlice';
+import { loadVoiceFeed } from '@/features/confession/confessionSlice';
 import AnonymousAvatar from './AnonymousAvatar';
 import VoicePlayer from './VoicePlayer';
 

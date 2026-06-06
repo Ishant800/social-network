@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const isBlogItem = (item) => Boolean(item?.title || item?.coverImage);
 

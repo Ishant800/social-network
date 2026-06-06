@@ -5,11 +5,11 @@ import {
   loadConfessions,
   loadTrending,
   setCategory,
-} from '../features/confession/confessionSlice';
-import ConfessionCard from '../components/confessions/ConfessionCard';
-import WriteConfessionModal from '../components/confessions/WriteConfessionModal';
-import AnonymousAvatar from '../components/confessions/AnonymousAvatar';
-import CategoryPills from '../components/confessions/CategoryPills';
+} from '@/features/confession/confessionSlice';
+import ConfessionCard from '@/components/confessions/ConfessionCard';
+import WriteConfessionModal from '@/components/confessions/WriteConfessionModal';
+import AnonymousAvatar from '@/components/confessions/AnonymousAvatar';
+import CategoryPills from '@/components/confessions/CategoryPills';
 
 const TRENDING_BG = [
   'bg-teal-50 border-teal-100',

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { followUser, getUserSuggestions } from '../../features/users/userSlice';
-import axios from '../../api/axios';
+import { followUser, getUserSuggestions } from '@/features/users/userSlice';
+import axios from '@/api/axios';
 import {
   X,
   MessageCircle,

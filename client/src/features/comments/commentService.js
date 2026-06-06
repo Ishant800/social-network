@@ -1,4 +1,4 @@
-import API from '../../api/axios';
+import API from '@/api/axios';
 
 const getComments = async (postId, targetType = 'Post') => {
   const response = await API.get(`/comment/getComment/${postId}?type=${targetType}`);

@@ -2,11 +2,11 @@ import { ArrowLeft, MessageCircle, Send, Trash2, MoreHorizontal, Pencil, Reply, 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import SimplePostCard from '../components/posts/SimplePostCard';
-import PostSkeleton from '../components/skeletons/PostSkeleton';
-import { getPostDetails } from '../features/post/postSlice';
-import { toggleBookmark } from '../features/bookmarks/bookmarkSlice';
-import API from '../api/axios';
+import SimplePostCard from '@/components/posts/SimplePostCard';
+import PostSkeleton from '@/components/ui/skeletons/PostSkeleton';
+import { getPostDetails } from '@/features/post/postSlice';
+import { toggleBookmark } from '@/features/bookmarks/bookmarkSlice';
+import API from '@/api/axios';
 
 // Anonymous placeholder image
 

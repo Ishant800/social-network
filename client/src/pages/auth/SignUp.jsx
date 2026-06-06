@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { signup, reset } from "../features/auth/authSlice";
-import logo from "../assets/logo.png";
+import { signup, reset } from '@/features/auth/authSlice';
+import logo from '@/assets/logo.png';
 
 function Signup() {
   const [name, setName] = useState("");
