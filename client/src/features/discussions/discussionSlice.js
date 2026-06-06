@@ -11,9 +11,9 @@ const initialState = {
 // Fetch active discussions (last 24 hours)
 export const fetchActiveDiscussions = createAsyncThunk(
   'discussions/fetchActive',
-  async (_, thunkAPI) => {
+  async (options = {}, thunkAPI) => {
     try {
-      return await discussionService.getActiveDiscussions();
+      return await discussionService.getActiveDiscussions(options);
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to fetch discussions';
       return thunkAPI.rejectWithValue(message);

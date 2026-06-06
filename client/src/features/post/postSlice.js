@@ -428,6 +428,12 @@ const postSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.blogDetails = action.payload;
+        const blogId = action.payload?._id || action.payload?.id;
+        if (blogId && action.payload?.isLiked) {
+          if (!state.likedPostIds.some((id) => String(id) === String(blogId))) {
+            state.likedPostIds.push(blogId);
+          }
+        }
       })
       .addCase(getBlogDetails.rejected, (state, action) => {
         state.isLoading = false;

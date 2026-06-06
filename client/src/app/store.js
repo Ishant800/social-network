@@ -8,6 +8,7 @@ import commentReducer from "../features/comments/commentSlice"
 import messageReducer from "../features/messages/messageSlice"
 import confessionReducer from "../features/confession/confessionSlice"
 import discussionReducer from "../features/discussions/discussionSlice"
+import profileReducer from "../features/profile/profileSlice"
 
 export const store = configureStore({
     reducer:{
@@ -20,5 +21,6 @@ export const store = configureStore({
         messages: messageReducer,
         confession: confessionReducer,
         discussions: discussionReducer,
+        profile: profileReducer,
     }
 })

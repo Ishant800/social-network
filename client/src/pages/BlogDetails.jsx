@@ -17,7 +17,7 @@ import PostSkeleton from '../components/skeletons/PostSkeleton';
 import CommentSection from '../components/comments/CommentSection';
 import { getBlogDetails, likeBlog, unlikeBlog } from '../features/post/postSlice';
 import { toggleBookmark } from '../features/bookmarks/bookmarkSlice';
-import { getcomments } from '../features/comments/commentSlice';
+import engagementService from '../features/engagement/engagementService';
 
 const formatDate = (value) => {
   if (!value) return '';
@@ -33,30 +33,30 @@ function BlogContentRenderer({ content }) {
   if (!content) return null;
 
   // Function to render text with marks (bold, italic, etc.)
-  const renderText = (textNode) => {
+  const renderText = (textNode, key) => {
     if (!textNode.text) return null;
-    
-    let text = textNode.text;
-    let element = <span>{text}</span>;
-    
+
+    let element = <span key={key}>{textNode.text}</span>;
+
     if (textNode.marks) {
-      textNode.marks.forEach(mark => {
+      textNode.marks.forEach((mark, markIndex) => {
+        const markKey = `${key}-${mark.type}-${markIndex}`;
         switch (mark.type) {
           case 'bold':
-            element = <strong key={Math.random()}>{element}</strong>;
+            element = <strong key={markKey}>{element}</strong>;
             break;
           case 'italic':
-            element = <em key={Math.random()}>{element}</em>;
+            element = <em key={markKey}>{element}</em>;
             break;
           case 'code':
-            element = <code key={Math.random()}>{element}</code>;
+            element = <code key={markKey}>{element}</code>;
             break;
           case 'link':
             element = (
-              <a 
-                key={Math.random()} 
-                href={mark.attrs?.href} 
-                target="_blank" 
+              <a
+                key={markKey}
+                href={mark.attrs?.href}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
@@ -69,7 +69,7 @@ function BlogContentRenderer({ content }) {
         }
       });
     }
-    
+
     return element;
   };
 
@@ -83,7 +83,9 @@ function BlogContentRenderer({ content }) {
         const HeadingTag = `h${level}`;
         return (
           <HeadingTag key={index} className="font-bold mt-6 mb-3">
-            {node.content?.map((child, i) => renderText(child))}
+            {node.content?.map((child, i) =>
+              child.type === 'text' ? renderText(child, `${index}-h-${i}`) : null,
+            )}
           </HeadingTag>
         );
 
@@ -91,8 +93,8 @@ function BlogContentRenderer({ content }) {
         return (
           <p key={index} className="mb-4 text-gray-700 leading-relaxed">
             {node.content?.map((child, i) => {
-              if (child.type === 'text') return renderText(child);
-              if (child.type === 'hardBreak') return <br key={i} />;
+              if (child.type === 'text') return renderText(child, `${index}-p-${i}`);
+              if (child.type === 'hardBreak') return <br key={`${index}-br-${i}`} />;
               return null;
             })}
           </p>
@@ -167,6 +169,16 @@ function BlogContentRenderer({ content }) {
     }
   }
 
+  // Legacy HTML body (older create flow)
+  if (content.body && typeof content.body === 'string') {
+    return (
+      <div
+        className="blog-content prose max-w-none"
+        dangerouslySetInnerHTML={{ __html: content.body }}
+      />
+    );
+  }
+
   if (content.type === 'doc' && content.content) {
     return (
       <div className="blog-content prose max-w-none">
@@ -216,11 +228,8 @@ const getTags = (blog) => {
 };
 
 // Combined Discussion Section (Comments + Live Discussion)
-function DiscussionSection({ postId }) {
+function DiscussionSection({ postId, commentsCount, onCommentCountChange }) {
   const [activeTab, setActiveTab] = useState('comments');
-  const commentState = useSelector((state) => state.comment);
-  const comments = commentState?.comments || [];
-  const commentsCount = Array.isArray(comments) ? comments.length : 0;
 
   return (
     <div className="mt-8 border-t border-gray-100 pt-6">
@@ -254,7 +263,11 @@ function DiscussionSection({ postId }) {
       {/* Comments Tab Content */}
       {activeTab === 'comments' && (
         <div>
-          <CommentSection postId={postId} targetType="Blog" />
+          <CommentSection
+            postId={postId}
+            targetType="Blog"
+            onCommentCountChange={onCommentCountChange}
+          />
         </div>
       )}
 
@@ -306,14 +319,13 @@ export default function BlogDetails() {
   const dispatch = useDispatch();
   const { blogDetails, likedPostIds, isLoading } = useSelector((state) => state.posts);
   const { ids: bookmarkIds } = useSelector((state) => state.bookmarks);
-  const commentState = useSelector((state) => state.comment);
-  const comments = commentState?.comments || [];
-  
+
   const [error, setError] = useState(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(0);
 
   const blog = (blogDetails?._id || blogDetails?.id) === postId ? blogDetails : null;
-  const isLiked = likedPostIds?.includes(postId);
+  const isLiked = blog?.isLiked ?? likedPostIds?.includes(postId);
   const isBookmarked = bookmarkIds?.includes(postId);
 
   // Fetch blog data using Redux
@@ -325,12 +337,11 @@ export default function BlogDetails() {
     }
   }, [dispatch, postId, blog]);
 
-  // Fetch comments for this blog
   useEffect(() => {
-    if (postId) {
-      dispatch(getcomments(postId));
+    if (blog?.stats?.comments != null) {
+      setCommentsCount(blog.stats.comments);
     }
-  }, [dispatch, postId]);
+  }, [blog?.stats?.comments]);
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -355,15 +366,28 @@ export default function BlogDetails() {
 
   const handleShare = async () => {
     try {
-      await navigator.share({
-        title: blog?.title,
-        text: blog?.summary,
-        url: window.location.href,
-      });
-    } catch {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      await engagementService.trackShare('blog', postId);
+    } catch (err) {
+      console.error('Share tracking failed:', err);
     }
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: blog?.title,
+          text: blog?.summary,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch {
+      // User cancelled share dialog
+    }
+  };
+
+  const handleCommentCountChange = (count) => {
+    setCommentsCount(count);
   };
 
   if (isLoading && !blog) {
@@ -386,15 +410,14 @@ export default function BlogDetails() {
 
   const author = getAuthor(blog);
   const stats = {
-  views: blog?.stats?.views || 0,
-  comments: blog?.stats?.comments || 0,
-  likes: blog?.stats?.likes || 0,
-};
-
-const tags = blog?.tags || [];
-
-const readTime = blog?.readTime || 1;
-  
+    views: blog?.stats?.views || 0,
+    comments: commentsCount || blog?.stats?.comments || 0,
+    likes: blog?.likesCount ?? blog?.stats?.likes ?? 0,
+  };
+  const tags = blog?.tags || [];
+  const readTime = blog?.readTime || 1;
+  const categoryLabel =
+    typeof blog?.category === 'string' ? blog.category : blog?.category?.name;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -402,9 +425,9 @@ const readTime = blog?.readTime || 1;
       <article>
         {/* Header */}
         <header className="pb-6 border-b border-gray-100">
-          {blog?.category?.name && (
+          {categoryLabel && (
             <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-              {blog.category.name}
+              {categoryLabel}
             </span>
           )}
 
@@ -514,7 +537,11 @@ const readTime = blog?.readTime || 1;
         </div>
 
         {/* Discussion Section (Comments + Live Discussion Tabs) */}
-        <DiscussionSection postId={postId} />
+        <DiscussionSection
+          postId={postId}
+          commentsCount={stats.comments}
+          onCommentCountChange={handleCommentCountChange}
+        />
       </article>
 
       {/* Custom CSS for blog content */}

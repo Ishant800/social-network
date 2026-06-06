@@ -14,7 +14,7 @@ export default function Layout({ children }) {
   const isFullPage = pathname === '/chats' || pathname.startsWith('/discussionroom/');
   const isWidePage = pathname.startsWith('/profile') || pathname === '/explore' ||
                      pathname.startsWith('/post/') || pathname.startsWith('/blog/') ||
-                     pathname === '/friendsexplore';
+                     pathname === '/friendsexplore' || pathname === '/discussions';
   
   // Form pages handle their own layout completely
   const isFormPage = pathname === '/post/create' || 

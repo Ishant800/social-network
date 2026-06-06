@@ -1,18 +1,16 @@
-import API from "../../api/axios"
+import API from '../../api/axios';
 
-const getComents = async(postId)=>{
-const response = await API.get(`/comment/getComment/${postId}`)
-return response.data.comments
-}   
-    
+const getComments = async (postId, targetType = 'Post') => {
+  const response = await API.get(`/comment/getComment/${postId}?type=${targetType}`);
+  return response.data.comments;
+};
 
 const createComments = async ({ postId, text, targetType }) => {
-    // server expects { text, targetType }
-    const response = await API.post(`/comment/create/${postId}`, {
-        text,
-        targetType,
-    });
-    return response.data;
-}
+  const response = await API.post(`/comment/create/${postId}`, {
+    text,
+    targetType,
+  });
+  return response.data;
+};
 
-export default {getComents,createComments};
+export default { getComments, createComments };

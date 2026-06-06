@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Share2, Bookmark, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MessageCircle, Share2, Bookmark, MoreHorizontal, Pencil, Trash2, ThumbsUp } from 'lucide-react';
 import { reactToPost } from '../../features/post/postSlice';
 import { toggleBookmark } from '../../features/bookmarks/bookmarkSlice';
 import postService from '../../features/post/postService';
+import engagementService from '../../features/engagement/engagementService';
 import API from '../../api/axios';
+import { getDisplayName, getAvatarUrl } from '../../utils/userDisplay';
 
 // Anonymous placeholder image
 const ANONYMOUS_AVATAR = "data:image/jpeg;base64,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";
@@ -22,6 +24,15 @@ const REACTIONS = [
 const getReactionEmoji = (type) => {
   const reaction = REACTIONS.find(r => r.type === type);
   return reaction?.emoji || '👍';
+};
+
+const REACTION_ACTIVE_STYLES = {
+  like:  'text-blue-600 bg-blue-50',
+  love:  'text-red-600 bg-red-50',
+  haha:  'text-amber-600 bg-amber-50',
+  wow:   'text-purple-600 bg-purple-50',
+  sad:   'text-slate-600 bg-slate-100',
+  angry: 'text-orange-600 bg-orange-50',
 };
 
 export default function SimplePostCard({ post }) {
@@ -52,12 +63,8 @@ export default function SimplePostCard({ post }) {
   const hoverTimer = useRef(null);
 
   const isBookmarked = bookmarkIds.includes(postId);
-  const authorName = post.author?.fullName || post.author?.username || 'Unknown';
-  
-  // Handle avatar - can be string URL or object with .url property
-  const authorAvatar = typeof post.author?.avatar === 'string' 
-    ? post.author.avatar 
-    : post.author?.avatar?.url || ANONYMOUS_AVATAR;
+  const authorName = getDisplayName(post.author);
+  const authorAvatar = getAvatarUrl(post.author, ANONYMOUS_AVATAR);
 
   const isOwner = currentUser && (
     post.author?.userId === currentUser._id ||
@@ -312,22 +319,9 @@ export default function SimplePostCard({ post }) {
         )}
       </div>
 
-      {/* Reaction summary */}
-      {localLikes > 0 && (
-        <div className="flex items-center gap-1.5 mb-2 px-1">
-          <div className="flex -space-x-1">
-            {topReactions.map((emoji, i) => (
-              <span key={i} className="text-lg leading-none">{emoji}</span>
-            ))}
-          </div>
-          <span className="text-xs text-gray-500 ml-1">{localLikes}</span>
-        </div>
-      )}
-
       {/* Actions */}
-      <div className="grid grid-cols-4 gap-1 mt-2 border-t border-gray-100 pt-2">
-
-        {/* Reaction button with picker - REDUCED SIZES */}
+      <div className="mt-3 grid grid-cols-4 gap-1 border-t border-gray-100 pt-2">
+        {/* Reaction button with picker */}
         <div className="relative" ref={pickerRef}>
           <button
             onClick={handleLikeClick}
@@ -335,17 +329,31 @@ export default function SimplePostCard({ post }) {
             onMouseLeave={handleLikeMouseLeave}
             disabled={isReacting}
             className={`w-full h-8 text-xs gap-1.5 flex items-center justify-center rounded transition hover:bg-gray-50 ${
-              userReaction ? 'text-blue-600 font-medium' : 'text-gray-500'
+              userReaction
+                ? REACTION_ACTIVE_STYLES[userReaction] || 'text-blue-600 bg-blue-50'
+                : 'text-gray-500'
             }`}
           >
-            <span className="text-base leading-none">
-              {userReaction ? getReactionEmoji(userReaction) : '👍'}
-            </span>
-            <span className="text-xs">
-              {userReaction
-                ? REACTIONS.find(r => r.type === userReaction)?.label
-                : 'Like'}
-            </span>
+            {localLikes > 0 ? (
+              <>
+                <div className="flex -space-x-1">
+                  {topReactions.map((emoji, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-xs leading-none"
+                    >
+                      {emoji}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-xs font-medium">{localLikes}</span>
+              </>
+            ) : (
+              <>
+                <ThumbsUp className="h-4 w-4" />
+                <span className="text-xs">Like</span>
+              </>
+            )}
           </button>
 
           {/* Reaction picker popup - REDUCED SIZES */}
@@ -386,9 +394,23 @@ export default function SimplePostCard({ post }) {
 
         {/* Share */}
         <button
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            navigator.share?.({ url: `${window.location.origin}/post/${postId}` });
+            const shareUrl = `${window.location.origin}/post/${postId}`;
+            try {
+              await engagementService.trackShare('post', postId);
+            } catch (err) {
+              console.error('Share tracking failed:', err);
+            }
+            try {
+              if (navigator.share) {
+                await navigator.share({ url: shareUrl });
+              } else {
+                await navigator.clipboard.writeText(shareUrl);
+              }
+            } catch {
+              // User cancelled share dialog
+            }
           }}
           className="h-8 text-xs gap-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded transition"
         >

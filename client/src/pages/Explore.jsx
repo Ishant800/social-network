@@ -1,234 +1,199 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Newspaper, ChevronDown, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2, FileText, MessageSquare } from 'lucide-react';
 import postService from '../features/post/postService';
+import SimplePostCard from '../components/posts/SimplePostCard';
+import BlogCard from '../components/blogs/BlogCard';
 
-function BlogCard({ blog }) {
-  const id = blog._id || blog.id;
-  const cover = blog.coverImage?.url?.trim();
-  const author = blog.author?.fullName || blog.author?.username || 'Anonymous';
-  const authorId = blog.author?._id || blog.author?.userId;
-  const authorAvatar = blog.author?.avatar?.url || `https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg`;
-  const date = blog.publishedAt || blog.createdAt;
-  
-  const formatDate = (value) => {
-    if (!value) return '';
-    return new Date(value).toLocaleDateString(undefined, { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const readTime = blog.readTime || Math.ceil((blog.content?.length || 0) / 1000) || 5;
-
-  return (
-    <article className="py-5 border-b border-gray-200 last:border-0">
-      <div className="flex gap-8">
-        {/* Left Content Section */}
-        <div className="flex-1 min-w-0">
-          {/* Author Row */}
-          <div className="flex items-center gap-2 mb-2">
-            <Link to={`/profile/${authorId}`} onClick={(e) => e.stopPropagation()}>
-              <img 
-                src={authorAvatar} 
-                alt={author}
-                className="w-6 h-6 rounded-full object-cover cursor-pointer hover:opacity-80 transition"
-              />
-            </Link>
-            <Link 
-              to={`/profile/${authorId}`} 
-              onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-gray-900 hover:text-gray-700 transition"
-            >
-              {author}
-            </Link>
-          </div>
-
-          {/* Title */}
-          <Link to={`/blog/${id}`}>
-            <h2 className="text-xl font-bold text-gray-900 hover:text-gray-700 leading-tight mb-2 line-clamp-2 cursor-pointer">
-              {blog.title}
-            </h2>
-          </Link>
-
-          {/* Description */}
-          <Link to={`/blog/${id}`}>
-            <p className="text-sm text-gray-600 leading-relaxed mb-3 line-clamp-2 cursor-pointer">
-              {blog.summary || (typeof blog.content === 'string' ? blog.content.substring(0, 160) : '') || 'Read this article...'}
-            </p>
-          </Link>
-
-          {/* Bottom Metadata Row */}
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span>{formatDate(date)}</span>
-            <span>·</span>
-            <span>{readTime} min read</span>
-            <span>·</span>
-            <span className="flex items-center gap-1">
-              <Heart className="h-3.5 w-3.5" />
-              {blog.likes?.length || blog.likesCount || 0}
-            </span>
-          </div>
-        </div>
-
-        {/* Right Section - Thumbnail */}
-        {cover && (
-          <Link to={`/blog/${id}`} className="shrink-0">
-            <div className="w-32 h-32 rounded overflow-hidden bg-gray-100">
-              <img 
-                src={cover} 
-                alt={blog.title}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          </Link>
-        )}
-      </div>
-    </article>
-  );
-}
+const POSTS_LIMIT = 8;
+const BLOGS_LIMIT = 6;
 
 export default function Explore() {
+  const [posts, setPosts] = useState([]);
   const [blogs, setBlogs] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [skip, setSkip] = useState(0);
+  const [postsSkip, setPostsSkip] = useState(0);
+  const [blogsSkip, setBlogsSkip] = useState(0);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [blogsHasMore, setBlogsHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  const [loadingMoreBlogs, setLoadingMoreBlogs] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('latest');
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  const limit = 10;
-
-  const filterOptions = [
-    { value: 'latest', label: 'Latest' },
-    { value: 'popular', label: 'Most viewed' },
-    { value: 'trending', label: 'Trending' },
-  ];
-
-  const load = useCallback(async (offset, append) => {
+  const loadInitial = useCallback(async () => {
     try {
-      if (append) setLoadingMore(true);
-      else setLoading(true);
+      setLoading(true);
       setError('');
-      
-      const data = await postService.exploreBlogs({
-        search: '',
-        skip: offset,
-        limit,
-        sort: filter,
+
+      const data = await postService.exploreFeed({
+        postsLimit: POSTS_LIMIT,
+        blogsLimit: BLOGS_LIMIT,
+        postsSkip: 0,
+        blogsSkip: 0,
       });
-      
-      const list = data.blogs || [];
-      setTotal(data.total ?? list.length);
-      
-      if (append) {
-        setBlogs((prev) => [...prev, ...list]);
-      } else {
-        setBlogs(list);
-      }
-      setSkip(offset + list.length);
+
+      const newPosts = data.posts || [];
+      const newBlogs = data.blogs || [];
+
+      setPosts(newPosts);
+      setBlogs(newBlogs);
+      setPostsSkip(newPosts.length);
+      setBlogsSkip(newBlogs.length);
+      setPostsHasMore(Boolean(data.postsHasMore));
+      setBlogsHasMore(Boolean(data.blogsHasMore));
     } catch (e) {
-      setError(e.response?.data?.message || e.message || 'Could not load articles.');
-      if (!append) setBlogs([]);
+      setError(e.response?.data?.message || e.message || 'Could not load explore feed.');
+      setPosts([]);
+      setBlogs([]);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }, [filter, limit]);
+  }, []);
 
   useEffect(() => {
-    setSkip(0);
-    load(0, false);
-  }, [filter, load]);
+    loadInitial();
+  }, [loadInitial]);
 
-  const hasMore = useMemo(() => skip < total && blogs.length > 0, [skip, total, blogs.length]);
+  const handleLoadMorePosts = async () => {
+    if (loadingMorePosts || !postsHasMore) return;
 
-  const currentFilterLabel = filterOptions.find(f => f.value === filter)?.label;
+    try {
+      setLoadingMorePosts(true);
+      const data = await postService.exploreFeed({
+        postsLimit: POSTS_LIMIT,
+        blogsLimit: 0,
+        postsSkip,
+        blogsSkip: 0,
+      });
+      const newPosts = data.posts || [];
+      setPosts((prev) => [...prev, ...newPosts]);
+      setPostsSkip((prev) => prev + newPosts.length);
+      setPostsHasMore(Boolean(data.postsHasMore));
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || 'Could not load more posts.');
+    } finally {
+      setLoadingMorePosts(false);
+    }
+  };
+
+  const handleLoadMoreBlogs = async () => {
+    if (loadingMoreBlogs || !blogsHasMore) return;
+
+    try {
+      setLoadingMoreBlogs(true);
+      const data = await postService.exploreFeed({
+        postsLimit: 0,
+        blogsLimit: BLOGS_LIMIT,
+        postsSkip: 0,
+        blogsSkip,
+      });
+      const newBlogs = data.blogs || [];
+      setBlogs((prev) => [...prev, ...newBlogs]);
+      setBlogsSkip((prev) => prev + newBlogs.length);
+      setBlogsHasMore(Boolean(data.blogsHasMore));
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || 'Could not load more blogs.');
+    } finally {
+      setLoadingMoreBlogs(false);
+    }
+  };
+
+  const isEmpty = !loading && posts.length === 0 && blogs.length === 0;
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-4">
-      {/* Header with Filter */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Explore</h1>
-        
-        {/* Filter Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50 transition-all"
-          >
-            {currentFilterLabel}
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showFilterDropdown && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowFilterDropdown(false)} />
-              <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1">
-                {filterOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setFilter(option.value);
-                      setShowFilterDropdown(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                      filter === option.value ? 'text-blue-600 font-medium bg-blue-50/50' : 'text-gray-700'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          Suggested on the basis of your interests
+        </p>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-md px-4 py-3">
           {error}
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="flex justify-center py-20">
           <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
         </div>
       )}
 
-      {/* Empty */}
-      {!loading && blogs.length === 0 && !error && (
-        <div className="text-center py-20">
-          <Newspaper className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-3 text-gray-500 text-sm">No articles found</p>
-        </div>
-      )}
-
-      {/* Blog List */}
-      {!loading && blogs.length > 0 && (
+      {!loading && (
         <>
-          <div>
-            {blogs.map((blog) => (
-              <BlogCard key={blog._id || blog.id} blog={blog} />
-            ))}
-          </div>
-
-          {/* Load More */}
-          {hasMore && (
-            <div className="flex justify-center mt-8 mb-4">
-              <button
-                onClick={() => load(skip, true)}
-                disabled={loadingMore}
-                className="px-6 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Load more articles'}
-              </button>
+          {/* Posts section */}
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+              <MessageSquare className="h-5 w-5 text-teal-600" />
+              <h2 className="text-xl font-bold text-gray-900">Posts</h2>
             </div>
+
+            {posts.length === 0 ? (
+              <p className="text-sm text-gray-500 py-6 text-center">No posts to show right now.</p>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <SimplePostCard key={post._id || post.id} post={post} />
+                ))}
+              </div>
+            )}
+
+            {postsHasMore && posts.length > 0 && (
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={handleLoadMorePosts}
+                  disabled={loadingMorePosts}
+                  className="px-6 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {loadingMorePosts ? (
+                    <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                  ) : (
+                    'Load more posts'
+                  )}
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Blogs section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-bold text-gray-900">Blogs</h2>
+            </div>
+
+            {blogs.length === 0 ? (
+              <p className="text-sm text-gray-500 py-6 text-center">No blogs to show right now.</p>
+            ) : (
+              <div className="space-y-4">
+                {blogs.map((blog) => (
+                  <BlogCard key={blog._id || blog.id} post={blog} />
+                ))}
+              </div>
+            )}
+
+            {blogsHasMore && blogs.length > 0 && (
+              <div className="flex justify-center mt-6 mb-4">
+                <button
+                  onClick={handleLoadMoreBlogs}
+                  disabled={loadingMoreBlogs}
+                  className="px-6 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {loadingMoreBlogs ? (
+                    <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                  ) : (
+                    'Load more blogs'
+                  )}
+                </button>
+              </div>
+            )}
+          </section>
+
+          {isEmpty && !error && (
+            <p className="text-center text-sm text-gray-500 py-10">
+              Follow people and interact with content to improve your explore feed.
+            </p>
           )}
         </>
       )}

@@ -10,17 +10,13 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
-  const [googleMsg, setGoogleMsg] = useState(false);
+  
 
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleGoogleClick = () => {
-    setGoogleMsg(true);
-    setTimeout(() => setGoogleMsg(false), 2000);
-  };
-
+ 
 
   useEffect(() => {
     if (isSuccess) {
@@ -179,7 +175,7 @@ function Signup() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 transition disabled:opacity-60 mt-4"
+              className="w-full bg-teal-600 text-white py-2 rounded text-sm font-medium hover:bg-teal-700 transition disabled:opacity-60 mt-4"
             >
               {isLoading ? "Creating..." : "Sign Up"}
             </button>
@@ -191,25 +187,7 @@ function Signup() {
               <div className="flex-1 h-px bg-gray-200"></div>
             </div>
 
-            {/* Google Button */}
-            <button
-              type="button"
-              onClick={handleGoogleClick}
-              className="w-full border border-gray-300 py-2 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-2"
-            >
-              <img
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="google"
-                className="h-3.5 w-3.5"
-              />
-              Continue with Google
-            </button>
-
-            {googleMsg && (
-              <p className="text-center text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                Google sign-in not available. Please use your credentials.
-              </p>
-            )}
+           
 
             {/* Sign In Link */}
             <p className="text-center text-xs text-gray-600 mt-4">

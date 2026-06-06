@@ -23,6 +23,7 @@ import Notifications from './pages/Notifications';
 import CreatePostPage from './pages/CreatePost';
 import CreateBlog from './pages/CreateBlog';
 import DiscussionRoom from './components/chats/DiscussionRoom';
+import Discussions from './pages/Discussions';
 import MessageSystem from './pages/Chat';
 import SearchPage from './pages/Search';
 import Confessions from './pages/Confessions';
@@ -101,6 +102,7 @@ export default function App() {
         <Route path="/friendsexplore" element={<ProtectedRoute><UserSuggestions /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/discussions" element={<ProtectedRoute><Discussions /></ProtectedRoute>} />
         <Route path="/discussionroom/:blogId" element={<ProtectedRoute><DiscussionRoom /></ProtectedRoute>} />
         <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
         <Route path="/post/create" element={<ProtectedRoute><CreatePostPage /></ProtectedRoute>} />

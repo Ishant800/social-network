@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import io from 'socket.io-client';
 import {
   Send,
   ArrowLeft,
@@ -11,20 +10,69 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { setChatList, decrementUnreadCount } from '../features/messages/messageSlice';
+import { markChatAsRead } from '../features/messages/messageSlice';
+import { usePrivateChat } from '../context/PrivateChatContext';
+import { getDisplayName, getAvatarUrl } from '../utils/userDisplay';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────────
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const normalizePrivateMessage = (msg) => {
+  const id = String(msg.id || msg._id || '');
+  return {
+    id,
+    _id: id,
+    from: {
+      _id: msg.from?._id || msg.from,
+      username: msg.from?.username,
+      fullName: msg.from?.fullName || msg.from?.profile?.fullName,
+      profile: msg.from?.profile,
+      profileImage: msg.from?.profileImage,
+      avatar: msg.from?.avatar || msg.from?.profile?.avatar?.url,
+    },
+    to: {
+      _id: msg.to?._id || msg.to,
+      username: msg.to?.username,
+      fullName: msg.to?.fullName || msg.to?.profile?.fullName,
+      profile: msg.to?.profile,
+      profileImage: msg.to?.profileImage,
+      avatar: msg.to?.avatar || msg.to?.profile?.avatar?.url,
+    },
+    content: msg.content,
+    createdAt: msg.createdAt,
+    read: Boolean(msg.read),
+    delivered: Boolean(msg.delivered),
+  };
+};
 
-const getAvatar = (u) =>
-  u?.profile?.avatar?.url ||
-  u?.profileImage?.url ||
-  u?.profileImage ||
+const messageKey = (msg) => {
+  const id = String(msg.id || msg._id || '');
+  if (id) return `id:${id}`;
+  const fromId = String(msg.from?._id || msg.from || '');
+  const ts = msg.createdAt ? new Date(msg.createdAt).getTime() : '';
+  return `fallback:${fromId}:${ts}:${msg.content}`;
+};
+
+const appendUniqueMessage = (prev, msg) => {
+  const normalized = normalizePrivateMessage(msg);
+  const key = messageKey(normalized);
+  if (prev.some((m) => messageKey(m) === key)) {
+    return prev;
+  }
+  return [...prev, normalized];
+};
+
+const dedupeMessages = (messages) => {
+  const seen = new Set();
+  return messages.filter((msg) => {
+    const key = messageKey(msg);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const avatarFallback = (u) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    u?.username || u?.name || 'User'
+    getDisplayName(u),
   )}&background=e2e8f0&color=475569&bold=true`;
-
-const getName = (u) => u?.username || u?.name || 'User';
 
 const fmtTime = (ts) => {
   if (!ts) return '';
@@ -49,8 +97,8 @@ function EmptyChat() {
 // ─── Conversation row ─────────────────────────────────────────────────────────────
 function ConversationRow({ chat, isActive, onClick, isOnline }) {
   const u    = chat.user;
-  const name = getName(u);
-  const avatar = getAvatar(u);
+  const name = getDisplayName(u);
+  const avatar = getAvatarUrl(u, avatarFallback(u));
   const lastMsg = chat.lastMessage?.content;
   const time    = fmtTime(chat.lastMessage?.createdAt);
 
@@ -139,147 +187,143 @@ function TypingIndicator() {
 
 export default function MessageSystem() {
   const { user }   = useSelector((s) => s.auth);
+  const chatList   = useSelector((s) => s.messages.chatList);
+  const onlineUsers = useSelector((s) => s.messages.onlineUsers);
   const dispatch   = useDispatch();
   const navigate   = useNavigate();
   const location   = useLocation();
+  const { socketRef, connected } = usePrivateChat();
 
-  const socketRef      = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimer    = useRef(null);
   const inputRef       = useRef(null);
+  const selectedChatRef = useRef(null);
+  const userIdRef       = useRef(null);
+  const historyForRef   = useRef(null);
 
-  const [connected,     setConnected]     = useState(false);
-  const [chatList,      setChatList]      = useState([]);
   const [selectedChat,  setSelectedChat]  = useState(null);
   const [messages,      setMessages]      = useState([]);
   const [draft,         setDraft]         = useState('');
   const [isTyping,      setIsTyping]      = useState(false);
   const [search,        setSearch]        = useState('');
-  const [onlineUsers,   setOnlineUsers]   = useState({});
+
+  const isUserOnline = (id) => Boolean(onlineUsers[String(id)]);
+
+  const userId = user?._id || user?.id;
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // ── Init socket ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
-
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  // ── Register + load chat list once connected ─────────────────────────────────
+  // ── Chat page socket listeners (shared socket from PrivateChatProvider) ─────
   useEffect(() => {
     const socket = socketRef.current;
-    if (!socket || !connected || !user?._id) return;
+    if (!socket || !connected || !userId) return;
 
-    socket.emit('register_private_user', { userId: user._id });
-    socket.emit('get_chat_list', { userId: user._id });
+    const onReceivePrivate = (msg) => {
+      const sc = selectedChatRef.current;
+      const fromId = msg.from?._id || msg.from;
+      if (sc && String(fromId) === String(sc.user._id)) {
+        setMessages((prev) => appendUniqueMessage(prev, msg));
+        socket.emit('mark_private_messages_read', {
+          userId: userIdRef.current,
+          otherUserId: fromId,
+        });
+      }
+      socket.emit('get_chat_list', { userId: userIdRef.current });
+    };
 
-    socket.on('chat_list_data', (data) => {
-      setChatList(data);
-      // Update Redux store with chat list and unread count
-      dispatch(setChatList(data));
-      // Update online status from chat list
-      const onlineMap = {};
-      data.forEach(chat => {
-        if (chat.isOnline) {
-          onlineMap[chat.user._id] = true;
-        }
-      });
-      setOnlineUsers(onlineMap);
-    });
+    const onPrivateSent = (msg) => {
+      const sc = selectedChatRef.current;
+      const toId = msg.to?._id || msg.to;
+      if (sc && String(toId) === String(sc.user._id)) {
+        setMessages((prev) => appendUniqueMessage(prev, msg));
+        setTimeout(scrollToBottom, 80);
+      }
+      socket.emit('get_chat_list', { userId: userIdRef.current });
+    };
 
-    socket.on('receive_private_message', (msg) => {
-      // If the message is from the currently open conversation, append it
-      setSelectedChat((sc) => {
-        if (sc && msg.from?._id === sc.user._id) {
-          setMessages((prev) => [...prev, msg]);
-          socket.emit('mark_private_messages_read', {
-            userId: user._id,
-            otherUserId: msg.from._id,
-          });
-        }
-        return sc;
-      });
-      // Always refresh the list
-      socket.emit('get_chat_list', { userId: user._id });
-    });
+    const onChatHistory = (payload) => {
+      const history = Array.isArray(payload) ? payload : payload?.messages;
+      const payloadOtherUserId = Array.isArray(payload)
+        ? historyForRef.current
+        : payload?.otherUserId;
+      const sc = selectedChatRef.current;
+      if (!sc || !payloadOtherUserId) return;
+      if (String(sc.user?._id) !== String(payloadOtherUserId)) return;
 
-    socket.on('private_message_sent', (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      const normalized = (history || []).map(normalizePrivateMessage);
+      setMessages(dedupeMessages(normalized));
       setTimeout(scrollToBottom, 80);
-      socket.emit('get_chat_list', { userId: user._id });
-    });
+    };
 
-    socket.on('private_chat_history', (history) => {
-      setMessages(history);
-      setTimeout(scrollToBottom, 80);
-    });
-
-    socket.on('message_delivered', ({ messageId }) => {
+    const onMessageDelivered = ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, delivered: true } : m))
+        prev.map((m) =>
+          String(m.id || m._id) === String(messageId) ? { ...m, delivered: true } : m,
+        ),
       );
-    });
+    };
 
-    socket.on('messages_read', ({ readBy }) => {
-      setSelectedChat((sc) => {
-        if (sc && readBy === sc.user._id) {
-          setMessages((prev) => prev.map((m) => ({ ...m, read: true })));
-        }
-        return sc;
-      });
-    });
+    const onMessagesRead = ({ readBy }) => {
+      const sc = selectedChatRef.current;
+      if (sc && String(readBy) === String(sc.user._id)) {
+        setMessages((prev) => prev.map((m) => ({ ...m, read: true })));
+      }
+    };
 
-    socket.on('user_typing', ({ userId, isTyping: typing }) => {
-      setSelectedChat((sc) => {
-        if (sc && userId === sc.user._id) setIsTyping(typing);
-        return sc;
-      });
-    });
+    const onUserTyping = ({ userId: typingUserId, isTyping: typing }) => {
+      const sc = selectedChatRef.current;
+      if (sc && String(typingUserId) === String(sc.user._id)) {
+        setIsTyping(typing);
+      }
+    };
 
-    socket.on('user_status_changed', ({ userId, isOnline }) => {
-      setOnlineUsers((prev) => {
-        if (isOnline) {
-          return { ...prev, [userId]: true };
-        } else {
-          const updated = { ...prev };
-          delete updated[userId];
-          return updated;
-        }
-      });
-    });
+    socket.on('receive_private_message', onReceivePrivate);
+    socket.on('private_message_sent', onPrivateSent);
+    socket.on('private_chat_history', onChatHistory);
+    socket.on('message_delivered', onMessageDelivered);
+    socket.on('messages_read', onMessagesRead);
+    socket.on('user_typing', onUserTyping);
 
     return () => {
-      socket.off('chat_list_data');
-      socket.off('receive_private_message');
-      socket.off('private_message_sent');
-      socket.off('private_chat_history');
-      socket.off('message_delivered');
-      socket.off('messages_read');
-      socket.off('user_typing');
-      socket.off('user_status_changed');
+      socket.off('receive_private_message', onReceivePrivate);
+      socket.off('private_message_sent', onPrivateSent);
+      socket.off('private_chat_history', onChatHistory);
+      socket.off('message_delivered', onMessageDelivered);
+      socket.off('messages_read', onMessagesRead);
+      socket.off('user_typing', onUserTyping);
     };
-  }, [connected, user, scrollToBottom]);
+  }, [connected, userId, scrollToBottom, socketRef]);
 
   // ── Handle incoming navigation from UserSuggestions ─────────────────────────
   useEffect(() => {
     const target = location.state?.startChatWith;
     const socket = socketRef.current;
-    if (!target || !socket || !user?._id) return;
+    if (!target || !socket || !userId) return;
 
+    const fullName = target.fullName || target.name;
+    const avatar = target.profileImage;
     const chatUser = {
       user: {
-        _id:          target._id,
-        username:     target.name || target.username,
-        profileImage: target.profileImage,
+        _id: target._id,
+        username: target.username,
+        fullName,
+        profile: {
+          fullName: fullName || null,
+          avatar: typeof avatar === 'string'
+            ? { url: avatar }
+            : avatar || null,
+        },
+        profileImage: avatar || null,
       },
       lastMessage: null,
       unreadCount: 0,
@@ -289,42 +333,26 @@ export default function MessageSystem() {
     setMessages([]);
 
     navigate('/chats', { replace: true, state: {} });
-  }, [location.state, user, navigate]);
+  }, [location.state, userId, navigate]);
 
-  
   useEffect(() => {
     const socket = socketRef.current;
-    if (!selectedChat || !socket || !user?._id || !connected) return;
+    const otherUserId = selectedChat?.user?._id;
+    if (!otherUserId || !socket?.connected || !userId) return;
 
-    socket.emit('get_private_chat_history', {
-      userId:      user._id,
-      otherUserId: selectedChat.user._id,
-    });
-    socket.emit('mark_private_messages_read', {
-      userId:      user._id,
-      otherUserId: selectedChat.user._id,
-    });
+    historyForRef.current = otherUserId;
+    socket.emit('get_private_chat_history', { userId, otherUserId });
+    socket.emit('mark_private_messages_read', { userId, otherUserId });
     setIsTyping(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [selectedChat, connected, user]);
+  }, [selectedChat?.user?._id, userId, connected]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   const selectConversation = (chat) => {
     setSelectedChat(chat);
     setMessages([]);
-    
-    // Update local chat list to mark as read
-    const unreadCount = chat.unreadCount || 0;
-    setChatList((prev) =>
-      prev.map((c) =>
-        c.user._id === chat.user._id ? { ...c, unreadCount: 0 } : c
-      )
-    );
-    
-    // Decrement Redux unread count
-    if (unreadCount > 0) {
-      dispatch(decrementUnreadCount(unreadCount));
-    }
+
+    dispatch(markChatAsRead(chat.user._id));
   };
 
   const sendMessage = (e) => {
@@ -333,8 +361,8 @@ export default function MessageSystem() {
     if (!draft.trim() || !selectedChat || !socket) return;
 
     socket.emit('send_private_message', {
-      from:    user._id,
-      to:      selectedChat.user._id,
+      from: userId,
+      to: selectedChat.user._id,
       message: draft.trim(),
     });
     setDraft('');
@@ -344,21 +372,23 @@ export default function MessageSystem() {
     const socket = socketRef.current;
     if (!selectedChat || !socket) return;
 
-    socket.emit('private_typing', { from: user._id, to: selectedChat.user._id, isTyping: true });
+    socket.emit('private_typing', { from: userId, to: selectedChat.user._id, isTyping: true });
     clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => {
-      socket.emit('private_typing', { from: user._id, to: selectedChat.user._id, isTyping: false });
+      socket.emit('private_typing', { from: userId, to: selectedChat.user._id, isTyping: false });
     }, 1500);
   };
 
   // ── Filtered chat list ───────────────────────────────────────────────────────
   const visibleChats = chatList.filter((c) => {
     if (!search.trim()) return true;
-    return getName(c.user).toLowerCase().includes(search.toLowerCase());
+    return getDisplayName(c.user).toLowerCase().includes(search.toLowerCase());
   });
 
-  const recipientName   = selectedChat ? getName(selectedChat.user)   : '';
-  const recipientAvatar = selectedChat ? getAvatar(selectedChat.user) : '';
+  const recipientName = selectedChat ? getDisplayName(selectedChat.user) : '';
+  const recipientAvatar = selectedChat
+    ? getAvatarUrl(selectedChat.user, avatarFallback(selectedChat.user))
+    : '';
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -413,7 +443,7 @@ export default function MessageSystem() {
                 chat={chat}
                 isActive={selectedChat?.user._id === chat.user._id}
                 onClick={() => selectConversation(chat)}
-                isOnline={onlineUsers[chat.user._id]}
+                isOnline={isUserOnline(chat.user._id)}
               />
             ))
           )}
@@ -442,7 +472,7 @@ export default function MessageSystem() {
                   alt={recipientName}
                   className="w-9 h-9 rounded-full object-cover"
                 />
-                {onlineUsers[selectedChat.user._id] && (
+                {isUserOnline(selectedChat.user._id) && (
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
                 )}
               </div>
@@ -454,7 +484,7 @@ export default function MessageSystem() {
                 <p className="text-[11px] text-gray-400 leading-tight mt-0.5">
                   {isTyping ? (
                     <span className="text-gray-700 font-medium animate-pulse">typing…</span>
-                  ) : onlineUsers[selectedChat.user._id] ? (
+                  ) : isUserOnline(selectedChat.user._id) ? (
                     <span className="text-green-600 font-medium">Online</span>
                   ) : (
                     'Offline'
@@ -475,7 +505,7 @@ export default function MessageSystem() {
               ) : (
                 messages.map((msg, idx) => {
                   const fromId  = msg.from?._id || msg.from;
-                  const isSender = String(fromId) === String(user._id);
+                  const isSender = String(fromId) === String(userId);
                   return (
                     <MessageBubble key={msg.id || msg._id || idx} msg={msg} isSender={isSender} />
                   );

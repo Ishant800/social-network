@@ -90,6 +90,17 @@ const updatePost = async (postId, formData) => {
   return normalizePost(response.data.post);
 };
 
+const exploreFeed = async ({ postsLimit = 8, blogsLimit = 6, postsSkip = 0, blogsSkip = 0 } = {}) => {
+  const params = new URLSearchParams({
+    postsLimit: String(postsLimit),
+    blogsLimit: String(blogsLimit),
+    postsSkip: String(postsSkip),
+    blogsSkip: String(blogsSkip),
+  });
+  const { data } = await API.get(`/feed/explore?${params.toString()}`);
+  return data;
+};
+
 const exploreBlogs = async ({ search = '', skip = 0, limit = 24, exclude = '', category = '' } = {}) => {
   const params = new URLSearchParams({
     limit: String(limit),
@@ -123,6 +134,7 @@ export default {
   unlikeBlog,
   getPostDetails,
   getBlogDetails,
+  exploreFeed,
   exploreBlogs,
   updateInterestScores,
 };

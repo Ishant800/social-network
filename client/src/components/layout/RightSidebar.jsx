@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { followUser, getUserSuggestions } from '../../features/users/userSlice';
 import axios from '../../api/axios';
-import { 
-  X, 
+import {
+  X,
   MessageCircle,
   Heart,
-  Eye
+  Eye,
 } from 'lucide-react';
 
 // The anonymous placeholder image
@@ -17,7 +17,7 @@ const ANONYMOUS_AVATAR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wC
 export default function RightSidebar() {
   const dispatch = useDispatch();
   const { suggestions, isLoading, isError } = useSelector((s) => s.users);
-  
+
   const [dismissedUsers, setDismissedUsers] = useState([]);
   const [following, setFollowing] = useState({});
   const [weeklyStats, setWeeklyStats] = useState({

@@ -17,7 +17,12 @@ import {
 import API from '../../api/axios';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const socket = io(SOCKET_URL, { autoConnect: false });
+
+const appendUniqueDiscussionMessage = (prev, formatted) => {
+  const id = String(formatted.id || '');
+  if (id && prev.some((m) => String(m.id) === id)) return prev;
+  return [...prev, formatted];
+};
 
 const DiscussionRoom = () => {
   const { blogId } = useParams();
@@ -36,6 +41,17 @@ const DiscussionRoom = () => {
   const [showPingToast, setShowPingToast] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const socketRef = useRef(null);
+  const userIdRef = useRef(null);
+  const blogAuthorIdRef = useRef(null);
+
+  useEffect(() => {
+    userIdRef.current = user?._id || user?.id;
+  }, [user?._id, user?.id]);
+
+  useEffect(() => {
+    blogAuthorIdRef.current = blog?.author?._id;
+  }, [blog?.author?._id]);
 
   // Fetch blog details
   useEffect(() => {
@@ -67,7 +83,9 @@ const DiscussionRoom = () => {
     id: blog?.author?._id,
   };
 
-  const isAuthorOnline = onlineUsers.some(u => u.userId === authorInfo.id);
+  const isAuthorOnline = onlineUsers.some(
+    (u) => String(u.userId) === String(authorInfo.id),
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,29 +106,17 @@ const DiscussionRoom = () => {
 
   // Socket connection
   useEffect(() => {
-    if (!blogId || !user?._id) return;
+    const userId = user?._id || user?.id;
+    if (!blogId || !userId) return;
 
-    if (!socket.connected) {
-      socket.connect();
-    }
+    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    socketRef.current = socket;
 
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
 
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    setIsConnected(socket.connected);
-
-    socket.emit('join_room', {
-      blogId,
-      user: {
-        _id: user._id,
-        username: user.username || user.name,
-        avatar: user.avatar || user.profileImage?.url,
-      },
-    });
-
     const handleLoadMessages = (msgs) => {
+      const authorId = blogAuthorIdRef.current;
       const formatted = msgs.map((msg) => ({
         id: msg._id?.toString() || msg.id,
         author: msg.user?.username || msg.author || 'Anonymous',
@@ -120,17 +126,18 @@ const DiscussionRoom = () => {
           ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
           : msg.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
         userId: msg.user?._id || msg.userId,
-        likes: msg.likes || 0,
+        likes: msg.likes || (msg.likedBy || []).length || 0,
         likedBy: msg.likedBy || [],
         replyTo: msg.replyTo,
-        isAuthor: (msg.user?._id || msg.userId) === authorInfo.id,
+        isAuthor: String(msg.user?._id || msg.userId) === String(authorId),
       }));
       setMessages(formatted);
     };
 
     const handleReceiveMessage = (newMessage) => {
+      const authorId = blogAuthorIdRef.current;
       const formatted = {
-        id: newMessage.id?.toString() || newMessage._id?.toString() || Date.now().toString(),
+        id: newMessage.id?.toString() || newMessage._id?.toString() || '',
         author: newMessage.author || newMessage.user?.username || 'Unknown',
         avatar: newMessage.avatar || newMessage.user?.avatar,
         text: newMessage.text || newMessage.content,
@@ -139,12 +146,13 @@ const DiscussionRoom = () => {
         likes: 0,
         likedBy: [],
         replyTo: newMessage.replyTo,
-        isAuthor: (newMessage.userId || newMessage.user?._id) === authorInfo.id,
+        isAuthor: String(newMessage.userId || newMessage.user?._id) === String(authorId),
       };
-      setMessages((prev) => [...prev, formatted]);
-      
-      // Add to activity
-      if (formatted.userId !== user._id) {
+      if (!formatted.id) return;
+
+      setMessages((prev) => appendUniqueDiscussionMessage(prev, formatted));
+
+      if (String(formatted.userId) !== String(userIdRef.current)) {
         addActivity('message', formatted.author, 'sent a message');
       }
     };
@@ -154,26 +162,38 @@ const DiscussionRoom = () => {
     };
 
     const handleMessageLiked = (data) => {
-      const { messageId, userId, action } = data;
-      setMessages(prev => prev.map(msg => {
+      const { messageId, userId: likerId, action } = data;
+      setMessages((prev) => prev.map((msg) => {
         if (msg.id === messageId) {
           const likedBy = action === 'like'
-            ? [...(msg.likedBy || []), userId]
-            : (msg.likedBy || []).filter(id => id !== userId);
+            ? [...(msg.likedBy || []), likerId]
+            : (msg.likedBy || []).filter((id) => id !== likerId);
           return {
             ...msg,
             likes: likedBy.length,
-            likedBy
+            likedBy,
           };
         }
         return msg;
       }));
     };
 
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
     socket.on('load_messages', handleLoadMessages);
     socket.on('receive_message', handleReceiveMessage);
     socket.on('update_active_users', handleUpdateActiveUsers);
     socket.on('message_liked', handleMessageLiked);
+
+    socket.connect();
+    socket.emit('join_room', {
+      blogId,
+      user: {
+        _id: userId,
+        username: user.username || user.name,
+        avatar: user.avatar || user.profileImage?.url || user.profile?.avatar?.url,
+      },
+    });
 
     return () => {
       socket.off('connect', handleConnect);
@@ -182,34 +202,17 @@ const DiscussionRoom = () => {
       socket.off('receive_message', handleReceiveMessage);
       socket.off('update_active_users', handleUpdateActiveUsers);
       socket.off('message_liked', handleMessageLiked);
-      socket.emit('leave_room', { blogId });
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, [blogId, user, authorInfo.id]);
+  }, [blogId, user?._id, user?.id]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    
-    console.log('Send button clicked');
-    console.log('Socket connected:', socket.connected);
-    console.log('Message input:', messageInput);
-    console.log('User:', user);
-    
-    if (!messageInput.trim()) {
-      console.log('Message is empty');
-      return;
-    }
-    
-    if (!socket.connected) {
-      console.log('Socket not connected');
-      return;
-    }
-    
-    if (!user?._id) {
-      console.log('User not found');
-      return;
-    }
 
-    console.log('Emitting send_message event');
+    const socket = socketRef.current;
+    if (!messageInput.trim() || !socket?.connected || !user?._id) return;
+
     socket.emit('send_message', {
       blogId,
       message: messageInput.trim(),
@@ -254,7 +257,9 @@ const DiscussionRoom = () => {
       return msg;
     }));
 
-    // Emit socket event to persist like
+    const socket = socketRef.current;
+    if (!socket) return;
+
     socket.emit('like_message', {
       blogId,
       messageId,

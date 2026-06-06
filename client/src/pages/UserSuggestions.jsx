@@ -104,6 +104,8 @@ export default function UserSuggestions() {
       state: {
         startChatWith: {
           _id: user._id,
+          username: user.username,
+          fullName: user.profile?.fullName || user.username,
           name: user.profile?.fullName || user.username,
           email: user.email,
           profileImage: user.profile?.avatar,
