@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
+const Comment = require('../models/comment.model');
 const { cloudinary } = require('../config/cloudinary.config');
 const postModel = require('../models/post.model');
 const { pushNotification } = require('./notification.controller');
@@ -77,9 +79,9 @@ const updateProfile = async (req, res) => {
       
     if(!getme){
       return res.status(400).json({
-        sucess:false,
-        message:"user not found"
-      })
+        success: false,
+        message: 'user not found',
+      });
     }
 
     // Check if profile is incomplete
@@ -595,9 +597,9 @@ async function getUsers(req,res){
     
   } catch (error) {
     res.status(500).json({
-      sucess:true,
-      error:error.message
-    })
+      success: false,
+      error: error.message,
+    });
   }
 
 }
@@ -611,8 +613,8 @@ async function getWeeklyStats(req, res) {
 
     // Get user's posts from this week
     const userPosts = await postModel.find({
-      user: userId,
-      createdAt: { $gte: oneWeekAgo }
+      author: userId,
+      createdAt: { $gte: oneWeekAgo },
     }).select('_id');
 
     const postIds = userPosts.map(p => p._id);
@@ -744,7 +746,7 @@ async function deleteAccount(req, res) {
       } catch { /* ignore */ }
     }
 
-    const posts = await postModel.find({ user: userId }).select('media').lean();
+    const posts = await postModel.find({ author: userId }).select('media').lean();
     for (const post of posts) {
       if (post.media?.length) {
         for (const m of post.media) {
@@ -755,7 +757,7 @@ async function deleteAccount(req, res) {
       }
     }
 
-    await postModel.deleteMany({ user: userId });
+    await postModel.deleteMany({ author: userId });
     await Comment.deleteMany({ 'user._id': userId });
     await Notification.deleteMany({
       $or: [{ recipient: userId }, { actor: userId }],

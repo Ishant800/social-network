@@ -142,14 +142,14 @@ const getMyPost = async (req, res) => {
 
     if (!posts || posts.length === 0) {
       return res.status(200).json({
-        sucess: 'ok',
+        success: true,
         totalCount: 0,
         message: 'no post available',
       });
     }
 
     return res.status(200).json({
-      sucess: 'ok',
+      success: true,
       totalCount: posts.length,
       posts: posts.map((post) => {
         const postData = post.toObject();
@@ -188,7 +188,7 @@ const getPostDetails = async (req, res) => {
     );
     if (!post) {
       return res.status(400).json({
-        sucess: 'ok',
+        success: true,
         message: 'post not found ',
       });
     }
