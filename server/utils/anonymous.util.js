@@ -40,6 +40,7 @@ function generatePersona() {
 function stripUserFromPost(post) {
   const obj = typeof post.toObject === 'function' ? post.toObject() : { ...post };
   delete obj.user;
+  delete obj.author;
   return {
     ...obj,
     id: obj._id,

@@ -89,17 +89,17 @@ export default function ConfessionsVoiceSidebar() {
         </div>
 
         {featured?.voice?.url ? (
-          <button
-            type="button"
-            onClick={goVoicePage}
-            className="mt-3 w-full rounded-xl overflow-hidden relative text-left bg-gradient-to-br from-orange-500 to-amber-500 p-4 hover:opacity-95 transition-opacity"
-          >
-            <div className="flex items-center gap-2 mb-3">
+          <div className="mt-3 w-full rounded-xl overflow-hidden relative text-left bg-gradient-to-br from-orange-500 to-amber-500 p-4">
+            <button
+              type="button"
+              onClick={goVoicePage}
+              className="flex items-center gap-2 mb-3 w-full text-left hover:opacity-90 transition-opacity"
+            >
               <AnonymousAvatar persona={featured.anonymousPersona} size="sm" />
               <span className="text-xs font-semibold text-white truncate">
                 {featured.anonymousPersona?.name}
               </span>
-            </div>
+            </button>
             <VoicePlayer
               url={featured.voice.url}
               duration={featured.voice.duration}
@@ -111,7 +111,7 @@ export default function ConfessionsVoiceSidebar() {
                 {featured.category}
               </span>
             )}
-          </button>
+          </div>
         ) : (
           <div className="mt-3 rounded-xl border border-dashed border-orange-200 bg-orange-50/60 p-5 text-center">
             <Mic size={24} className="mx-auto text-orange-400/60 mb-2" />

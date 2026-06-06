@@ -20,8 +20,8 @@ const createConfession = async (req, res) => {
     if (req.file) {
       const duration = Math.min(Math.max(parseFloat(req.body.duration) || 0, 0), 300);
       voice = {
-        url: req.file.path,
-        public_id: req.file.filename,
+        url: req.file.secure_url || req.file.path || req.file.url,
+        public_id: req.file.filename || req.file.public_id,
         duration,
       };
     }
@@ -45,7 +45,7 @@ const createConfession = async (req, res) => {
     }
 
     const post = await Post.create({
-      user: userId,
+      author: userId,
       content: content?.trim() || '',
       voice,
       isVoicePost: Boolean(voice),

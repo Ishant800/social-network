@@ -31,6 +31,13 @@ const CommentSchema = new mongoose.Schema({
   stats: {
     likes: { type: Number, default: 0 }
   },
+
+  isAnonymous: { type: Boolean, default: false },
+  anonymousPersona: {
+    name: String,
+    avatarColor: String,
+    animal: String,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Comment', CommentSchema);

@@ -22,6 +22,7 @@ const feedRoute = require('./routes/feed.routes');
 const bookmarkRoute = require('./routes/bookmark.routes');
 const notificationRoute = require('./routes/notification.routes');
 const searchRoute = require('./routes/search.routes');
+const confessionRoute = require('./routes/confession.routes');
 const recommendationRoute = require('./routes/recommendation.routes');
 const bulkDataRoute = require('./routes/bulk-data.routes');
 const uploadRoute = require('./routes/upload.routes');
@@ -68,6 +69,7 @@ app.use('/likes', likeRoute);
 app.use('/bookmark', bookmarkRoute);
 app.use('/notifications', notificationRoute);
 app.use('/search', searchRoute);
+app.use('/confession', confessionRoute);
 app.use('/recommendation', recommendationRoute);
 app.use('/bulk', bulkDataRoute);
 app.use('/upload', uploadRoute);     
@@ -76,7 +78,7 @@ app.use('/upload', uploadRoute);
 const clientDist = path.resolve(__dirname, '../client/dist');
 const API_PREFIXES = [
   '/auth', '/feed', '/post', '/blog', '/user', '/comment', '/likes',
-  '/bookmark', '/notifications', '/search', '/recommendation', '/bulk', '/upload', '/health', '/socket.io',
+  '/bookmark', '/notifications', '/search', '/confession', '/recommendation', '/bulk', '/upload', '/health', '/socket.io',
 ];  
  
 // if (fs.existsSync(clientDist)) {

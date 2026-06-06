@@ -5,11 +5,13 @@ import {
   Compass,
   FileText,
   Home,
+  Mic,
   PenSquare,
   Settings,
   Users,
   User,
   MessagesSquare,
+  VenetianMask,
 } from 'lucide-react';
 
 function NavItem({ icon: Icon, label, path, end = false, badge }) {
@@ -56,6 +58,11 @@ export default function Sidebar() {
     { icon: MessagesSquare, label: 'Live Discussions', path: '/discussions' },
   ];
 
+  const discoverNav = [
+    { icon: VenetianMask, label: 'Confessions', path: '/confessions' },
+    { icon: Mic, label: 'Voice Stories', path: '/voice-stories' },
+  ];
+
   const profileNav = [
     { icon: User, label: 'My Profile', path: `/profile/${user?._id || user?.id || ''}` },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
@@ -72,6 +79,12 @@ export default function Sidebar() {
         {mainNav.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
+
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          {discoverNav.map((item) => (
+            <NavItem key={item.path} {...item} />
+          ))}
+        </div>
 
         <div className="mt-0">
           {profileNav.map((item) => (

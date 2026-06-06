@@ -5,10 +5,10 @@ import { Mic, Waves } from 'lucide-react';
 import {
   loadVoiceFeed,
   setVoiceCategory,
-} from '../features/confession/confessionSlice';
-import VoiceConfessionCard from '../components/confessions/VoiceConfessionCard';
-import WriteVoiceModal from '../components/confessions/WriteVoiceModal';
-import CategoryPills from '../components/confessions/CategoryPills';
+} from '@/features/confession/confessionSlice';
+import VoiceConfessionCard from '@/components/confessions/VoiceConfessionCard';
+import WriteVoiceModal from '@/components/confessions/WriteVoiceModal';
+import CategoryPills from '@/components/confessions/CategoryPills';
 
 export default function VoiceStories() {
   const dispatch = useDispatch();

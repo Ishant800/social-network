@@ -21,6 +21,7 @@ import Discussions from '@/pages/chat/Discussions';
 import MessageSystem from '@/pages/chat/Chat';
 import SearchResults from '@/pages/social/SearchResults';
 import Confessions from '@/pages/social/Confessions';
+import VoiceStories from '@/pages/VoiceStories';
 
 export default function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ export default function AppRoutes() {
       <Route path="/chats" element={<ProtectedRoute><MessageSystem /></ProtectedRoute>} />
       <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
       <Route path="/confessions" element={<ProtectedRoute><Confessions /></ProtectedRoute>} />
+      <Route path="/voice-stories" element={<ProtectedRoute><VoiceStories /></ProtectedRoute>} />
     </Routes>
   );
 }

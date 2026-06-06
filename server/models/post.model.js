@@ -11,9 +11,50 @@ const PostSchema = new mongoose.Schema({
 
   content:{
     type:String,
-    required:true,
+    required:function requiredContent() {
+      if (this.isAnonymous && this.voice?.url) return false;
+      return true;
+    },
     trim:true,
-    maxlength:2000
+    maxlength:10000
+  },
+
+  voice:{
+    url:String,
+    public_id:String,
+    duration:{ type:Number, default:0 }
+  },
+
+  isVoicePost:{
+    type:Boolean,
+    default:false
+  },
+
+  isAnonymous:{
+    type:Boolean,
+    default:false,
+    index:true
+  },
+
+  anonymousPersona:{
+    name:String,
+    avatarColor:String,
+    animal:String
+  },
+
+  isPublic:{
+    type:Boolean,
+    default:true
+  },
+
+  commentsCount:{
+    type:Number,
+    default:0
+  },
+
+  likesCount:{
+    type:Number,
+    default:0
   },
 
   media:[
@@ -135,5 +176,8 @@ PostSchema.index({ createdAt:-1 });
 PostSchema.index({ category:1, createdAt:-1 });
 PostSchema.index({ author:1, createdAt:-1 });
 PostSchema.index({ engagementScore:-1 });
+PostSchema.index({ isAnonymous:1, createdAt:-1 });
+PostSchema.index({ isAnonymous:1, category:1, createdAt:-1 });
+PostSchema.index({ isAnonymous:1, isVoicePost:1, createdAt:-1 });
 
 module.exports = mongoose.model("Post", PostSchema);

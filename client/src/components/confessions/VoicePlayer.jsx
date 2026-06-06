@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
+import { getPlayableVoiceUrl } from '@/utils/voice';
 
 function formatTime(seconds) {
   const s = Math.max(0, Math.floor(seconds || 0));
@@ -43,33 +44,42 @@ export default function VoicePlayer({
   const [current, setCurrent] = useState(0);
   const theme = THEMES[variant] || THEMES.default;
   const total = duration || 0;
+  const playableUrl = getPlayableVoiceUrl(url);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
+
+    setPlaying(false);
+    setCurrent(0);
+    audio.load();
 
     const onTime = () => setCurrent(audio.currentTime);
     const onEnd = () => {
       setPlaying(false);
       setCurrent(0);
     };
+    const onError = () => setPlaying(false);
 
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('ended', onEnd);
+    audio.addEventListener('error', onError);
     return () => {
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('ended', onEnd);
+      audio.removeEventListener('error', onError);
     };
-  }, [url]);
+  }, [playableUrl]);
 
-  const toggle = () => {
+  const toggle = (e) => {
+    e.stopPropagation();
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !playableUrl) return;
     if (playing) {
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play().then(() => setPlaying(true)).catch(() => {});
+      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   };
 
@@ -77,8 +87,8 @@ export default function VoicePlayer({
   const bars = compact ? 20 : 28;
 
   return (
-    <div className={compact ? '' : 'mt-3'}>
-      <audio ref={audioRef} src={url} preload="metadata" className="hidden" />
+    <div className={compact ? '' : 'mt-3'} onClick={(e) => e.stopPropagation()}>
+      <audio ref={audioRef} src={playableUrl} preload="metadata" className="hidden" />
       <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${theme.wrap}`}>
         <button
           type="button"
