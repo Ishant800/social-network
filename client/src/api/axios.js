@@ -1,9 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/config/env';
 
-const envUrl = (import.meta.env.VITE_API_URL || '').trim();
-
-// Use environment variable or fallback to localhost for development
-const baseURL = envUrl || 'http://localhost:5000';
+const baseURL = API_BASE_URL;
 
 const API = axios.create({
   baseURL,

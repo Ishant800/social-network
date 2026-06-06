@@ -26,30 +26,20 @@ const recommendationRoute = require('./routes/recommendation.routes');
 const bulkDataRoute = require('./routes/bulk-data.routes');
 const uploadRoute = require('./routes/upload.routes');
 const { Server } = require('socket.io');
+const {
+  getClientOrigins,
+  getClientUrl,
+  createCorsOptions,
+  createSocketCorsOptions,
+} = require('./config/cors.config');
 
 const app = express();
-
-// const clientOrigins = (
-//   process.env.CLIENT_ORIGINS 
-//   // || 
-//   // 'https://social-network-fronted.onrender.com,http://localhost:5173,http://127.0.0.1:5173'
-// )
-  // .split(',')
-  // .map((s) => s.trim())
-  // .filter(Boolean);
+const clientOrigins = getClientOrigins();
 
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(
-  cors({
-    
-    origin: "http://localhost:5173",
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
-);
+app.use(cors(createCorsOptions(clientOrigins)));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
@@ -120,9 +110,10 @@ const socketHandler = require('./socket/socketcontroller');
 socketHandler(io);
     
 const PORT_NO = process.env.PORT || 5000;
-server.listen(PORT_NO, () => {   
-  
+server.listen(PORT_NO, () => {
   console.log(`server running successfully on port: ${PORT_NO}`);
+  console.log(`allowed client origins: ${clientOrigins.join(', ')}`);
+  console.log(`client url: ${getClientUrl()}`);
 });
 
 module.exports = { io, server };

@@ -24,7 +24,7 @@ export const login = createAsyncThunk(
                     String(error.message || "").toLowerCase().includes("network"))
             ) {
                 return thunkAPI.rejectWithValue(
-                    "Cannot reach the server. Run the API on port 5000 and restart Vite (npm run dev), or set VITE_API_URL in client/.env."
+                    "Cannot reach the server. Check your connection or API configuration."
                 );
             }
             const data = error.response?.data;
@@ -50,7 +50,7 @@ export const signup = createAsyncThunk(
           String(error.message || "").toLowerCase().includes("network"))
       ) {
         return thunkAPI.rejectWithValue(
-          "Cannot reach the server. Run the API on port 5000 and restart Vite (npm run dev), or set VITE_API_URL in client/.env."
+          "Cannot reach the server. Check your connection or API configuration."
         );
       }
       const data = error.response?.data;

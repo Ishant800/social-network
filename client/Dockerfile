@@ -12,6 +12,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Production API URL (override with --build-arg for other environments)
+ARG VITE_API_URL=https://social-network-backend-9gdm.onrender.com
+ARG VITE_FRONTEND_URL=https://social-network-fronted.onrender.com
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_FRONTEND_URL=$VITE_FRONTEND_URL
+
 # Build the app
 RUN npm run build
 

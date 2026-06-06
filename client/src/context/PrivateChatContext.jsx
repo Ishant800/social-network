@@ -1,13 +1,12 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import io from 'socket.io-client';
+import { API_BASE_URL } from '@/config/env';
 import {
   setChatList,
   setUserOnlineStatus,
   setOnlineUsersFromChatList,
 } from '@/features/messages/messageSlice';
-
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const PrivateChatContext = createContext(null);
 
@@ -30,7 +29,10 @@ export function PrivateChatProvider({ children }) {
     const token = localStorage.getItem('token');
     if (!userId || !token) return;
 
-    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
     socketRef.current = socket;
 
     const onConnect = () => {

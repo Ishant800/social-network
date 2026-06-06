@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '@/config/env';
 import { useSelector } from 'react-redux';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -15,8 +16,6 @@ import {
   Bell,
 } from 'lucide-react';
 import API from '@/api/axios';
-
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const appendUniqueDiscussionMessage = (prev, formatted) => {
   const id = String(formatted.id || '');
@@ -109,7 +108,10 @@ const DiscussionRoom = () => {
     const userId = user?._id || user?.id;
     if (!blogId || !userId) return;
 
-    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
     socketRef.current = socket;
 
     const handleConnect = () => setIsConnected(true);
